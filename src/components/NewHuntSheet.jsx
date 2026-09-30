@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { PlusCircle, Sparkles, RefreshCw } from 'lucide-react';
-import { useStore } from '../state/store.jsx';
+import { PlusCircle, Sparkles, RefreshCw, ShieldAlert } from 'lucide-react';
+import { useStore, defaultMethodFor } from '../state/store.jsx';
 import { useNav } from '../state/nav.jsx';
-import { getPokemon } from '../data/pokedex.js';
-import { GAMES, SHINY_METHODS, methodOdds, GAME_BY_ID } from '../data/constants.js';
-import { encountersFor, fmtNumber, fmtOdds } from '../lib/utils.js';
-import { Sheet, Field, Toggle, Sprite, TypeBadge } from './ui.jsx';
+import { getPokemon, isAvailableIn } from '../data/pokedex.js';
+import { isLockedIn, GAME_BY_ID } from '../data/constants.js';
+import { encountersFor, METHOD_BY_ID } from '../data/methods.js';
+import { fmtNumber } from '../lib/utils.js';
+import { Sheet, Field, Sprite, TypeBadge } from './ui.jsx';
 import PokemonPicker from './PokemonPicker.jsx';
+import OddsConfig from './OddsConfig.jsx';
 
 export default function NewHuntSheet({ open, initialTarget, onClose }) {
   const { settings, createHunt } = useStore();
@@ -20,19 +22,21 @@ export default function NewHuntSheet({ open, initialTarget, onClose }) {
     const t = initialTarget ? getPokemon(initialTarget) : null;
     setTarget(t);
     setPicking(!t);
-    const method = settings.defaultMethod || 'wild';
-    setForm({ game: settings.defaultGame || 'sv', method, charm: settings.charm, odds: methodOdds(method, settings.charm), step: 1, count: 0, customOdds: false });
-  }, [open, initialTarget, settings.defaultGame, settings.defaultMethod, settings.charm]);
+    const game = settings.defaultGame || 'sv';
+    const method = defaultMethodFor(game);
+    setForm({ game, method, opts: {}, charm: settings.charm, customOdds: null, step: METHOD_BY_ID[method]?.step || 1, count: 0 });
+  }, [open, initialTarget, settings.defaultGame, settings.charm]);
 
   if (!form) return null;
-  const update = patch => setForm(f => {
-    const next = { ...f, ...patch };
-    if (!next.customOdds && ('method' in patch || 'charm' in patch)) next.odds = methodOdds(next.method, next.charm);
-    return next;
-  });
+  const update = patch => setForm(f => ({ ...f, ...patch }));
+  const unit = METHOD_BY_ID[form.method]?.unit || 'rencontres';
+  const warnings = target ? [
+    !isAvailableIn(target, form.game) && `${target.name} n'apparaît pas dans le Pokédex de ${GAME_BY_ID[form.game]?.short}.`,
+    isLockedIn(target, form.game) && `${target.name} est probablement Shiny Lock dans ce jeu.`
+  ].filter(Boolean) : [];
 
   const start = () => {
-    createHunt({ targetId: target.key, game: form.game, method: form.method, charm: form.charm, odds: form.odds, step: form.step, count: form.count });
+    createHunt({ targetId: target.key, ...form });
     onClose();
     goTo('hunts');
   };
@@ -65,42 +69,28 @@ export default function NewHuntSheet({ open, initialTarget, onClose }) {
             </button>
           </div>
 
-          <Field label="Jeu" hint={GAME_BY_ID[form.game]?.bestMethod ? `💡 Méthode phare : ${GAME_BY_ID[form.game].bestMethod}` : null}>
-            <select className="input" value={form.game} onChange={e => update({ game: e.target.value })}>
-              {GAMES.map(g => <option key={g.id} value={g.id}>{g.icon} {g.name}</option>)}
-            </select>
-          </Field>
+          {warnings.map(w => (
+            <p key={w} className="flex gap-2 text-xs text-amber-200 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3">
+              <ShieldAlert className="w-4 h-4 shrink-0" /> {w}
+            </p>
+          ))}
 
-          <Field label="Méthode">
-            <select className="input" value={form.method} onChange={e => update({ method: e.target.value })}>
-              {SHINY_METHODS.map(m => <option key={m.id} value={m.id}>{m.icon} {m.name}</option>)}
-            </select>
-          </Field>
+          <OddsConfig value={form} onChange={update} />
 
-          <div className="card px-4 divide-y divide-slate-800">
-            <Toggle checked={form.charm} onChange={charm => update({ charm })} label="Charme Chroma" desc="Augmente le nombre de tirages shiny selon la méthode" />
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Taux 1/x">
-              <input type="number" inputMode="numeric" min="1" className="input font-mono px-3" value={form.odds}
-                onChange={e => update({ odds: Math.max(1, parseInt(e.target.value, 10) || 1), customOdds: true })} />
-            </Field>
-            <Field label="Pas (+x)">
-              <input type="number" inputMode="numeric" min="1" max="100" className="input font-mono px-3" value={form.step}
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={`Pas (+x ${unit})`}>
+              <input type="number" inputMode="numeric" min="1" max="100" className="input font-mono" value={form.step}
                 onChange={e => update({ step: Math.min(100, Math.max(1, parseInt(e.target.value, 10) || 1)) })} />
             </Field>
-            <Field label="Départ">
-              <input type="number" inputMode="numeric" min="0" className="input font-mono px-3" value={form.count}
+            <Field label="Compteur de départ">
+              <input type="number" inputMode="numeric" min="0" className="input font-mono" value={form.count}
                 onChange={e => update({ count: Math.max(0, parseInt(e.target.value, 10) || 0) })} />
             </Field>
           </div>
 
           <p className="text-xs text-slate-400 leading-relaxed">
-            À {fmtOdds(form.odds)}, il faut en moyenne <strong className="text-slate-200">{fmtNumber(form.odds)}</strong> rencontres ;
-            50 % de chances après <strong className="text-slate-200">{fmtNumber(encountersFor(0.5, form.odds))}</strong> et
-            90 % après <strong className="text-slate-200">{fmtNumber(encountersFor(0.9, form.odds))}</strong>.
-            Le « pas » sert aux hordes ou aux œufs par 5 par exemple.
+            50 % de chances d'avoir le shiny après <strong className="text-slate-200">{fmtNumber(encountersFor(form, 0.5))}</strong> {unit},
+            90 % après <strong className="text-slate-200">{fmtNumber(encountersFor(form, 0.9))}</strong>.
           </p>
         </div>
       )}

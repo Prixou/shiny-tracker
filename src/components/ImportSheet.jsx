@@ -2,12 +2,11 @@ import { useMemo } from 'react';
 import { Download, AlertTriangle } from 'lucide-react';
 import { useStore } from '../state/store.jsx';
 import { parseImport } from '../lib/sync.js';
-import { Sheet, useToast } from './ui.jsx';
+import { Sheet } from './ui.jsx';
 
 // `code` : lien/QR (#import=…), JSON collé ou objet déjà lu depuis un fichier.
 export default function ImportSheet({ code, onClose }) {
-  const { importData, shinies, hunts } = useStore();
-  const toast = useToast();
+  const { importData, catches, hunts } = useStore();
   const parsed = useMemo(() => {
     if (!code) return null;
     try {
@@ -19,7 +18,6 @@ export default function ImportSheet({ code, onClose }) {
 
   const apply = mode => {
     importData(parsed.data, mode);
-    toast(mode === 'replace' ? 'Sauvegarde restaurée' : 'Données fusionnées');
     onClose();
   };
 
@@ -41,9 +39,9 @@ export default function ImportSheet({ code, onClose }) {
         <div className="space-y-4">
           <div className="grid grid-cols-3 gap-2 text-center">
             {[
-              { label: 'Shiny', value: Object.keys(d.shinies).length },
+              { label: 'Shiny', value: d.catches.length },
               { label: 'Chasses', value: d.hunts.length },
-              { label: 'Objectifs', value: Object.keys(d.wishlist).length }
+              { label: 'Listes', value: d.lists.length + (Object.keys(d.wishlist).length ? 1 : 0) }
             ].map(s => (
               <div key={s.label} className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
                 <div className="text-2xl font-black font-mono text-amber-400">{s.value}</div>
@@ -52,7 +50,7 @@ export default function ImportSheet({ code, onClose }) {
             ))}
           </div>
           <p className="text-sm text-slate-300 leading-relaxed">
-            Actuellement sur cet appareil : <strong>{Object.keys(shinies).length}</strong> shiny et <strong>{hunts.length}</strong> chasses.
+            Actuellement sur cet appareil : <strong>{catches.length}</strong> shiny et <strong>{hunts.length}</strong> chasses.
             La <strong>fusion</strong> garde la version la plus récente de chaque entrée ; le <strong>remplacement</strong> efface les données actuelles.
           </p>
         </div>

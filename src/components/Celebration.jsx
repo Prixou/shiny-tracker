@@ -27,7 +27,7 @@ export default function Celebration({ data, onClose }) {
   }), [data]);
 
   if (!data) return null;
-  const luck = getLuckTier(data.count, data.odds);
+  const luck = getLuckTier(data.ratio);
   return createPortal(
     <button className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-sm animate-fade-in text-center px-6" onClick={onClose} aria-label="Fermer">
       <div className="relative">

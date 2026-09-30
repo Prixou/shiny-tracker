@@ -1,62 +1,56 @@
 import { useRef, useState } from 'react';
-import { useStore } from '../state/store.jsx';
-import { SHINY_METHODS, methodOdds } from '../data/constants.js';
-import { cumulativeChance, encountersFor, fmtNumber, fmtOdds, fmtPercent, fmtRatio, clamp } from '../lib/utils.js';
-import { Field, Toggle } from '../components/ui.jsx';
+import { useStore, defaultMethodFor } from '../state/store.jsx';
+import { cumulativeChance, encountersFor, oddsAt, METHOD_BY_ID } from '../data/methods.js';
+import { fmtNumber, fmtOdds, fmtPercent, fmtRatio, clamp } from '../lib/utils.js';
+import { Field } from '../components/ui.jsx';
+import OddsConfig from '../components/OddsConfig.jsx';
 
 const TARGETS = [0.5, 0.75, 0.9, 0.95, 0.99];
 
 export default function OddsTool() {
   const { settings } = useStore();
-  const [method, setMethod] = useState(settings.defaultMethod || 'wild');
-  const [charm, setCharm] = useState(settings.charm);
-  const [custom, setCustom] = useState('');
+  const [cfg, setCfg] = useState(() => {
+    const game = settings.defaultGame || 'sv';
+    return { game, method: defaultMethodFor(game), opts: {}, charm: settings.charm, customOdds: null };
+  });
   const [n, setN] = useState(1000);
+  const update = patch => setCfg(c => ({ ...c, ...patch }));
 
-  const odds = Number(custom) > 0 ? Number(custom) : methodOdds(method, charm);
-  const p = cumulativeChance(n, odds);
-  const maxN = Math.max(encountersFor(0.99, odds), n, 10);
+  const p = cumulativeChance(cfg, [n]);
+  const odds = oddsAt(cfg, n);
+  const unit = METHOD_BY_ID[cfg.method]?.unit || 'rencontres';
+  const maxN = Math.max(encountersFor(cfg, 0.99), n, 10);
 
   return (
     <div className="space-y-4">
       <div className="card p-4 space-y-4">
-        <Field label="Méthode">
-          <select className="input" value={method} onChange={e => { setMethod(e.target.value); setCustom(''); }}>
-            {SHINY_METHODS.filter(m => m.odds > 1).map(m => <option key={m.id} value={m.id}>{m.icon} {m.name} (1/{m.odds})</option>)}
-          </select>
+        <OddsConfig value={cfg} onChange={update} />
+        <Field label={`Nombre de ${unit}`}>
+          <input type="number" inputMode="numeric" min="0" className="input font-mono" value={n} onChange={e => setN(Math.max(0, parseInt(e.target.value, 10) || 0))} />
         </Field>
-        <Toggle checked={charm} onChange={v => { setCharm(v); setCustom(''); }} label="Charme Chroma" />
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Taux personnalisé (1/x)">
-            <input type="number" inputMode="numeric" min="1" className="input font-mono" value={custom} placeholder={String(methodOdds(method, charm))} onChange={e => setCustom(e.target.value)} />
-          </Field>
-          <Field label="Rencontres">
-            <input type="number" inputMode="numeric" min="0" className="input font-mono" value={n} onChange={e => setN(Math.max(0, parseInt(e.target.value, 10) || 0))} />
-          </Field>
-        </div>
-        <input type="range" min="0" max={maxN} value={Math.min(n, maxN)} onChange={e => setN(Number(e.target.value))} className="w-full accent-amber-500 h-8" aria-label="Nombre de rencontres" />
+        <input type="range" min="0" max={maxN} value={Math.min(n, maxN)} onChange={e => setN(Number(e.target.value))} className="w-full accent-amber-500 h-8" aria-label={`Nombre de ${unit}`} />
       </div>
 
       <div className="card p-5 text-center space-y-1">
         <div className="label-caps">Chance d'avoir au moins 1 shiny</div>
         <div className="text-5xl font-black font-mono text-amber-400">{fmtPercent(p, 2)}</div>
-        <div className="text-sm text-slate-400">après {fmtNumber(n)} rencontres à {fmtOdds(odds)} · {fmtRatio(n / odds)} le taux</div>
+        <div className="text-sm text-slate-400">après {fmtNumber(n)} {unit} · taux actuel {fmtOdds(odds)} · {fmtRatio(-Math.log(1 - Math.min(p, 0.999999)))} le taux</div>
       </div>
 
-      <Curve odds={odds} n={n} maxN={maxN} onPick={setN} />
+      <Curve cfg={cfg} n={n} maxN={maxN} onPick={setN} />
 
       <div className="card p-4 space-y-2">
-        <div className="label-caps">Rencontres nécessaires</div>
+        <div className="label-caps">{unit.charAt(0).toUpperCase() + unit.slice(1)} nécessaires</div>
         <div className="grid grid-cols-5 gap-1.5 text-center">
           {TARGETS.map(t => (
-            <button key={t} onClick={() => setN(encountersFor(t, odds))} className="p-2 rounded-2xl bg-slate-950 border border-slate-800 active:bg-slate-800">
+            <button key={t} onClick={() => setN(encountersFor(cfg, t))} className="p-2 rounded-2xl bg-slate-950 border border-slate-800 active:bg-slate-800">
               <div className="text-xs font-bold text-slate-400">{Math.round(t * 100)} %</div>
-              <div className="text-sm font-black font-mono text-slate-100">{fmtNumber(encountersFor(t, odds))}</div>
+              <div className="text-sm font-black font-mono text-slate-100">{fmtNumber(encountersFor(cfg, t))}</div>
             </button>
           ))}
         </div>
         <p className="text-xs text-slate-500 pt-1">
-          Chaque rencontre est indépendante : les rencontres passées n'augmentent pas la chance de la suivante. Ces valeurs indiquent la probabilité globale sur toute la chasse.
+          Chaque rencontre est indépendante : les rencontres passées n'augmentent pas la chance de la suivante (sauf méthodes à chaîne, où c'est la chaîne qui améliore le taux).
         </p>
       </div>
     </div>
@@ -64,15 +58,15 @@ export default function OddsTool() {
 }
 
 // Courbe de probabilité cumulée ; glisser le doigt dessus pour lire une valeur.
-function Curve({ odds, n, maxN, onPick }) {
+function Curve({ cfg, n, maxN, onPick }) {
   const ref = useRef(null);
   const [hover, setHover] = useState(null);
   const W = 320, H = 150, pad = { l: 34, r: 10, t: 10, b: 22 };
   const x = v => pad.l + (v / maxN) * (W - pad.l - pad.r);
   const y = pr => pad.t + (1 - pr) * (H - pad.t - pad.b);
   const pts = Array.from({ length: 61 }, (_, i) => {
-    const v = (i / 60) * maxN;
-    return `${x(v).toFixed(1)},${y(cumulativeChance(v, odds)).toFixed(1)}`;
+    const v = Math.round((i / 60) * maxN);
+    return `${x(v).toFixed(1)},${y(cumulativeChance(cfg, [v])).toFixed(1)}`;
   });
   const valueAt = e => {
     const r = ref.current.getBoundingClientRect();
@@ -80,7 +74,8 @@ function Curve({ odds, n, maxN, onPick }) {
     return Math.round(clamp((px - pad.l) / (W - pad.l - pad.r), 0, 1) * maxN);
   };
   const shown = hover ?? n;
-  const pr = cumulativeChance(shown, odds);
+  const pr = cumulativeChance(cfg, [shown]);
+  const baseOdds = oddsAt(cfg, 0);
   return (
     <div className="card p-4 space-y-2">
       <div className="flex justify-between text-xs">
@@ -104,8 +99,12 @@ function Curve({ odds, n, maxN, onPick }) {
             <text x={pad.l - 6} y={y(t) + 3} textAnchor="end" className="fill-slate-500 text-[9px] font-mono">{Math.round(t * 100)}%</text>
           </g>
         ))}
-        <line x1={x(odds)} x2={x(odds)} y1={pad.t} y2={H - pad.b} stroke="#475569" strokeDasharray="3 3" />
-        <text x={x(odds)} y={H - 8} textAnchor="middle" className="fill-slate-500 text-[9px] font-mono">{fmtOdds(odds)}</text>
+        {baseOdds <= maxN && (
+          <>
+            <line x1={x(baseOdds)} x2={x(baseOdds)} y1={pad.t} y2={H - pad.b} stroke="#475569" strokeDasharray="3 3" />
+            <text x={x(baseOdds)} y={H - 8} textAnchor="middle" className="fill-slate-500 text-[9px] font-mono">{fmtOdds(baseOdds)}</text>
+          </>
+        )}
         <text x={pad.l} y={H - 8} textAnchor="start" className="fill-slate-500 text-[9px] font-mono">0</text>
         <text x={W - pad.r} y={H - 8} textAnchor="end" className="fill-slate-500 text-[9px] font-mono">{fmtNumber(maxN)}</text>
         <polyline points={pts.join(' ')} fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinejoin="round" />

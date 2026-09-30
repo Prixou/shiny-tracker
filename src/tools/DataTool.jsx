@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { Download, Upload, Share2, Copy, QrCode, ScanLine, ClipboardPaste, CloudOff, Smartphone, HardDrive, Link2 } from 'lucide-react';
 import { useStore } from '../state/store.jsx';
-import { POKEDEX, spriteUrl } from '../data/pokedex.js';
+import { MAIN_DEX, spriteUrl } from '../data/pokedex.js';
 import { POKE_BALLS, ballSprite } from '../data/constants.js';
 import { buildExport, backupFilename, downloadFile, shareFile, copyText, shareLink } from '../lib/sync.js';
 import { useInstallPrompt } from '../lib/hooks.js';
 import { Sheet, useToast } from '../components/ui.jsx';
 import ImportSheet from '../components/ImportSheet.jsx';
 import QrScanner from '../components/QrScanner.jsx';
+import CloudSection from '../components/CloudSection.jsx';
 
 export default function DataTool() {
   const store = useStore();
@@ -39,10 +40,12 @@ export default function DataTool() {
     }
   };
 
-  const counts = { shinies: Object.keys(store.shinies).length, hunts: store.hunts.length };
+  const counts = { shinies: store.catches.length, hunts: store.hunts.length };
 
   return (
     <div className="space-y-4">
+      <CloudSection />
+
       <section className="card p-4 space-y-3">
         <h3 className="label-caps flex items-center gap-2"><Download className="w-4 h-4" /> Sauvegarder</h3>
         <p className="text-sm text-slate-400">{counts.shinies} shiny et {counts.hunts} chasses stockés sur cet appareil. Pense à faire une sauvegarde de temps en temps.</p>
@@ -100,16 +103,16 @@ export default function DataTool() {
 }
 
 function QrSheet({ open, onClose }) {
-  const { shinies, hunts, wishlist } = useStore();
+  const { catches, hunts, wishlist, lists } = useStore();
   const toast = useToast();
   const [state, setState] = useState(null);
   useEffect(() => {
     if (!open) return;
-    const link = shareLink({ shinies, hunts, wishlist });
+    const link = shareLink({ catches, hunts, wishlist, lists });
     QRCode.toDataURL(link, { errorCorrectionLevel: 'L', margin: 2, width: 720, color: { dark: '#020617', light: '#ffffff' } })
       .then(url => setState({ url, link }))
       .catch(() => setState({ error: true, link }));
-  }, [open, shinies, hunts, wishlist]);
+  }, [open, catches, hunts, wishlist, lists]);
   return (
     <Sheet open={open} onClose={onClose} title="QR code de transfert" subtitle="Les notes ne sont pas incluses (taille limitée)" icon={<QrCode className="w-5 h-5" />}>
       {!state ? null : state.error ? (
@@ -142,7 +145,7 @@ function OfflineSection() {
   }, [progress]);
 
   const cacheSprites = async () => {
-    const urls = [...POKEDEX.map(p => spriteUrl(p)), ...POKE_BALLS.map(b => ballSprite(b.id))];
+    const urls = [...MAIN_DEX.map(p => spriteUrl(p)), ...POKE_BALLS.map(b => ballSprite(b.id))];
     let done = 0;
     setProgress(0);
     const queue = [...urls];

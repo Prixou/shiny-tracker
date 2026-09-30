@@ -1,17 +1,18 @@
 import { useState } from 'react';
-import { Dices, Calculator, HardDrive, Settings } from 'lucide-react';
 import { useStore } from '../state/store.jsx';
 import { Segmented } from '../components/ui.jsx';
 import RandomTool from '../tools/RandomTool.jsx';
 import OddsTool from '../tools/OddsTool.jsx';
+import RecipesTool from '../tools/RecipesTool.jsx';
 import DataTool from '../tools/DataTool.jsx';
 import SettingsTool from '../tools/SettingsTool.jsx';
 
 const SECTIONS = [
-  { id: 'random', label: 'Tirage', icon: <Dices className="w-4 h-4" /> },
-  { id: 'odds', label: 'Probas', icon: <Calculator className="w-4 h-4" /> },
-  { id: 'data', label: 'Données', icon: <HardDrive className="w-4 h-4" /> },
-  { id: 'settings', label: 'Réglages', icon: <Settings className="w-4 h-4" /> }
+  { id: 'random', label: 'Tirage' },
+  { id: 'odds', label: 'Probas' },
+  { id: 'recipes', label: 'Recettes' },
+  { id: 'data', label: 'Données' },
+  { id: 'settings', label: 'Réglages' }
 ];
 
 export default function ToolsView() {
@@ -23,6 +24,7 @@ export default function ToolsView() {
       <Segmented options={SECTIONS} value={section} onChange={change} size="sm" />
       {section === 'random' && <RandomTool />}
       {section === 'odds' && <OddsTool />}
+      {section === 'recipes' && <RecipesTool />}
       {section === 'data' && <DataTool />}
       {section === 'settings' && <SettingsTool />}
     </div>

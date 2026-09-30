@@ -1,8 +1,8 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { Sparkles, Layers, Timer, BookOpen, BarChart3, Wrench, WifiOff } from 'lucide-react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Sparkles, Layers, Timer, BookOpen, BarChart3, Wrench, WifiOff, Undo2 } from 'lucide-react';
 import { useStore } from './state/store.jsx';
 import { NavContext } from './state/nav.jsx';
-import { POKEDEX } from './data/pokedex.js';
+import { MAIN_DEX } from './data/pokedex.js';
 import { TABS } from './data/constants.js';
 import { useOnline } from './lib/hooks.js';
 import DexView from './views/DexView.jsx';
@@ -10,6 +10,7 @@ import HuntsView from './views/HuntsView.jsx';
 import PokemonSheet from './components/PokemonSheet.jsx';
 import NewHuntSheet from './components/NewHuntSheet.jsx';
 import ImportSheet from './components/ImportSheet.jsx';
+import { useToast } from './components/ui.jsx';
 
 const JournalView = lazy(() => import('./views/JournalView.jsx'));
 const StatsView = lazy(() => import('./views/StatsView.jsx'));
@@ -30,7 +31,8 @@ const initialTab = ui => {
 };
 
 export default function App() {
-  const { shinies, hunts, ui, setUiValue } = useStore();
+  const { shinies, hunts, ui, setUiValue, undoStack, undo } = useStore();
+  const toast = useToast();
   const [tab, setTab] = useState(() => initialTab(ui));
   const [pokemonKey, setPokemonKey] = useState(null);
   const [newHunt, setNewHunt] = useState(null);
@@ -57,8 +59,32 @@ export default function App() {
     openNewHunt: (targetKey = null) => setNewHunt({ targetKey })
   }), [tab, goTo]);
 
-  const caughtCount = useMemo(() => Object.keys(shinies).length, [shinies]);
-  const pct = POKEDEX.length ? (caughtCount / POKEDEX.length) * 100 : 0;
+  const caughtCount = useMemo(() => MAIN_DEX.reduce((n, p) => n + (shinies[p.key] ? 1 : 0), 0), [shinies]);
+  const pct = MAIN_DEX.length ? (caughtCount / MAIN_DEX.length) * 100 : 0;
+
+  // Chaque action annulable affiche un toast « Annuler » ; Ctrl/Cmd+Z annule aussi.
+  const doUndo = useCallback(() => {
+    const entry = undo();
+    if (entry) toast(`Annulé : ${entry.label}`, { type: 'info' });
+  }, [undo, toast]);
+  const lastUndoId = useRef(undoStack[undoStack.length - 1]?.id);
+  useEffect(() => {
+    const top = undoStack[undoStack.length - 1];
+    if (top && top.id !== lastUndoId.current && Date.now() - top.at < 1000) {
+      toast(top.label, { action: { label: 'Annuler', onClick: doUndo }, duration: 4500 });
+    }
+    lastUndoId.current = top?.id;
+  }, [undoStack, toast, doUndo]);
+  useEffect(() => {
+    const onKey = e => {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+        e.preventDefault();
+        doUndo();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [doUndo]);
   const runningCount = hunts.filter(h => h.startedAt).length;
   const activeCount = hunts.filter(h => h.status === 'active').length;
 
@@ -96,6 +122,11 @@ export default function App() {
 
             <div className="ml-auto md:ml-0 flex items-center gap-2">
               {!online && <WifiOff className="w-4 h-4 text-slate-500" aria-label="Hors ligne" />}
+              {undoStack.length > 0 && (
+                <button onClick={doUndo} className="icon-btn w-10 h-10 bg-slate-900 border border-slate-800" aria-label={`Annuler : ${undoStack[undoStack.length - 1].label}`} title="Annuler (Ctrl+Z)">
+                  <Undo2 className="w-4 h-4" />
+                </button>
+              )}
               <button onClick={() => goTo('stats')} className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-2xl pl-2 pr-3 py-1.5" aria-label="Progression">
                 <svg viewBox="0 0 36 36" className="w-7 h-7 -rotate-90" aria-hidden="true">
                   <circle cx="18" cy="18" r="15" fill="none" stroke="#1e293b" strokeWidth="5" />
@@ -104,7 +135,7 @@ export default function App() {
                 </svg>
                 <span className="text-left leading-tight">
                   <span className="block text-sm font-black font-mono text-amber-400">{caughtCount}</span>
-                  <span className="block text-[10px] text-slate-500 font-mono">/{POKEDEX.length}</span>
+                  <span className="block text-[10px] text-slate-500 font-mono">/{MAIN_DEX.length}</span>
                 </span>
               </button>
             </div>

@@ -4,7 +4,7 @@ import { useStore } from '../state/store.jsx';
 import { useNav } from '../state/nav.jsx';
 import { getPokemon } from '../data/pokedex.js';
 import { GAME_BY_ID, METHOD_BY_ID, BALL_BY_ID } from '../data/constants.js';
-import { normalize, formatDate, fmtNumber, formatDuration, getLuckTier, monthLabel } from '../lib/utils.js';
+import { normalize, formatDate, fmtNumber, formatDuration, getLuckTier, monthLabel, catchRatio } from '../lib/utils.js';
 import { downloadFile } from '../lib/sync.js';
 import { Sprite, BallIcon, EmptyState } from '../components/ui.jsx';
 
@@ -17,14 +17,14 @@ const SORTS = [
 ];
 
 export default function JournalView() {
-  const { shinies } = useStore();
+  const { catches } = useStore();
   const { openPokemon, goTo } = useNav();
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('recent');
 
-  const entries = useMemo(() => Object.entries(shinies)
-    .map(([key, rec]) => ({ key, rec, p: getPokemon(key) }))
-    .filter(e => e.p), [shinies]);
+  const entries = useMemo(() => catches
+    .map(rec => ({ key: rec.key, id: rec.id, rec, p: getPokemon(rec.key) }))
+    .filter(e => e.p), [catches]);
 
   const totals = useMemo(() => entries.reduce((acc, e) => {
     acc.count += e.rec.count || 0;
@@ -35,7 +35,7 @@ export default function JournalView() {
   const list = useMemo(() => {
     const q = normalize(query);
     const out = entries.filter(e => !q || e.p.search.includes(q) || normalize(e.rec.nickname).includes(q) || normalize(e.rec.notes).includes(q));
-    const ratio = e => (e.rec.count > 0 ? e.rec.count / (e.rec.odds || 4096) : null);
+    const ratio = e => catchRatio(e.rec);
     const cmp = {
       recent: (a, b) => (b.rec.timestamp || 0) - (a.rec.timestamp || 0),
       oldest: (a, b) => (a.rec.timestamp || 0) - (b.rec.timestamp || 0),
@@ -59,10 +59,11 @@ export default function JournalView() {
 
   const exportCsv = () => {
     const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const rows = [['N°', 'Pokémon', 'Surnom', 'Date', 'Jeu', 'Méthode', 'Ball', 'Rencontres', 'Taux', 'Durée', 'Sexe', 'Notes']];
+    const rows = [['N°', 'Pokémon', 'Surnom', 'Date', 'Jeu', 'Méthode', 'Ball', 'Rencontres', 'Taux', 'Durée', 'Sexe', 'Nature', 'Talent', 'Niveau', 'Baron', 'Marque', 'Notes']];
     for (const { p, rec } of list) {
       rows.push([p.id, p.name, rec.nickname, rec.date, GAME_BY_ID[rec.game]?.name, METHOD_BY_ID[rec.method]?.name, BALL_BY_ID[rec.ball]?.name,
-        rec.count, rec.odds ? `1/${rec.odds}` : '', rec.elapsedMs ? formatDuration(rec.elapsedMs) : '', rec.gender === 'm' ? '♂' : rec.gender === 'f' ? '♀' : '', rec.notes]);
+        rec.count, rec.odds ? `1/${rec.odds}` : '', rec.elapsedMs ? formatDuration(rec.elapsedMs) : '', rec.gender === 'm' ? '♂' : rec.gender === 'f' ? '♀' : '',
+        rec.nature, rec.ability, rec.level, rec.alpha ? 'Oui' : '', rec.mark, rec.notes]);
     }
     downloadFile(`journal-shiny-${new Date().toISOString().slice(0, 10)}.csv`, '﻿' + rows.map(r => r.map(esc).join(';')).join('\n'), 'text/csv;charset=utf-8');
   };
@@ -110,12 +111,12 @@ export default function JournalView() {
         <section key={g.key} className="space-y-2">
           {g.label && <h3 className="label-caps pt-2 flex items-center justify-between">{g.label}<span className="text-slate-600">{g.items.length}</span></h3>}
           <div className="grid gap-2 md:grid-cols-2">
-            {g.items.map(({ key, rec, p }) => {
-              const luck = getLuckTier(rec.count, rec.odds);
+            {g.items.map(({ key, id, rec, p }) => {
+              const luck = getLuckTier(catchRatio(rec));
               const game = GAME_BY_ID[rec.game];
               const method = METHOD_BY_ID[rec.method];
               return (
-                <button key={key} onClick={() => openPokemon(key)} className="cv-auto w-full flex items-center gap-3 p-2.5 pr-3 rounded-2xl bg-slate-900/80 border border-slate-800 active:bg-slate-800 text-left">
+                <button key={id} onClick={() => openPokemon(key)} className="cv-auto w-full flex items-center gap-3 p-2.5 pr-3 rounded-2xl bg-slate-900/80 border border-slate-800 active:bg-slate-800 text-left">
                   <div className="relative shrink-0">
                     <Sprite pokemon={p} className="w-16 h-16 drop-shadow-[0_0_8px_rgba(245,158,11,0.35)]" />
                     <BallIcon id={rec.ball} className="w-6 h-6 absolute -bottom-1 -right-1" />

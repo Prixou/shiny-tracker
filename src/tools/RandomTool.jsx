@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Dices, Star, Timer, Info } from 'lucide-react';
 import { useStore } from '../state/store.jsx';
 import { useNav } from '../state/nav.jsx';
-import { POKEDEX, artworkUrl } from '../data/pokedex.js';
-import { REGIONS, POKEMON_TYPES } from '../data/constants.js';
+import { MAIN_DEX, artworkUrl, isAvailableIn } from '../data/pokedex.js';
+import { REGIONS, POKEMON_TYPES, GAMES, isLockedIn } from '../data/constants.js';
 import { padId } from '../lib/utils.js';
 import { feedback } from '../lib/hooks.js';
 import { Segmented, Sprite, TypeBadge, Toggle } from '../components/ui.jsx';
@@ -11,19 +11,21 @@ import { Segmented, Sprite, TypeBadge, Toggle } from '../components/ui.jsx';
 export default function RandomTool() {
   const { shinies, wishlist, toggleWish, ui, setUiValue } = useStore();
   const { openNewHunt, openPokemon } = useNav();
-  const opts = { pool: 'missing', region: 'all', type: 'all', noLock: true, ...(ui.randomOpts || {}) };
+  const opts = { pool: 'missing', region: 'all', type: 'all', game: 'all', noLock: true, ...(ui.randomOpts || {}) };
   const setOpts = patch => setUiValue('randomOpts', { ...opts, ...patch });
   const [result, setResult] = useState(null);
   const [rolling, setRolling] = useState(null);
   const timer = useRef(null);
   useEffect(() => () => clearInterval(timer.current), []);
 
-  const pool = POKEDEX.filter(p => {
+  const game = opts.game !== 'all' ? opts.game : null;
+  const pool = MAIN_DEX.filter(p => {
     if (opts.pool === 'missing' && shinies[p.key]) return false;
     if (opts.pool === 'wish' && !wishlist[p.key]) return false;
     if (opts.region !== 'all' && p.region !== opts.region) return false;
     if (opts.type !== 'all' && !p.types.includes(opts.type)) return false;
-    if (opts.noLock && p.isShinyLocked) return false;
+    if (game && !isAvailableIn(p, game)) return false;
+    if (opts.noLock && isLockedIn(p, game)) return false;
     return true;
   });
 
@@ -92,6 +94,10 @@ export default function RandomTool() {
             {POKEMON_TYPES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </div>
+        <select className="input" value={opts.game} onChange={e => setOpts({ game: e.target.value })} aria-label="Jeu">
+          <option value="all">🎮 Tous les jeux</option>
+          {GAMES.filter(g => g.dexes).map(g => <option key={g.id} value={g.id}>{g.icon} {g.name}</option>)}
+        </select>
         <Toggle checked={opts.noLock} onChange={noLock => setOpts({ noLock })} label="Exclure les Shiny Lock" />
       </div>
     </div>

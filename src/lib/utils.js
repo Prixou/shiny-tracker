@@ -56,18 +56,6 @@ export const monthLabel = key => {
   return label.charAt(0).toUpperCase() + label.slice(1);
 };
 
-// Probabilité d'avoir obtenu au moins un shiny après n tentatives à 1/odds.
-export const cumulativeChance = (n, odds) => {
-  if (!odds || odds <= 1) return n > 0 ? 1 : 0;
-  return 1 - Math.pow(1 - 1 / odds, Math.max(0, n));
-};
-
-// Nombre de tentatives nécessaires pour atteindre une probabilité cible.
-export const encountersFor = (target, odds) => {
-  if (!odds || odds <= 1) return 1;
-  return Math.ceil(Math.log(1 - target) / Math.log(1 - 1 / odds));
-};
-
 export const fmtPercent = (p, digits = 1) => {
   const v = p * 100;
   if (v > 0 && v < 0.1) return '< 0,1 %';
@@ -75,9 +63,9 @@ export const fmtPercent = (p, digits = 1) => {
   return `${v.toLocaleString('fr-FR', { maximumFractionDigits: digits, minimumFractionDigits: 0 })} %`;
 };
 
-export const getLuckTier = (count, odds) => {
-  if (!count || count <= 0) return { id: 'none', name: 'Non renseigné', desc: 'Saisie manuelle sans compteur', emoji: '🎲', color: 'text-slate-400', bg: 'bg-slate-800/60 border-slate-700' };
-  const ratio = count / (odds || 4096);
+// `ratio` ≈ rencontres / taux (voir luckRatio pour les taux dynamiques). null = pas de compteur.
+export const getLuckTier = ratio => {
+  if (ratio == null || !(ratio > 0)) return { id: 'none', name: 'Non renseigné', desc: 'Saisie manuelle sans compteur', emoji: '🎲', color: 'text-slate-400', bg: 'bg-slate-800/60 border-slate-700' };
   if (ratio <= 0.25) return { id: 'king', name: 'Cocu Master', desc: 'Même pas eu le temps de lancer le café !', emoji: '👑', color: 'text-amber-300', bg: 'bg-amber-500/15 border-amber-500/40' };
   if (ratio <= 0.75) return { id: 'lucky', name: 'Chatteux du Dimanche', desc: 'Franchement rapide et indécent !', emoji: '✨', color: 'text-emerald-400', bg: 'bg-emerald-500/15 border-emerald-500/40' };
   if (ratio <= 1.25) return { id: 'fair', name: 'Respectueux des Stats', desc: 'Pile dans les probabilités, comme dans un livre.', emoji: '⚖️', color: 'text-sky-400', bg: 'bg-sky-500/15 border-sky-500/40' };
@@ -85,6 +73,9 @@ export const getLuckTier = (count, odds) => {
   if (ratio <= 3.0) return { id: 'suffer', name: 'Suffer Squad', desc: 'Plus du double des odds. Lâchez une larme.', emoji: '💀', color: 'text-rose-400', bg: 'bg-rose-500/15 border-rose-500/40' };
   return { id: 'forgotten', name: 'Arceus t\'a Oublié', desc: 'Over Odds mythique, tu mérites une statue de seum.', emoji: '🗿', color: 'text-purple-400', bg: 'bg-purple-500/15 border-purple-500/40' };
 };
+
+// Ratio de chance d'une capture enregistrée.
+export const catchRatio = rec => (rec?.luck != null ? rec.luck : rec?.count > 0 && rec?.odds > 0 ? rec.count / rec.odds : null);
 
 export const getHuntingTip = p => {
   if (!p) return null;

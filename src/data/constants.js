@@ -22,58 +22,8 @@ export const POKEMON_TYPES = [
 ];
 export const TYPE_BY_ID = Object.fromEntries(POKEMON_TYPES.map(t => [t.id, t]));
 
-// `maxGen` sert au filtre « Jeu » du Pokédex : on masque les espèces des générations suivantes.
-export const GAMES = [
-  { id: 'za', name: 'Légendes Pokémon : Z-A', short: 'Z-A', icon: '🗼', maxGen: 9, bestMethod: 'Réapparitions sauvages + Charme Chroma' },
-  { id: 'sv', name: 'Écarlate / Violet', short: 'ÉV', icon: '🍇', maxGen: 9, bestMethod: 'Apparition massive + Sandwich Brillance Nv.3' },
-  { id: 'pla', name: 'Légendes Pokémon : Arceus', short: 'LPA', icon: '📜', maxGen: 8, bestMethod: 'Apparitions massives / Mégapparitions' },
-  { id: 'bdsp', name: 'Diamant Étincelant / Perle Scintillante', short: 'DEPS', icon: '💎', maxGen: 4, bestMethod: 'Poké Radar (chaîne 40)' },
-  { id: 'swsh', name: 'Épée / Bouclier', short: 'EB', icon: '⚔️', maxGen: 8, bestMethod: 'Expéditions Dynamax (1/100 avec Charme)' },
-  { id: 'letsgo', name: 'Let\'s Go Pikachu / Évoli', short: 'LGPE', icon: '⚡', maxGen: 1, bestMethod: 'Combo Capture + Parfum' },
-  { id: 'usum', name: 'Ultra-Soleil / Ultra-Lune', short: 'USUL', icon: '☀️', maxGen: 7, bestMethod: 'Appels à l\'aide (SOS)' },
-  { id: 'sm', name: 'Soleil / Lune', short: 'SL', icon: '🌺', maxGen: 7, bestMethod: 'Appels à l\'aide (SOS)' },
-  { id: 'oras', name: 'Rubis Oméga / Saphir Alpha', short: 'ROSA', icon: '🌋', maxGen: 6, bestMethod: 'Navi-Dex / Masuda' },
-  { id: 'xy', name: 'X / Y', short: 'XY', icon: '🏰', maxGen: 6, bestMethod: 'Safari des Amis / Pêche à la chaîne' },
-  { id: 'b2w2', name: 'Noir 2 / Blanc 2', short: 'N2B2', icon: '🏙️', maxGen: 5, bestMethod: 'Méthode Masuda + Charme Chroma' },
-  { id: 'bw', name: 'Noir / Blanc', short: 'NB', icon: '⬛', maxGen: 5, bestMethod: 'Méthode Masuda' },
-  { id: 'hgss', name: 'HeartGold / SoulSilver', short: 'HGSS', icon: '🌙', maxGen: 4, bestMethod: 'Soft Reset / Rencontres' },
-  { id: 'dpp', name: 'Diamant / Perle / Platine', short: 'DPPt', icon: '❄️', maxGen: 4, bestMethod: 'Poké Radar (chaîne 40)' },
-  { id: 'rse', name: 'Rubis / Saphir / Émeraude', short: 'RSE', icon: '🌊', maxGen: 3, bestMethod: 'Soft Reset / Rencontres sauvages' },
-  { id: 'frlg', name: 'Rouge Feu / Vert Feuille', short: 'RFVF', icon: '🔥', maxGen: 3, bestMethod: 'Soft Reset / Rencontres sauvages' },
-  { id: 'gsc', name: 'Or / Argent / Cristal', short: 'OAC', icon: '📀', maxGen: 2, bestMethod: 'Reproduction d\'un parent shiny (1/64)' },
-  { id: 'rbj', name: 'Rouge / Bleu / Jaune', short: 'RBJ', icon: '🔴', maxGen: 1, bestMethod: 'Transfert vers la Gen 2 (DV)' },
-  { id: 'pogo', name: 'Pokémon GO', short: 'GO', icon: '📱', maxGen: 9, bestMethod: 'Community Days / Raids' },
-  { id: 'other', name: 'Autre / Évènement', short: 'Autre', icon: '🎁', maxGen: 9 }
-];
-export const GAME_BY_ID = Object.fromEntries(GAMES.map(g => [g.id, g]));
-
-// Taux moyens (1/x) sans et avec Charme Chroma. Les valeurs restent éditables dans chaque chasse.
-export const SHINY_METHODS = [
-  { id: 'wild', name: 'Rencontre sauvage', icon: '🌿', odds: 4096, charmOdds: 1365 },
-  { id: 'reset', name: 'Soft Reset', icon: '🔄', odds: 4096, charmOdds: 1365 },
-  { id: 'masuda', name: 'Méthode Masuda', icon: '🥚', odds: 683, charmOdds: 512 },
-  { id: 'egg', name: 'Œufs (sans Masuda)', icon: '🐣', odds: 4096, charmOdds: 1365 },
-  { id: 'outbreak', name: 'Apparition massive (60+ KO)', icon: '✨', odds: 1365, charmOdds: 819 },
-  { id: 'sandwich', name: 'Sandwich Brillance Nv.3', icon: '🥪', odds: 1024, charmOdds: 683 },
-  { id: 'outbreak_sandwich', name: 'Apparition massive + Sandwich', icon: '🌟', odds: 683, charmOdds: 512 },
-  { id: 'mmo', name: 'Mégapparition (LPA)', icon: '📜', odds: 158, charmOdds: 128 },
-  { id: 'dynamax', name: 'Expédition Dynamax', icon: '🌀', odds: 300, charmOdds: 100 },
-  { id: 'raid', name: 'Raid Téracristal / Dynamax', icon: '💎', odds: 4096, charmOdds: 4096 },
-  { id: 'pokeradar', name: 'Poké Radar (chaîne 40)', icon: '📡', odds: 99, charmOdds: 99 },
-  { id: 'sos', name: 'Appels à l\'aide (SOS 31+)', icon: '📣', odds: 315, charmOdds: 273 },
-  { id: 'chaining', name: 'Pêche / Combo Capture', icon: '🎣', odds: 315, charmOdds: 273 },
-  { id: 'navidex', name: 'Navi-Dex / Safari des Amis', icon: '🔍', odds: 512, charmOdds: 512 },
-  { id: 'pogo', name: 'Pokémon GO (standard)', icon: '📱', odds: 500, charmOdds: 500 },
-  { id: 'cday', name: 'Community Day (GO)', icon: '🎉', odds: 25, charmOdds: 25 },
-  { id: 'event', name: 'Distribution / Évènement', icon: '🎁', odds: 1, charmOdds: 1 },
-  { id: 'other', name: 'Autre', icon: '❔', odds: 4096, charmOdds: 1365 }
-];
-export const METHOD_BY_ID = Object.fromEntries(SHINY_METHODS.map(m => [m.id, m]));
-
-export const methodOdds = (methodId, charm) => {
-  const m = METHOD_BY_ID[methodId] || SHINY_METHODS[0];
-  return charm ? m.charmOdds : m.odds;
-};
+export { GAMES, GAME_BY_ID, isLockedIn } from './games.js';
+export { METHODS as SHINY_METHODS, METHOD_BY_ID, gameMethods } from './methods.js';
 
 // `id` = clé de sauvegarde (compatibilité v1), `item` = sprite PokéAPI.
 export const POKE_BALLS = [
@@ -118,7 +68,8 @@ export const REGIONS = [
   { id: 'alola', name: 'Alola', icon: '🌺', gen: 7, range: [722, 809] },
   { id: 'galar', name: 'Galar', icon: '🛡️', gen: 8, range: [810, 898] },
   { id: 'hisui', name: 'Hisui', icon: '📜', gen: 8, range: [899, 905] },
-  { id: 'paldea', name: 'Paldea', icon: '🍇', gen: 9, range: [906, 1025] }
+  { id: 'paldea', name: 'Paldea', icon: '🍇', gen: 9, range: [906, 1025] },
+  { id: 'gen10', name: 'Génération 10', icon: '🌊', gen: 10, range: [1026, 1300] }
 ];
 export const REGION_BY_ID = Object.fromEntries(REGIONS.map(r => [r.id, r]));
 

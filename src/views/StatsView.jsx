@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react';
 import { BarChart3, Timer, Clock, Target, Sparkles, Trophy, Frown } from 'lucide-react';
 import { useStore, huntTotal } from '../state/store.jsx';
 import { useNav } from '../state/nav.jsx';
-import { POKEDEX } from '../data/pokedex.js';
+import { MAIN_DEX, POKEDEX, getPokemon } from '../data/pokedex.js';
 import { REGIONS, POKEMON_TYPES, SHINY_METHODS, POKE_BALLS, GAMES } from '../data/constants.js';
-import { fmtNumber, fmtRatio, formatDuration, getLuckTier, formatDate } from '../lib/utils.js';
+import { fmtNumber, fmtRatio, formatDuration, getLuckTier, formatDate, catchRatio } from '../lib/utils.js';
 import { Sprite, BallIcon, TypeIcon, EmptyState } from '../components/ui.jsx';
 
 const TIERS = [
@@ -13,27 +13,28 @@ const TIERS = [
 ];
 
 export default function StatsView() {
-  const { shinies, hunts } = useStore();
+  const { shinies, catches, hunts } = useStore();
   const { openPokemon, goTo } = useNav();
 
   const s = useMemo(() => {
-    const caught = POKEDEX.filter(p => shinies[p.key]);
-    const recs = caught.map(p => ({ p, rec: shinies[p.key] }));
-    const huntable = POKEDEX.filter(p => !p.isShinyLocked);
+    const caught = MAIN_DEX.filter(p => shinies[p.key]);
+    const recs = catches.map(rec => ({ p: getPokemon(rec.key), rec })).filter(r => r.p);
+    const huntable = MAIN_DEX.filter(p => !p.isShinyLocked);
+    const variantsAll = POKEDEX.filter(p => p.isVariant);
     const byRegion = REGIONS.map(r => {
-      const all = POKEDEX.filter(p => p.region === r.id);
+      const all = MAIN_DEX.filter(p => p.region === r.id);
       return { ...r, total: all.length, value: all.filter(p => shinies[p.key]).length };
-    });
+    }).filter(r => r.total > 0);
     const byType = POKEMON_TYPES.map(t => {
-      const all = POKEDEX.filter(p => p.types.includes(t.id));
+      const all = MAIN_DEX.filter(p => p.types.includes(t.id));
       return { ...t, total: all.length, value: all.filter(p => shinies[p.key]).length };
     });
     const countBy = (list, field) => list.map(item => ({ ...item, value: recs.filter(r => r.rec[field] === item.id).length }))
       .filter(x => x.value > 0).sort((a, b) => b.value - a.value);
     const withCount = recs.filter(r => r.rec.count > 0);
-    const ratios = withCount.map(r => ({ ...r, ratio: r.rec.count / (r.rec.odds || 4096) })).sort((a, b) => a.ratio - b.ratio);
-    const luck = TIERS.map(t => ({ ...getLuckTier(1, 1 / t.ratio), id: t.id, value: 0 }));
-    ratios.forEach(r => { const tier = getLuckTier(r.rec.count, r.rec.odds); const l = luck.find(x => x.id === tier.id); if (l) l.value++; });
+    const ratios = recs.map(r => ({ ...r, ratio: catchRatio(r.rec) })).filter(r => r.ratio != null).sort((a, b) => a.ratio - b.ratio);
+    const luck = TIERS.map(t => ({ ...getLuckTier(t.ratio), id: t.id, value: 0 }));
+    ratios.forEach(r => { const tier = getLuckTier(r.ratio); const l = luck.find(x => x.id === tier.id); if (l) l.value++; });
 
     const now = new Date();
     const months = Array.from({ length: 12 }, (_, i) => {
@@ -52,7 +53,10 @@ export default function StatsView() {
 
     return {
       caught: caught.length,
-      total: POKEDEX.length,
+      total: MAIN_DEX.length,
+      copies: recs.length,
+      variantsCaught: variantsAll.filter(p => shinies[p.key]).length,
+      variantsTotal: variantsAll.length,
       huntableCaught: huntable.filter(p => shinies[p.key]).length,
       huntableTotal: huntable.length,
       encounters: withCount.reduce((n, r) => n + r.rec.count, 0),
@@ -70,7 +74,7 @@ export default function StatsView() {
       huntEncounters, huntTime,
       activeHunts: hunts.filter(h => h.status === 'active').length
     };
-  }, [shinies, hunts]);
+  }, [shinies, catches, hunts]);
 
   if (!s.caught && !s.activeHunts) {
     return (
@@ -98,6 +102,7 @@ export default function StatsView() {
           <div className="label-caps">Pokédex shiny</div>
           <div className="text-3xl font-black font-mono text-amber-400">{s.caught}<span className="text-base text-slate-500">/{s.total}</span></div>
           <div className="text-xs text-slate-400">Hors Shiny Lock : <strong className="text-slate-200">{s.huntableCaught}/{s.huntableTotal}</strong></div>
+          <div className="text-xs text-slate-400">{s.copies} exemplaire{s.copies > 1 ? 's' : ''} · variantes {s.variantsCaught}/{s.variantsTotal}</div>
         </div>
       </section>
 
@@ -224,7 +229,7 @@ function Podium({ title, icon, items, onOpen }) {
     <section className="card p-4 space-y-2">
       <h3 className="label-caps flex items-center gap-1.5">{icon}{title}</h3>
       {items.map(({ p, rec, ratio }) => (
-        <button key={p.key} onClick={() => onOpen(p.key)} className="w-full flex items-center gap-3 p-1.5 rounded-2xl active:bg-slate-800 text-left">
+        <button key={rec.id} onClick={() => onOpen(p.key)} className="w-full flex items-center gap-3 p-1.5 rounded-2xl active:bg-slate-800 text-left">
           <Sprite pokemon={p} className="w-11 h-11" />
           <div className="flex-1 min-w-0">
             <div className="text-sm font-bold text-slate-100 truncate">{p.name}</div>

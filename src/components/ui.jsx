@@ -5,22 +5,32 @@ import { useBackClose } from '../lib/hooks.js';
 import { TYPE_BY_ID, ballSprite, BALL_BY_ID } from '../data/constants.js';
 import { spriteUrl } from '../data/pokedex.js';
 
-let openSheets = 0;
+// Pile des fenêtres ouvertes : Échap ne ferme que celle du dessus.
+const sheetStack = [];
 
 // Panneau glissant depuis le bas sur mobile, fenêtre centrée sur grand écran.
 export function Sheet({ open, onClose, title, subtitle, icon, children, footer, wide = false, full = false }) {
   useBackClose(open, onClose);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     if (!open) return;
-    openSheets++;
+    const id = Symbol('sheet');
+    sheetStack.push(id);
     document.documentElement.classList.add('sheet-open');
-    const onKey = e => { if (e.key === 'Escape') onClose?.(); };
+    const onKey = e => {
+      if (e.key === 'Escape' && sheetStack[sheetStack.length - 1] === id) {
+        e.stopImmediatePropagation();
+        onCloseRef.current?.();
+      }
+    };
     window.addEventListener('keydown', onKey);
     return () => {
       window.removeEventListener('keydown', onKey);
-      if (--openSheets === 0) document.documentElement.classList.remove('sheet-open');
+      sheetStack.splice(sheetStack.indexOf(id), 1);
+      if (!sheetStack.length) document.documentElement.classList.remove('sheet-open');
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
   return createPortal(

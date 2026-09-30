@@ -1,21 +1,21 @@
 import LZString from 'lz-string';
-import { normalizeHunts, normalizeShinies, normalizeHunt } from './storage.js';
-import { SHINY_METHODS, POKE_BALLS, GAMES } from '../data/constants.js';
+import { normalizeHunts, normalizeCatches, normalizeLists, normalizeHunt } from './storage.js';
 import { uid } from './utils.js';
 
 export const APP_ID = 'shiny-hunter-pro';
 
-export const buildExport = ({ shinies, hunts, wishlist, settings }) => ({
+export const buildExport = ({ catches, hunts, wishlist, lists, settings }) => ({
   app: APP_ID,
-  version: 2,
+  version: 3,
   exportedAt: new Date().toISOString(),
-  shinies,
+  catches,
   hunts: hunts.map(h => ({ ...h, startedAt: null })),
   wishlist,
+  lists,
   settings
 });
 
-// Accepte le format v2, l'ancien format v1 ({ shinyState, hunts }) et le format compact des QR codes.
+// Accepte le format v3, v2 ({ shinies }), v1 ({ shinyState, hunts }) et le format compact des QR codes / liens.
 export function parseImport(input) {
   let data = input;
   if (typeof input === 'string') {
@@ -26,49 +26,51 @@ export function parseImport(input) {
     else data = decodeCompact(text);
   }
   if (!data || typeof data !== 'object') throw new Error('Format inconnu');
-  if (data.c === 2) data = expandCompact(data);
-  const shinies = normalizeShinies(data.shinies || data.shinyState);
+  if (data.c === 3) data = expandCompact(data);
+  const hasCatches = data.catches || data.shinies || data.shinyState;
+  const catches = normalizeCatches(data.catches || data.shinies || data.shinyState);
   const hunts = normalizeHunts(data.hunts);
   const wishlist = data.wishlist && typeof data.wishlist === 'object' ? data.wishlist : {};
-  if (!Object.keys(shinies).length && !hunts.length && !Object.keys(wishlist).length && !data.shinies && !data.shinyState) {
-    throw new Error('Aucune donnée trouvée');
-  }
-  return { shinies, hunts, wishlist, settings: data.settings };
+  const lists = normalizeLists(data.lists);
+  if (!hasCatches && !hunts.length && !Object.keys(wishlist).length && !lists.length) throw new Error('Aucune donnée trouvée');
+  return { catches, hunts, wishlist, lists, settings: data.settings };
 }
 
+// Fusion : pour chaque élément (même identifiant), la version modifiée le plus récemment gagne.
+const mergeById = (mine, theirs) => {
+  const map = new Map(mine.map(x => [x.id, x]));
+  for (const t of theirs) {
+    const m = map.get(t.id);
+    if (!m || (t.updatedAt || 0) > (m.updatedAt || 0)) map.set(t.id, m?.startedAt && !t.startedAt ? { ...t, startedAt: m.startedAt } : t);
+  }
+  return [...map.values()];
+};
+
 export function mergeData(current, incoming) {
-  const shinies = { ...current.shinies };
-  for (const [key, rec] of Object.entries(incoming.shinies)) {
-    const mine = shinies[key];
-    if (!mine || (rec.timestamp || 0) > (mine.timestamp || 0)) shinies[key] = rec;
-  }
-  const byId = new Map(current.hunts.map(h => [h.id, h]));
-  for (const h of incoming.hunts) {
-    const mine = byId.get(h.id);
-    if (!mine || (h.updatedAt || 0) > (mine.updatedAt || 0)) byId.set(h.id, mine?.startedAt ? { ...h, startedAt: mine.startedAt } : h);
-  }
+  // Les anciens formats n'ont pas d'identifiant de capture : on évite les doublons (même Pokémon, même date).
+  const sig = c => `${c.key}|${c.date}|${c.ball}|${c.count}`;
+  const existing = new Set(current.catches.map(sig));
+  const incomingCatches = incoming.catches.filter(c => current.catches.some(m => m.id === c.id) || !existing.has(sig(c)));
   return {
-    shinies,
-    hunts: [...byId.values()],
-    wishlist: { ...current.wishlist, ...incoming.wishlist }
+    catches: mergeById(current.catches, incomingCatches),
+    hunts: mergeById(current.hunts, incoming.hunts),
+    wishlist: { ...current.wishlist, ...incoming.wishlist },
+    lists: mergeById(current.lists, incoming.lists)
   };
 }
 
-const idx = (list, id) => Math.max(0, list.findIndex(x => x.id === id));
-
-// Format compact : suffisamment petit pour tenir dans un QR code.
-export function encodeCompact({ shinies, hunts, wishlist }) {
+// Format compact : suffisamment petit pour tenir dans un QR code (sans les notes).
+export function encodeCompact({ catches, hunts, wishlist, lists }) {
   const compact = {
-    c: 2,
-    s: Object.entries(shinies).map(([k, r]) => {
-      const row = [k, r.date ? Number(r.date.replace(/-/g, '')) : 0, idx(SHINY_METHODS, r.method), idx(POKE_BALLS, r.ball),
-        r.game ? idx(GAMES, r.game) : -1, r.count || 0, r.odds || 0, Math.round((r.elapsedMs || 0) / 1000)];
+    c: 3,
+    s: catches.map(r => {
+      const row = [r.key, r.date ? Number(r.date.replace(/-/g, '')) : 0, r.method, r.ball, r.game || '', r.count || 0, r.odds || 0, Math.round((r.elapsedMs || 0) / 1000), r.id];
       if (r.nickname) row.push(r.nickname);
       return row;
     }),
-    h: hunts.filter(h => h.status === 'active').map(h => [h.targetId, idx(GAMES, h.game), idx(SHINY_METHODS, h.method), h.odds, h.count,
-      Math.round(h.elapsedMs / 1000), h.step, h.charm ? 1 : 0, h.id]),
-    w: Object.keys(wishlist).filter(k => wishlist[k])
+    h: hunts.filter(h => h.status === 'active').map(h => [h.targetId, h.game, h.method, h.opts, h.charm ? 1 : 0, h.customOdds || 0, h.count, Math.round(h.elapsedMs / 1000), h.step, h.id]),
+    w: Object.keys(wishlist).filter(k => wishlist[k]),
+    l: lists.map(l => [l.id, l.name, l.emoji, Object.keys(l.keys).filter(k => l.keys[k])])
   };
   return LZString.compressToEncodedURIComponent(JSON.stringify(compact));
 }
@@ -80,29 +82,18 @@ export function decodeCompact(str) {
 }
 
 function expandCompact(c) {
-  const shinies = {};
-  for (const [k, date, m, b, g, count, odds, secs, nickname] of c.s || []) {
+  const catches = (c.s || []).map(([key, date, method, ball, game, count, odds, secs, id, nickname]) => {
     const d = String(date || '');
     const iso = d.length === 8 ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}` : '';
-    shinies[k] = {
-      caught: true,
-      date: iso,
-      timestamp: iso ? new Date(`${iso}T12:00:00`).getTime() : Date.now(),
-      method: SHINY_METHODS[m]?.id,
-      ball: POKE_BALLS[b]?.id,
-      game: g >= 0 ? GAMES[g]?.id : '',
-      count,
-      odds,
-      elapsedMs: secs * 1000,
-      nickname: nickname || ''
-    };
-  }
-  const hunts = (c.h || []).map(([targetId, g, m, odds, count, secs, step, charm, id]) => normalizeHunt({
-    id: id || uid(), targetId, game: GAMES[g]?.id, method: SHINY_METHODS[m]?.id, odds, count,
-    elapsedMs: secs * 1000, step, charm: !!charm, updatedAt: Date.now()
+    return { id, key, date: iso, method, ball, game, count, odds, elapsedMs: secs * 1000, nickname: nickname || '' };
+  });
+  const hunts = (c.h || []).map(([targetId, game, method, opts, charm, customOdds, count, secs, step, id]) => normalizeHunt({
+    id: id || uid(), targetId, game, method, opts: opts || {}, charm: !!charm, customOdds: customOdds || null, count,
+    elapsedMs: secs * 1000, step, updatedAt: Date.now()
   }));
   const wishlist = Object.fromEntries((c.w || []).map(k => [k, true]));
-  return { shinies, hunts, wishlist };
+  const lists = (c.l || []).map(([id, name, emoji, keys]) => ({ id, name, emoji, keys: Object.fromEntries(keys.map(k => [k, true])) }));
+  return { catches, hunts, wishlist, lists };
 }
 
 export const shareLink = data => `${window.location.origin}${window.location.pathname}#import=${encodeCompact(data)}`;
