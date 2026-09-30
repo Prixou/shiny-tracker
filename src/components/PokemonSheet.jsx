@@ -6,7 +6,7 @@ import { getPokemon, artworkUrl, animatedUrl, POKEDEX, gamesFor, isPixelArtwork,
 import { REGION_BY_ID, GAME_BY_ID, METHOD_BY_ID, isLockedIn } from '../data/constants.js';
 import { getHuntingTip, padId, formatDate, fmtNumber, fmtOdds, formatDuration, getLuckTier, catchRatio } from '../lib/utils.js';
 import { feedback } from '../lib/hooks.js';
-import { Sheet, TypeBadge, Sprite, BallIcon, useConfirm } from './ui.jsx';
+import { Sheet, TypeBadge, Sprite, BallIcon, RegionIcon, useConfirm } from './ui.jsx';
 import CaptureForm from './CaptureForm.jsx';
 import EncountersSection from './EncountersSection.jsx';
 import BestOptions from './BestOptions.jsx';
@@ -52,7 +52,7 @@ function PokemonDetails({ p, onClose }) {
         <div className="absolute top-3 left-3 right-3 flex items-start justify-between z-10 gap-2">
           <div>
             <div className="text-xs font-mono font-black text-amber-400">{padId(p.id)}</div>
-            <div className="text-[11px] text-slate-400">{region?.icon} {region?.name} · Gen {p.gen}</div>
+            <div className="text-[11px] text-slate-400 flex items-center gap-1"><RegionIcon region={region} className="h-5" /> {region?.name} · Gen {p.gen}</div>
           </div>
           <div className="flex items-center gap-1.5">
             <button onClick={() => setAnimated(a => !a)} aria-pressed={animated} aria-label="Sprite animé"

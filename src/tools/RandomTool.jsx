@@ -87,8 +87,8 @@ export default function RandomTool() {
           options={[{ id: 'missing', label: 'Manquants' }, { id: 'wish', label: 'Objectifs' }, { id: 'all', label: 'Tous' }]} />
         <div className="grid grid-cols-2 gap-3">
           <select className="input" value={opts.region} onChange={e => setOpts({ region: e.target.value })} aria-label="Région">
-            <option value="all">🌐 Régions</option>
-            {REGIONS.map(r => <option key={r.id} value={r.id}>{r.icon} {r.name}</option>)}
+            <option value="all">Toutes les régions</option>
+            {REGIONS.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
           <select className="input" value={opts.type} onChange={e => setOpts({ type: e.target.value })} aria-label="Type">
             <option value="all">Types</option>
