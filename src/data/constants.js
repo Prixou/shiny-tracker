@@ -58,18 +58,19 @@ export const POKE_BALLS = [
 export const BALL_BY_ID = Object.fromEntries(POKE_BALLS.map(b => [b.id, b]));
 export const ballSprite = id => `${SPRITES}/items/${(BALL_BY_ID[id] || POKE_BALLS[0]).item}.png`;
 
+// Chaque région est représentée par les légendaires de jaquette de ses jeux (comme sur les supports officiels).
 export const REGIONS = [
-  { id: 'kanto', name: 'Kanto', icon: '🔴', gen: 1, range: [1, 151] },
-  { id: 'johto', name: 'Johto', icon: '🌙', gen: 2, range: [152, 251] },
-  { id: 'hoenn', name: 'Hoenn', icon: '🌿', gen: 3, range: [252, 386] },
-  { id: 'sinnoh', name: 'Sinnoh', icon: '❄️', gen: 4, range: [387, 493] },
-  { id: 'unova', name: 'Unys', icon: '🏙️', gen: 5, range: [494, 649] },
-  { id: 'kalos', name: 'Kalos', icon: '🏰', gen: 6, range: [650, 721] },
-  { id: 'alola', name: 'Alola', icon: '🌺', gen: 7, range: [722, 809] },
-  { id: 'galar', name: 'Galar', icon: '🛡️', gen: 8, range: [810, 898] },
-  { id: 'hisui', name: 'Hisui', icon: '📜', gen: 8, range: [899, 905] },
-  { id: 'paldea', name: 'Paldea', icon: '🍇', gen: 9, range: [906, 1025] },
-  { id: 'gen10', name: 'Génération 10', icon: '🌊', gen: 10, range: [1026, 1300] }
+  { id: 'kanto', name: 'Kanto', mascots: [6, 9], gen: 1, range: [1, 151] },
+  { id: 'johto', name: 'Johto', mascots: [250, 249], gen: 2, range: [152, 251] },
+  { id: 'hoenn', name: 'Hoenn', mascots: [383, 382], gen: 3, range: [252, 386] },
+  { id: 'sinnoh', name: 'Sinnoh', mascots: [483, 484], gen: 4, range: [387, 493] },
+  { id: 'unova', name: 'Unys', mascots: [643, 644], gen: 5, range: [494, 649] },
+  { id: 'kalos', name: 'Kalos', mascots: [716, 717], gen: 6, range: [650, 721] },
+  { id: 'alola', name: 'Alola', mascots: [791, 792], gen: 7, range: [722, 809] },
+  { id: 'galar', name: 'Galar', mascots: [888, 889], gen: 8, range: [810, 898] },
+  { id: 'hisui', name: 'Hisui', mascots: [493], gen: 8, range: [899, 905] },
+  { id: 'paldea', name: 'Paldea', mascots: [1007, 1008], gen: 9, range: [906, 1025] },
+  { id: 'gen10', name: 'Génération 10', mascots: [], gen: 10, range: [1026, 1300] }
 ];
 export const REGION_BY_ID = Object.fromEntries(REGIONS.map(r => [r.id, r]));
 

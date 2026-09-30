@@ -5,7 +5,7 @@ import { useNav } from '../state/nav.jsx';
 import { MAIN_DEX, POKEDEX, getPokemon } from '../data/pokedex.js';
 import { REGIONS, POKEMON_TYPES, SHINY_METHODS, POKE_BALLS, GAMES } from '../data/constants.js';
 import { fmtNumber, fmtRatio, formatDuration, getLuckTier, formatDate, catchRatio } from '../lib/utils.js';
-import { Sprite, BallIcon, TypeIcon, EmptyState } from '../components/ui.jsx';
+import { Sprite, BallIcon, TypeIcon, EmptyState, RegionIcon } from '../components/ui.jsx';
 
 const TIERS = [
   { id: 'king', ratio: 0.25 }, { id: 'lucky', ratio: 0.75 }, { id: 'fair', ratio: 1.25 },
@@ -129,7 +129,7 @@ export default function StatsView() {
       )}
 
       <Panel title="Par région">
-        {s.byRegion.map(r => <BarRow key={r.id} label={r.name} icon={<span>{r.icon}</span>} value={r.value} total={r.total} />)}
+        {s.byRegion.map(r => <BarRow key={r.id} label={r.name} icon={<RegionIcon region={r} className="h-6" />} value={r.value} total={r.total} />)}
       </Panel>
 
       <Panel title="Par type">
@@ -175,7 +175,7 @@ function BarRow({ label, icon, value, total, max }) {
   const ratio = total ? value / total : max ? value / max : 0;
   return (
     <div className="flex items-center gap-2.5">
-      <span className="w-5 flex justify-center shrink-0">{icon}</span>
+      <span className="w-9 flex justify-center shrink-0">{icon}</span>
       <div className="flex-1 min-w-0">
         <div className="flex justify-between text-xs mb-1">
           <span className="font-semibold text-slate-300 truncate">{label}</span>

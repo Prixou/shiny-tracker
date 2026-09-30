@@ -6,7 +6,7 @@ import { POKEDEX, MAIN_DEX, isAvailableIn } from '../data/pokedex.js';
 import { POKEMON_TYPES, REGIONS, SHINY_METHODS, POKE_BALLS, GAME_BY_ID, TYPE_BY_ID, REGION_BY_ID, METHOD_BY_ID, BALL_BY_ID, isLockedIn } from '../data/constants.js';
 import { normalize, collator } from '../lib/utils.js';
 import { useDebouncedValue, feedback } from '../lib/hooks.js';
-import { Sheet, Segmented, Sprite, BallIcon, TypeIcon, EmptyState, useConfirm } from '../components/ui.jsx';
+import { Sheet, Segmented, Sprite, BallIcon, RegionIcon, TypeIcon, EmptyState, useConfirm } from '../components/ui.jsx';
 import ListsSheet from '../components/ListsSheet.jsx';
 import GameOptions from '../components/GameOptions.jsx';
 import { PLATFORMS, gamesOnPlatform } from '../data/games.js';
@@ -138,7 +138,7 @@ export default function DexView() {
   const density = DENSITY_CLASSES[settings.density] ? settings.density : 4;
 
   const activeChips = [
-    ...filters.regions.map(id => ({ key: `r-${id}`, label: `${REGION_BY_ID[id]?.icon} ${REGION_BY_ID[id]?.name}`, clear: () => setFilters({ regions: filters.regions.filter(x => x !== id) }) })),
+    ...filters.regions.map(id => ({ key: `r-${id}`, label: <><RegionIcon region={REGION_BY_ID[id]} className="h-7 -my-1 -ml-1" /> {REGION_BY_ID[id]?.name}</>, clear: () => setFilters({ regions: filters.regions.filter(x => x !== id) }) })),
     ...filters.types.map(id => ({ key: `t-${id}`, label: TYPE_BY_ID[id]?.name, color: TYPE_BY_ID[id]?.color, clear: () => setFilters({ types: filters.types.filter(x => x !== id) }) })),
     ...filters.categories.map(id => ({ key: `c-${id}`, label: CATEGORIES.find(c => c.id === id)?.label, clear: () => setFilters({ categories: filters.categories.filter(x => x !== id) }) })),
     ...(filters.game !== 'all' ? [{ key: 'g', label: filters.game.startsWith('platform:') ? `🎮 ${PLATFORMS.find(pl => `platform:${pl.id}` === filters.game)?.name}` : `${GAME_BY_ID[filters.game]?.icon} ${GAME_BY_ID[filters.game]?.short}`, clear: () => setFilters({ game: 'all' }) }] : []),
@@ -325,7 +325,7 @@ function FilterSheet({ open, onClose, filters, setFilters, resultCount, lists })
             {REGIONS.filter(r => MAIN_DEX.some(p => p.region === r.id)).map(r => (
               <button key={r.id} onClick={() => setFilters({ regions: toggleIn(filters.regions, r.id) })}
                 className={`chip ${filters.regions.includes(r.id) ? 'chip-on' : 'chip-off'}`}>
-                <span>{r.icon}</span> {r.name}
+                <RegionIcon region={r} className="h-9 -my-1.5 -ml-1.5" /> {r.name}
               </button>
             ))}
           </div>
