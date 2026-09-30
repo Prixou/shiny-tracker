@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { GAMES, POKE_BALLS, BALL_BY_ID, POKEMON_TYPES } from '../data/constants.js';
+import { POKE_BALLS, BALL_BY_ID, POKEMON_TYPES } from '../data/constants.js';
 import { gameMethods, METHOD_BY_ID } from '../data/methods.js';
 import { Field, BallIcon, Toggle } from './ui.jsx';
+import GameOptions from './GameOptions.jsx';
 
 export const NATURES = ['Assuré', 'Bizarre', 'Brave', 'Calme', 'Discret', 'Docile', 'Doux', 'Foufou', 'Gentil', 'Hardi', 'Jovial',
   'Lâche', 'Malin', 'Malpoli', 'Mauvais', 'Modeste', 'Naïf', 'Pressé', 'Prudent', 'Pudique', 'Relax', 'Rigide', 'Sérieux', 'Solo', 'Timide'];
@@ -53,7 +54,7 @@ export default function CaptureForm({ value, onChange, showCounts = true }) {
           onChange(ms.some(m => m.id === value.method) ? { game } : { game, method: ms[0]?.id || 'other' });
         }}>
           <option value="">Non précisé</option>
-          {GAMES.map(g => <option key={g.id} value={g.id}>{g.icon} {g.name}</option>)}
+          <GameOptions />
         </select>
       </Field>
 

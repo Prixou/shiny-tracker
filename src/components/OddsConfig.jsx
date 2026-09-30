@@ -1,8 +1,9 @@
 import { Info } from 'lucide-react';
-import { GAMES, GAME_BY_ID } from '../data/constants.js';
+import { GAME_BY_ID } from '../data/constants.js';
 import { gameMethods, METHOD_BY_ID, charmAvailable, oddsAt, oddsContext, isDynamic } from '../data/methods.js';
 import { fmtOdds } from '../lib/utils.js';
 import { Field, Toggle } from './ui.jsx';
+import GameOptions from './GameOptions.jsx';
 
 /** Choix jeu + méthode + options + Charme, avec calcul du taux en direct. */
 export default function OddsConfig({ value, onChange, allowCustom = true }) {
@@ -24,7 +25,7 @@ export default function OddsConfig({ value, onChange, allowCustom = true }) {
     <div className="space-y-4">
       <Field label="Jeu" hint={game.tip ? `💡 ${game.tip}` : null}>
         <select className="input" value={game.id} onChange={e => changeGame(e.target.value)}>
-          {GAMES.map(g => <option key={g.id} value={g.id}>{g.icon} {g.name}</option>)}
+          <GameOptions />
         </select>
       </Field>
 

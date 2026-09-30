@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Vibrate, Volume2, Sun, PauseCircle, Palette, ShieldAlert, AlertTriangle, Sparkles, Trash2, Info, Layers, Film, ListPlus } from 'lucide-react';
 import { useStore } from '../state/store.jsx';
-import { GAMES } from '../data/constants.js';
 import { MAIN_DEX, POKEDEX } from '../data/pokedex.js';
 import ListsSheet from '../components/ListsSheet.jsx';
 import { Toggle, Field, useConfirm } from '../components/ui.jsx';
 import { feedback } from '../lib/hooks.js';
+import GameOptions from '../components/GameOptions.jsx';
 
 export default function SettingsTool() {
   const { settings, setSettings, resetAll } = useStore();
@@ -49,7 +49,7 @@ export default function SettingsTool() {
         <h3 className="label-caps flex items-center gap-2"><Sparkles className="w-4 h-4" /> Valeurs par défaut</h3>
         <Field label="Jeu principal">
           <select className="input" value={settings.defaultGame} onChange={e => setSettings({ defaultGame: e.target.value })}>
-            {GAMES.map(g => <option key={g.id} value={g.id}>{g.icon} {g.name}</option>)}
+            <GameOptions />
           </select>
         </Field>
         <Toggle checked={settings.charm} onChange={charm => setSettings({ charm })} label="J'ai le Charme Chroma" desc="Utilisé pour pré-remplir les taux des nouvelles chasses" />

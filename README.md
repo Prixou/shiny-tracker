@@ -7,6 +7,7 @@ Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex sh
 ### 📖 Pokédex shiny
 - Les **1025 espèces + 57 formes régionales** (Alola, Galar, Hisui, Paldea), noms FR et EN.
 - **392 variantes** en option : formes alternatives (Prismillon, Charmilly, Zarbi, Météno…), **Méga-Évolutions** (dont Z-A), **Gigamax** et différences mâle/femelle.
+- **Jeux regroupés par console** (Switch, 3DS, DS, GBA, Game Boy / Console virtuelle 3DS, mobile) et filtre « Disponible sur Nintendo 3DS / Switch / … ».
 - **Disponibilité réelle par jeu** d'après les Pokédex régionaux (Z-A + Mega Dimension, ÉV + DLC, Champions, LPA, EB + DLC…) et **Shiny Lock par jeu**.
 - **Plusieurs exemplaires** d'un même shiny, chacun avec ses détails (nature, talent, niveau, Baron, marque, type Téra…).
 - **Listes perso** (« À faire en Z-A », « Préférés »…) en plus des Objectifs.

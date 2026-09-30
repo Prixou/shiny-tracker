@@ -83,8 +83,21 @@ export function bestOptions(p, data) {
     if (has(g, 'old-rod', 'good-rod', 'super-rod')) add(g, { method: 'chain_fishing' }, { label: 'Pêche à la chaîne (20+)', locations: locs(g, 'old-rod', 'good-rod', 'super-rod') });
   }
   if (has('xy', 'walk')) add('xy', { method: 'radar' }, { label: 'Poké Radar (chaîne 40)', locations: locs('xy', 'walk') });
+  // Safari des Amis (X / Y) : 5 tirages de base
+  const safari = locs('xy', 'walk').filter(n => n.startsWith('Safari des Amis'));
+  if (safari.length) add('xy', { method: 'friend_safari' }, { label: 'Safari des Amis', locations: safari, note: 'Le Pokémon doit figurer dans le Safari d\'un ami (code ami 3DS).' });
+  // Navi-Dex (Rubis Oméga / Saphir Alpha)
+  if (has('oras', 'walk')) add('oras', { method: 'dexnav' }, { label: 'Navi-Dex (chaîne)', locations: locs('oras', 'walk') });
   if (has('bdsp', 'walk')) add('bdsp', { method: 'radar' }, { label: 'Poké Radar (chaîne 40)', locations: locs('bdsp', 'walk'), note: 'Uniquement dans les hautes herbes.' });
   if (has('dpp', 'walk')) add('dpp', { method: 'radar' }, { label: 'Poké Radar (chaîne 40)', locations: locs('dpp', 'walk') });
+
+  // Or / Argent / Cristal (Console virtuelle 3DS) : un parent shiny donne 1/64 à la reproduction.
+  if (p.canBreed && !p.isForm && p.baseId <= 251 && isAvailableIn(p, 'gsc')) {
+    add('gsc', { method: 'gsc_breed', charm: false }, {
+      label: 'Reproduction avec un parent shiny (Console virtuelle 3DS)',
+      note: 'Il faut un parent shiny compatible : un Métamorph shiny marche avec tout (le Léviator rouge du Lac Colère convient aux groupes Eau 2 et Dragon). L\'œuf donne la première forme de l\'évolution. Transfert ensuite via Pokémon Banque et Poké Transporter.'
+    });
+  }
 
   // Épée / Bouclier
   if (DYNAMAX_LEGENDS.has(p.baseId) && !p.isForm) add('swsh', { method: 'dynamax' }, { label: 'Expédition Dynamax', locations: ['Grand Antre (Terres Enneigées)'] });

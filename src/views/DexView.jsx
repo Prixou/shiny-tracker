@@ -3,11 +3,13 @@ import { Search, SlidersHorizontal, X, Check, Star, ShieldAlert, ArrowUpDown, Gr
 import { useStore } from '../state/store.jsx';
 import { useNav } from '../state/nav.jsx';
 import { POKEDEX, MAIN_DEX, isAvailableIn } from '../data/pokedex.js';
-import { POKEMON_TYPES, REGIONS, GAMES, SHINY_METHODS, POKE_BALLS, GAME_BY_ID, TYPE_BY_ID, REGION_BY_ID, METHOD_BY_ID, BALL_BY_ID, isLockedIn } from '../data/constants.js';
+import { POKEMON_TYPES, REGIONS, SHINY_METHODS, POKE_BALLS, GAME_BY_ID, TYPE_BY_ID, REGION_BY_ID, METHOD_BY_ID, BALL_BY_ID, isLockedIn } from '../data/constants.js';
 import { normalize, collator } from '../lib/utils.js';
 import { useDebouncedValue, feedback } from '../lib/hooks.js';
 import { Sheet, Segmented, Sprite, BallIcon, TypeIcon, EmptyState, useConfirm } from '../components/ui.jsx';
 import ListsSheet from '../components/ListsSheet.jsx';
+import GameOptions from '../components/GameOptions.jsx';
+import { PLATFORMS, gamesOnPlatform } from '../data/games.js';
 
 const PAGE = 72;
 
@@ -38,7 +40,9 @@ const toggleIn = (list, id) => (list.includes(id) ? list.filter(x => x !== id) :
 
 export function filterPokedex({ filters, query, shinies, catchesByKey, wishlist, lists, hideLocked, showVariants }) {
   const q = normalize(query);
-  const game = filters.game !== 'all' ? filters.game : null;
+  const platform = filters.game.startsWith('platform:') ? filters.game.slice(9) : null;
+  const game = filters.game !== 'all' && !platform ? filters.game : null;
+  const platformGames = platform ? gamesOnPlatform(platform).map(g => g.id) : null;
   const cats = CATEGORIES.filter(c => filters.categories.includes(c.id));
   const withVariants = showVariants || filters.categories.some(c => VARIANT_CATS.includes(c));
   const selectedLists = lists.filter(l => filters.lists.includes(l.id));
@@ -51,6 +55,7 @@ export function filterPokedex({ filters, query, shinies, catchesByKey, wishlist,
     if (filters.regions.length && !filters.regions.includes(p.region)) return false;
     if (filters.types.length && !filters.types.every(t => p.types.includes(t))) return false;
     if (game && !isAvailableIn(p, game)) return false;
+    if (platformGames && !platformGames.some(g => isAvailableIn(p, g) && !isLockedIn(p, g)) && !rec) return false;
     if (filters.method !== 'all' && !(catchesByKey[p.key] || []).some(c => c.method === filters.method)) return false;
     if (filters.ball !== 'all' && !(catchesByKey[p.key] || []).some(c => c.ball === filters.ball)) return false;
     if (selectedLists.length && !selectedLists.some(l => l.keys[p.key])) return false;
@@ -136,7 +141,7 @@ export default function DexView() {
     ...filters.regions.map(id => ({ key: `r-${id}`, label: `${REGION_BY_ID[id]?.icon} ${REGION_BY_ID[id]?.name}`, clear: () => setFilters({ regions: filters.regions.filter(x => x !== id) }) })),
     ...filters.types.map(id => ({ key: `t-${id}`, label: TYPE_BY_ID[id]?.name, color: TYPE_BY_ID[id]?.color, clear: () => setFilters({ types: filters.types.filter(x => x !== id) }) })),
     ...filters.categories.map(id => ({ key: `c-${id}`, label: CATEGORIES.find(c => c.id === id)?.label, clear: () => setFilters({ categories: filters.categories.filter(x => x !== id) }) })),
-    ...(filters.game !== 'all' ? [{ key: 'g', label: `${GAME_BY_ID[filters.game]?.icon} ${GAME_BY_ID[filters.game]?.short}`, clear: () => setFilters({ game: 'all' }) }] : []),
+    ...(filters.game !== 'all' ? [{ key: 'g', label: filters.game.startsWith('platform:') ? `🎮 ${PLATFORMS.find(pl => `platform:${pl.id}` === filters.game)?.name}` : `${GAME_BY_ID[filters.game]?.icon} ${GAME_BY_ID[filters.game]?.short}`, clear: () => setFilters({ game: 'all' }) }] : []),
     ...(filters.method !== 'all' ? [{ key: 'm', label: `${METHOD_BY_ID[filters.method]?.icon} ${METHOD_BY_ID[filters.method]?.name}`, clear: () => setFilters({ method: 'all' }) }] : []),
     ...(filters.ball !== 'all' ? [{ key: 'b', label: BALL_BY_ID[filters.ball]?.name, clear: () => setFilters({ ball: 'all' }) }] : []),
     ...filters.lists.map(id => ({ key: `l-${id}`, label: `${lists.find(l => l.id === id)?.emoji || ''} ${lists.find(l => l.id === id)?.name || 'Liste'}`, clear: () => setFilters({ lists: filters.lists.filter(x => x !== id) }) }))
@@ -224,7 +229,7 @@ export default function DexView() {
               p={p}
               rec={shinies[p.key]}
               copies={catchesByKey[p.key]?.length || 0}
-              locked={isLockedIn(p, filters.game !== 'all' ? filters.game : null)}
+              locked={isLockedIn(p, filters.game !== 'all' && !filters.game.startsWith('platform:') ? filters.game : null)}
               wished={!!wishlist[p.key]}
               compact={density === 5}
               colorUncaught={settings.colorUncaught}
@@ -376,7 +381,10 @@ function FilterSheet({ open, onClose, filters, setFilters, resultCount, lists })
             <span className="label-caps">Disponible dans le jeu</span>
             <select className="input" value={filters.game} onChange={e => setFilters({ game: e.target.value })}>
               <option value="all">🎮 Tous les jeux</option>
-              {GAMES.map(g => <option key={g.id} value={g.id}>{g.icon} {g.name}</option>)}
+              <optgroup label="Par console">
+                {PLATFORMS.filter(pl => gamesOnPlatform(pl.id).some(g => g.dexes)).map(pl => <option key={pl.id} value={`platform:${pl.id}`}>🎮 Disponible sur {pl.name}</option>)}
+              </optgroup>
+              <GameOptions />
             </select>
           </label>
           <label className="block space-y-1.5">

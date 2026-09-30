@@ -3,10 +3,11 @@ import { Dices, Star, Timer, Info } from 'lucide-react';
 import { useStore } from '../state/store.jsx';
 import { useNav } from '../state/nav.jsx';
 import { MAIN_DEX, artworkUrl, isAvailableIn } from '../data/pokedex.js';
-import { REGIONS, POKEMON_TYPES, GAMES, isLockedIn } from '../data/constants.js';
+import { REGIONS, POKEMON_TYPES, isLockedIn } from '../data/constants.js';
 import { padId } from '../lib/utils.js';
 import { feedback } from '../lib/hooks.js';
 import { Segmented, Sprite, TypeBadge, Toggle } from '../components/ui.jsx';
+import GameOptions from '../components/GameOptions.jsx';
 
 export default function RandomTool() {
   const { shinies, wishlist, toggleWish, ui, setUiValue } = useStore();
@@ -96,7 +97,7 @@ export default function RandomTool() {
         </div>
         <select className="input" value={opts.game} onChange={e => setOpts({ game: e.target.value })} aria-label="Jeu">
           <option value="all">🎮 Tous les jeux</option>
-          {GAMES.filter(g => g.dexes).map(g => <option key={g.id} value={g.id}>{g.icon} {g.name}</option>)}
+          <GameOptions filter={g => g.dexes} />
         </select>
         <Toggle checked={opts.noLock} onChange={noLock => setOpts({ noLock })} label="Exclure les Shiny Lock" />
       </div>
