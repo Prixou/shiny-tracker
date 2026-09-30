@@ -7,6 +7,9 @@ const addRolls = (p, base, n) => 1 - (1 - p) * Math.pow(1 - 1 / base, n);
 const tier = (c, steps) => steps.reduce((bonus, [min, value]) => (c >= min ? value : bonus), 0);
 
 const SPARKLING = label => ({ id: 'sparkling', label, type: 'select', values: [[0, 'Aucune'], [1, 'Nv. 1'], [2, 'Nv. 2'], [3, 'Nv. 3']] });
+const SPAWNS = { id: 'spawns', label: 'Pokémon ciblés par cycle', type: 'select', default: 1, values: [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [6, '6'], [8, '8']] };
+// Z-A : probabilité qu'au moins une des apparitions ciblées d'un cycle soit shiny.
+const cycle = x => 1 - Math.pow(1 - roll(x.base, 1 + x.charm + (x.o.sparkling || 0)), x.o.spawns || 1);
 const RESEARCH = { id: 'research', label: 'Recherche Pokédex', type: 'select', values: [[0, 'Incomplète'], [1, 'Niveau 10'], [3, 'Parfaite']] };
 
 // `p(ctx)` renvoie la probabilité qu'une rencontre soit shiny. ctx = { base, gen, charm (tirages), c (chaîne en cours), o (options) }.
@@ -53,6 +56,10 @@ export const METHODS = [
     note: 'En apparition massive : +1 tirage à 30 KO, +2 à 60 KO.'
   },
   { id: 'za_wild', name: 'Rencontre sauvage (Z-A)', icon: '🍩', unit: 'rencontres', options: [SPARKLING('Donut Brillance')], p: x => roll(x.base, 1 + x.charm + (x.o.sparkling || 0)), note: 'Avec un donut Brillance Nv. 3, la quête d\'Hyperespace « Attraper un shiny » garantit un shiny.' },
+  // Resets d'apparitions : chaque cycle relance toutes les apparitions proches (jusqu'à 50 m).
+  { id: 'za_fasttravel', name: 'Téléportation en boucle (Z-A)', icon: '🧭', unit: 'téléportations', options: [SPARKLING('Donut Brillance'), SPAWNS], p: x => cycle(x), note: 'Téléporte-toi vers un point à moins de 50 m des apparitions : chaque voyage relance les Pokémon. La méthode la plus rapide.' },
+  { id: 'za_bench', name: 'Banc jour / nuit (Z-A)', icon: '🪑', unit: 'bancs', options: [SPARKLING('Donut Brillance'), SPAWNS], p: x => cycle(x), note: 'S\'asseoir sur un banc fait passer du jour à la nuit et relance les apparitions dans un rayon de 50 m. Un peu plus lent (cinématique).' },
+  { id: 'za_stairs', name: 'Escalier Zone Sauvage 3 (Z-A)', icon: '🪜', unit: 'passages', options: [SPARKLING('Donut Brillance'), SPAWNS], p: x => cycle(x), note: 'Monter/descendre l\'escalier du pilier relance les apparitions : bloque le joystick pour chasser sans jouer. Pense à revenir compter.' },
   { id: 'za_fossil', name: 'Fossiles (Z-A)', icon: '🦴', unit: 'fossiles', charm: false, p: x => roll(x.base, 1), note: 'Le Charme Chroma ne s\'applique pas aux fossiles.' },
   { id: 'go_standard', name: 'Pokémon GO (standard)', icon: '📱', unit: 'rencontres', charm: false, p: () => 1 / 512 },
   { id: 'go_boosted', name: 'Pokémon GO (taux boosté)', icon: '⭐', unit: 'rencontres', charm: false, p: () => 1 / 64 },

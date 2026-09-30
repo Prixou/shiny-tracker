@@ -22,6 +22,7 @@ Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex sh
 - **Taux exacts par jeu** (1/8192 en Gen 2-5, 1/4096 ensuite, Charme Chroma ×4 en Z-A…) calculés par « tirages » et combinables : Brillance (sandwich / donut), recherche Pokédex LPA, apparitions massives, Parfum…
 - **Taux dynamiques** qui évoluent avec la chaîne : Combo Capture, SOS, pêche à la chaîne, Poké Radar, KO en apparition massive (ÉV).
 - **Mode œufs** (+30 = une boîte, décompte des boîtes) et hordes (+5).
+- **Méthodes Z-A** : téléportation en boucle, banc jour/nuit et escalier de la Zone Sauvage 3, avec le nombre de Pokémon ciblés par cycle.
 - **Phases** (un autre shiny apparaît : le compteur repart, le total est conservé), chance cumulée, rythme/heure, temps estimé.
 - « Shiny trouvé ! » : enregistrement de la capture + célébration. Historique des chasses terminées (reprise possible).
 - Raccourcis clavier : Espace/Entrée/↑ = +1, ↓/− = −1.

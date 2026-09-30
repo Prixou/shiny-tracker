@@ -4,7 +4,7 @@
 export const GAMES = [
   { id: 'za', name: 'Légendes Pokémon : Z-A (+ Mega Dimension)', short: 'Z-A', icon: '🗼', gen: 9, base: 4096, charm: 3,
     dexes: ['lumiose-city', 'hyperspace'], forms: ['alola', 'galar', 'hisui', 'paldea'],
-    methods: ['za_wild', 'za_fossil', 'reset', 'other'],
+    methods: ['za_fasttravel', 'za_bench', 'za_stairs', 'za_wild', 'za_fossil', 'reset', 'other'],
     tip: 'Charme Chroma (×4) + donut Brillance Nv.3 : environ 1/586.' },
   { id: 'sv', name: 'Écarlate / Violet', short: 'ÉV', icon: '🍇', gen: 9, base: 4096, charm: 2,
     dexes: ['paldea', 'kitakami', 'blueberry'], forms: ['alola', 'galar', 'hisui', 'paldea'],

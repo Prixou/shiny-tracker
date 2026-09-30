@@ -46,8 +46,8 @@ export default function OddsConfig({ value, onChange, allowCustom = true }) {
               <div className="text-sm font-bold text-slate-100">{o.label}</div>
               <div className="flex gap-1.5">
                 {o.values.map(([v, label]) => (
-                  <button key={v} type="button" onClick={() => setOpt(o.id, v)} aria-pressed={(opts[o.id] || 0) === v}
-                    className={`flex-1 min-h-10 rounded-xl border text-xs font-bold ${(opts[o.id] || 0) === v ? 'bg-amber-500 border-amber-400 text-slate-950' : 'bg-slate-950 border-slate-800 text-slate-300'}`}>
+                  <button key={v} type="button" onClick={() => setOpt(o.id, v)} aria-pressed={(opts[o.id] ?? o.default ?? 0) === v}
+                    className={`flex-1 min-h-10 rounded-xl border text-xs font-bold ${(opts[o.id] ?? o.default ?? 0) === v ? 'bg-amber-500 border-amber-400 text-slate-950' : 'bg-slate-950 border-slate-800 text-slate-300'}`}>
                     {label}
                   </button>
                 ))}
