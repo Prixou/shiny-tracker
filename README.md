@@ -1,1 +1,92 @@
-# shiny-tracker
+# ✨ Shiny Hunter Pro
+
+Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex shiny complet, compteur de rencontres, journal, statistiques et outils. Application web installable (PWA) qui fonctionne **hors ligne**, en français.
+
+## Fonctionnalités
+
+### 📖 Pokédex shiny
+- Les **1025 espèces + 57 formes régionales** (Alola, Galar, Hisui, Paldea), noms FR et EN.
+- **392 variantes** en option : formes alternatives (Prismillon, Charmilly, Zarbi, Météno…), **Méga-Évolutions** (dont Z-A), **Gigamax** et différences mâle/femelle.
+- **Jeux regroupés par console** (Switch, 3DS, DS, GBA, Game Boy / Console virtuelle 3DS, mobile) et filtre « Disponible sur Nintendo 3DS / Switch / … ».
+- **Disponibilité réelle par jeu** d'après les Pokédex régionaux (Z-A + Mega Dimension, ÉV + DLC, Champions, LPA, EB + DLC…) et **Shiny Lock par jeu**.
+- **Plusieurs exemplaires** d'un même shiny, chacun avec ses détails (nature, talent, niveau, Baron, marque, type Téra…).
+- **Listes perso** (« À faire en Z-A », « Préférés »…) en plus des Objectifs.
+- **Meilleures options shiny** sur chaque fiche : les jeux classés par meilleur taux atteignable (méthode, bonus, lieux) avec un bouton « Chasser » pré-réglé.
+- **Où le trouver** : lieux de capture de tous les jeux, en français (Gen 1 à 9, Légendes Arceus avec apparitions massives et Mégapparitions, Z-A et Hyperespace).
+- Recherche instantanée tolérante aux accents (« electhor » trouve « Électhor »), par nom FR/EN ou numéro.
+- Filtres dans un panneau glissant : régions, types (double type possible), catégories (légendaires, fabuleux, starters, bébés, formes, Shiny Lock), jeu, méthode, Poké Ball.
+- Onglets Tous / Capturés / Manquants / **Objectifs** (liste de souhaits ⭐), tri par numéro, nom, date ou rencontres, grille à 3 tailles.
+- Fiche détaillée : artwork shiny/normal, types, conseils de chasse, édition complète de la capture (date, jeu, méthode, Ball parmi 27, rencontres, taux, surnom, sexe, notes), lien Poképédia.
+
+### ⏱️ Compteur de chasse
+- **Énorme bouton tactile** (+1 ou pas personnalisé : hordes, œufs…), −1, vibration et son optionnels.
+- Plusieurs chasses en parallèle, chronomètre (pause auto quand l'app passe en arrière-plan), **écran maintenu allumé**.
+- **Taux exacts par jeu** (1/8192 en Gen 2-5, 1/4096 ensuite, Charme Chroma ×4 en Z-A…) calculés par « tirages » et combinables : Brillance (sandwich / donut), recherche Pokédex LPA, apparitions massives, Parfum…
+- **Taux dynamiques** qui évoluent avec la chaîne : Combo Capture, SOS, pêche à la chaîne, Poké Radar, KO en apparition massive (ÉV).
+- **Mode œufs** (+30 = une boîte, décompte des boîtes) et hordes (+5).
+- **Méthodes Z-A** : téléportation en boucle, banc jour/nuit et escalier de la Zone Sauvage 3, avec le nombre de Pokémon ciblés par cycle.
+- **Phases** (un autre shiny apparaît : le compteur repart, le total est conservé), chance cumulée, rythme/heure, temps estimé.
+- « Shiny trouvé ! » : enregistrement de la capture + célébration. Historique des chasses terminées (reprise possible).
+- Raccourcis clavier : Espace/Entrée/↑ = +1, ↓/− = −1.
+
+### 📚 Journal & 📊 Statistiques
+- Journal groupé par mois, recherche (nom, surnom, notes), tris (chance, rencontres…), **export CSV**.
+- Stats : progression globale (et hors Shiny Lock), par région, type, méthode, jeu, Ball, répartition de la chance, podiums, captures sur 12 mois.
+
+### 🧰 Outils
+- **Tirage aléatoire** de la prochaine cible (manquants / objectifs / tous, par région, type et jeu).
+- **Recettes** : sandwichs Brillance Nv.3 par type (ÉV) et donuts Brillance (Z-A Mega Dimension).
+- **Calculateur de probabilités** avec courbe interactive (glisser le doigt) et rencontres nécessaires pour 50/75/90/95/99 %.
+- **Synchronisation cloud** (optionnelle) : compte par e-mail, données à jour en direct entre téléphone et PC.
+- **Annuler** n'importe quelle action (toast « Annuler », bouton dans l'en-tête, Ctrl+Z).
+- **Données** : sauvegarde en fichier ou partage natif, restauration (fusion ou remplacement), **transfert PC ⇄ mobile par QR code** généré localement, scanner intégré (Chrome Android), pré-téléchargement des sprites pour le hors-ligne, installation de l'app.
+- **Réglages** : vibrations, sons, écran allumé, pause auto, affichage, jeu/méthode/charme par défaut, effacement.
+
+### 📱 Optimisations mobile
+- Navigation par barre du bas, panneaux glissants (bottom sheets), cibles tactiles ≥ 44 px.
+- Le **bouton retour d'Android** ferme les panneaux au lieu de quitter l'app.
+- Zones sûres (encoche, barre de geste), pas de zoom intempestif sur les champs, pas de délai au toucher, pas de pull-to-refresh accidentel.
+- Données du Pokédex **embarquées** (plus aucun appel API au démarrage), rendu progressif de la grille, sprites mis en cache par le service worker.
+- Données stockées localement ; les sauvegardes de l'ancienne version sont **migrées automatiquement**.
+
+## Développement
+
+```bash
+npm install
+npm run dev       # serveur de dev
+npm run lint      # ESLint
+npm run build     # build de production dans dist/
+npm run preview   # prévisualiser le build
+npm run data      # régénérer src/data/pokedex.json et encounters.json depuis PokéAPI (api-data)
+```
+
+Stack : React 19, Vite, Tailwind CSS 4, vite-plugin-pwa (Workbox), lucide-react, qrcode, lz-string, supabase-js (chargé seulement si la synchro est configurée).
+
+## Déploiement (GitHub Pages)
+
+Le workflow `.github/workflows/deploy.yml` construit et publie l'app à chaque push sur `main`.
+Dans **Settings → Pages**, choisir la source **GitHub Actions**. L'app sera disponible sur
+`https://<utilisateur>.github.io/shiny-tracker/` ; sur le téléphone, ouvrir ce lien puis « Ajouter à l'écran d'accueil » / « Installer ».
+
+## Synchronisation cloud (Supabase, optionnel)
+
+1. Créer un projet gratuit sur [supabase.com](https://supabase.com).
+2. Dans **SQL Editor**, exécuter [`supabase/schema.sql`](supabase/schema.sql) (table `shiny_data` protégée par RLS + temps réel).
+3. Dans **Authentication → URL Configuration**, ajouter l'URL du site (ex. `https://<utilisateur>.github.io/shiny-tracker/`).
+4. Pour se connecter depuis l'app installée, ajouter le code au modèle d'e-mail **Magic Link** (`{{ .Token }}`), sinon utiliser le lien.
+5. Renseigner l'URL du projet et la clé publique `anon` :
+   - soit dans l'app (**Outils → Données → Synchronisation cloud → Configurer**),
+   - soit au build via les secrets GitHub `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` (utilisés par le workflow de déploiement).
+
+Chaque utilisateur ne peut lire et modifier que sa propre ligne. En cas de modifications simultanées sur deux appareils, les données sont fusionnées.
+
+## Sources des données
+
+- **PokéAPI** : Pokédex, noms, types, Pokédex régionaux, lieux des Gen 1 à 7 et d'Épée / Bouclier.
+- **PKHeX** (tables extraites des jeux, non officielles) : lieux de Diamant Étincelant / Perle Scintillante (dont Grands Souterrains), Légendes Arceus (apparitions massives et Mégapparitions exactes), Écarlate / Violet + DLC, Légendes Z-A + Hyperespace, et la liste des apparitions massives évènementielles d'ÉV.
+- Les apparitions massives classiques d'ÉV sont **estimées** (espèces sauvages hors Zone Zéro, hors légendaires) : signale toute coquille pour corriger.
+
+## Crédits
+
+Données et sprites : [PokéAPI](https://pokeapi.co). Icônes de types : [duiker101/pokemon-type-svg-icons](https://github.com/duiker101/pokemon-type-svg-icons).
+Pokémon est une marque de Nintendo / Game Freak / The Pokémon Company. Application de fan non officielle.
