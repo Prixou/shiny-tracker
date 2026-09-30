@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { createPortal } from 'react-dom';
 import { X, Check, AlertTriangle, Info } from 'lucide-react';
 import { useBackClose } from '../lib/hooks.js';
-import { TYPE_BY_ID, ballSprite, BALL_BY_ID, SPRITES } from '../data/constants.js';
+import { TYPE_BY_ID, ballSprite, BALL_BY_ID } from '../data/constants.js';
 import { spriteUrl } from '../data/pokedex.js';
 
 // Pile des fenêtres ouvertes : Échap ne ferme que celle du dessus.
@@ -152,20 +152,12 @@ export function Sprite({ pokemon, src, className = 'w-16 h-16', alt, pixel = tru
   );
 }
 
-/** Emblème de région : ses légendaires de jaquette côte à côte (repli : numéro de génération). */
-export function RegionIcon({ region, className = 'h-6', mono = false }) {
-  // mono : silhouette blanche d'un seul légendaire, dans le style des icônes de type.
-  const ids = (region?.mascots || []).slice(0, mono ? 1 : 2);
-  if (!ids.length) {
-    return <span className={`${className} aspect-square inline-flex items-center justify-center rounded-full bg-slate-800 text-[9px] font-black text-slate-300 shrink-0`} aria-hidden="true">G{region?.gen ?? '?'}</span>;
-  }
+/** Pastille de région : numéro de génération sur la couleur de la région (mono : blanche, pour les boutons colorés). */
+export function RegionIcon({ region, className = 'w-5 h-5 text-[10px]', mono = false }) {
   return (
-    <span className={`${className} ${ids.length > 1 ? 'aspect-[3/2]' : 'aspect-square'} relative inline-block shrink-0`} aria-hidden="true">
-      {ids.map((id, i) => (
-        <img key={id} src={`${SPRITES}/pokemon/${id}.png`} alt="" loading="lazy" decoding="async" draggable="false"
-          onError={e => { e.currentTarget.style.visibility = 'hidden'; }}
-          className={`absolute top-0 h-full aspect-square object-contain pixelated ${mono ? 'scale-150 [filter:brightness(0)_invert(1)]' : ''} ${i ? 'right-0' : 'left-0'}`} />
-      ))}
+    <span className={`${className} inline-flex items-center justify-center rounded-full font-black leading-none shrink-0`} aria-hidden="true"
+      style={mono ? { backgroundColor: '#fff', color: region?.color } : { backgroundColor: region?.color, color: '#fff' }}>
+      {region?.gen ?? '?'}
     </span>
   );
 }
