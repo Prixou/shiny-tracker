@@ -82,6 +82,8 @@ const species = speciesRaw.map((s, i) => {
   if (s.is_mythical) entry.m = 1;
   if (s.is_baby) entry.b = 1;
   if (s.has_gender_differences) entry.g = 1;
+  // Groupe « Inconnu » : ne se reproduit pas (pas de Masuda possible).
+  if (s.egg_groups?.some(g => g.name === 'no-eggs')) entry.ne = 1;
   return entry;
 });
 const speciesIdByName = Object.fromEntries(speciesRaw.map((s, i) => [s.name, i + 1]));
@@ -197,7 +199,77 @@ encRaw.forEach((list, i) => {
   if (rows.size) encounters[i + 1] = [...rows.values()];
 });
 
+// ---------- Jeux récents : tables de rencontres de PKHeX (non officiel, extrait des jeux) ----------
+console.log('Rencontres DEPS / LPA / ÉV / Z-A (PKHeX)…');
+const PKHEX = 'https://raw.githubusercontent.com/kwsch/PKHeX/master/PKHeX.Core/Resources';
+const bin = async path => Buffer.from(await (await fetch(`${PKHEX}/${path}`)).arrayBuffer());
+const txt = async path => (await (await fetch(`${PKHEX}/text/locations/${path}`)).text()).split(/\r?\n/);
+const u16 = (b, o) => b[o] | (b[o + 1] << 8);
+const u32 = (b, o) => (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0;
+// Conteneurs « BinLinker » de PKHeX : n entrées, table d'offsets 32 bits (ou 16 bits).
+const link32 = b => Array.from({ length: u16(b, 2) }, (_, i) => b.subarray(u32(b, 4 + i * 4), u32(b, 8 + i * 4)));
+const link16 = b => Array.from({ length: u16(b, 2) }, (_, i) => b.subarray(u16(b, 4 + i * 2), u16(b, 6 + i * 2)));
+
+const extra = new Map(); // espèce → Map(clé → ligne)
+const addRow = (sp, game, locName, method, min, max) => {
+  if (!sp || sp > MAX_ID || !locName || locName.startsWith('－')) return;
+  if (!extra.has(sp)) extra.set(sp, new Map());
+  const rows = extra.get(sp);
+  const key = `${game}|${locName}|${method}`;
+  const row = rows.get(key) || [GAME_IDS.indexOf(game), locIdx(locName), methodIdx(method), min, max, 0];
+  row[3] = Math.min(row[3], min);
+  row[4] = Math.max(row[4], max);
+  rows.set(key, row);
+};
+
+// Écarlate / Violet (+ DLC) : zones sauvages
+const svLoc = await txt('gen9/text_sv_00000_fr.txt');
+for (const a of link32(await bin('legality/wild/Gen9/encounter_wild_paldea.pkl'))) {
+  for (let o = 4; o + 8 <= a.length; o += 8) addRow(u16(a, o), 'sv', svLoc[a[0]], 'sv-wild', a[o + 4], a[o + 5]);
+}
+// Apparitions massives évènementielles (distributions passées)
+const obBin = await bin('legality/wild/Gen9/encounter_outbreak_paldea.pkl');
+const svEventOutbreaks = new Set();
+for (let o = 0; o + 28 <= obBin.length; o += 28) svEventOutbreaks.add(u16(obBin, o));
+
+// Légendes Arceus : 0 sauvage, 1 distorsion, 2 point d'intérêt, 3 apparition massive, 4 mégapparition
+const laLoc = await txt('gen8a/text_la_00000_fr.txt');
+const LA_TYPES = ['pla-wild', 'pla-distortion', 'pla-landmark', 'pla-mo', 'pla-mmo'];
+for (const a of link32(await bin('legality/wild/Gen8/encounter_la.pkl'))) {
+  const n = a[0];
+  const locations = [...a.subarray(1, 1 + n)];
+  let align = n + 1;
+  align += align & 1;
+  const b = a.subarray(align);
+  const method = LA_TYPES[b[0]] || 'pla-wild';
+  for (let i = 0; i < b[1]; i++) {
+    const o = 2 + i * 8;
+    for (const l of locations) addRow(u16(b, o), 'pla', laLoc[l], method, b[o + 4], b[o + 5]);
+  }
+}
+
+// Diamant Étincelant / Perle Scintillante : 1 herbes, 2 surf, 3-5 cannes, 6 Éclate-Roc, 8 Arbre à Miel
+const bdLoc = await txt('gen8b/text_bdsp_00000_fr.txt');
+const BD_TYPES = { 1: 'walk', 2: 'surf', 3: 'old-rod', 4: 'good-rod', 5: 'super-rod', 6: 'rock-smash', 8: 'honey-tree' };
+for (const file of ['encounter_bd', 'encounter_sp', 'encounter_bd_underground', 'encounter_sp_underground']) {
+  const underground = file.includes('underground');
+  for (const a of link32(await bin(`legality/wild/Gen8/${file}.pkl`))) {
+    const method = underground ? 'underground' : BD_TYPES[a[2]];
+    if (!method) continue;
+    for (let o = 4; o + 4 <= a.length; o += 4) addRow(u16(a, o) & 0x3ff, 'bdsp', bdLoc[u16(a, 0)], method, a[o + 2], a[o + 3]);
+  }
+}
+
+// Légendes Z-A (+ Hyperespace)
+const zaLoc = await txt('gen9a/text_za_00000_fr.txt');
+for (const [file, method] of [['encounter_za', 'za-wild'], ['encounter_hyperspace_za', 'za-hyperspace']]) {
+  for (const a of link16(await bin(`legality/wild/Gen9/${file}.pkl`))) {
+    for (let o = 4; o + 8 <= a.length; o += 8) addRow(u16(a, o), 'za', zaLoc[u16(a, 0)], method, a[o + 4], a[o + 5]);
+  }
+}
+for (const [sp, rows] of extra) encounters[sp] = [...(encounters[sp] || []), ...rows.values()];
+
 await mkdir(new URL('../src/data/', import.meta.url), { recursive: true });
 await writeFile(new URL('../src/data/pokedex.json', import.meta.url), JSON.stringify({ species, forms, variants, dexes }));
-await writeFile(new URL('../src/data/encounters.json', import.meta.url), JSON.stringify({ games: GAME_IDS, methods: METHODS, locations: LOCS, encounters }));
+await writeFile(new URL('../src/data/encounters.json', import.meta.url), JSON.stringify({ games: GAME_IDS, methods: METHODS, locations: LOCS, encounters, svEventOutbreaks: [...svEventOutbreaks].sort((a, b) => a - b) }));
 console.log(`OK : ${species.length} espèces, ${forms.length} formes régionales, ${variants.length} variantes, ${Object.keys(dexes).length} Pokédex, ${Object.keys(encounters).length} espèces avec lieux.`);

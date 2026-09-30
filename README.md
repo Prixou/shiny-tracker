@@ -10,7 +10,8 @@ Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex sh
 - **Disponibilité réelle par jeu** d'après les Pokédex régionaux (Z-A + Mega Dimension, ÉV + DLC, Champions, LPA, EB + DLC…) et **Shiny Lock par jeu**.
 - **Plusieurs exemplaires** d'un même shiny, chacun avec ses détails (nature, talent, niveau, Baron, marque, type Téra…).
 - **Listes perso** (« À faire en Z-A », « Préférés »…) en plus des Objectifs.
-- **Où le trouver** : lieux de capture par jeu (Gen 1 à 7, noms français).
+- **Meilleures options shiny** sur chaque fiche : les jeux classés par meilleur taux atteignable (méthode, bonus, lieux) avec un bouton « Chasser » pré-réglé.
+- **Où le trouver** : lieux de capture de tous les jeux, en français (Gen 1 à 9, Légendes Arceus avec apparitions massives et Mégapparitions, Z-A et Hyperespace).
 - Recherche instantanée tolérante aux accents (« electhor » trouve « Électhor »), par nom FR/EN ou numéro.
 - Filtres dans un panneau glissant : régions, types (double type possible), catégories (légendaires, fabuleux, starters, bébés, formes, Shiny Lock), jeu, méthode, Poké Ball.
 - Onglets Tous / Capturés / Manquants / **Objectifs** (liste de souhaits ⭐), tri par numéro, nom, date ou rencontres, grille à 3 tailles.
@@ -77,6 +78,12 @@ Dans **Settings → Pages**, choisir la source **GitHub Actions**. L'app sera di
    - soit au build via les secrets GitHub `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` (utilisés par le workflow de déploiement).
 
 Chaque utilisateur ne peut lire et modifier que sa propre ligne. En cas de modifications simultanées sur deux appareils, les données sont fusionnées.
+
+## Sources des données
+
+- **PokéAPI** : Pokédex, noms, types, Pokédex régionaux, lieux des Gen 1 à 7 et d'Épée / Bouclier.
+- **PKHeX** (tables extraites des jeux, non officielles) : lieux de Diamant Étincelant / Perle Scintillante (dont Grands Souterrains), Légendes Arceus (apparitions massives et Mégapparitions exactes), Écarlate / Violet + DLC, Légendes Z-A + Hyperespace, et la liste des apparitions massives évènementielles d'ÉV.
+- Les apparitions massives classiques d'ÉV sont **estimées** (espèces sauvages hors Zone Zéro, hors légendaires) : signale toute coquille pour corriger.
 
 ## Crédits
 

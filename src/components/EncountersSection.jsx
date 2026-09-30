@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MapPin, ChevronDown } from 'lucide-react';
 import { GAME_BY_ID } from '../data/constants.js';
+import { loadEncounters } from '../lib/encountersData.js';
 
 const METHOD_NAMES = {
   walk: 'Herbes / grotte', surf: 'Surf', 'old-rod': 'Canne', 'good-rod': 'Super Canne', 'super-rod': 'Méga Canne',
@@ -10,12 +11,22 @@ const METHOD_NAMES = {
   'red-flowers': 'Fleurs rouges', 'rough-terrain': 'Terrain accidenté', pokeflute: 'Poké Flûte', 'sos-encounter': 'Appel à l\'aide',
   'island-scan': 'Scan des îles', 'npc-trade': 'Échange', seaweed: 'Algues', 'roaming-grass': 'Errant (herbes)', 'roaming-water': 'Errant (eau)',
   'devon-scope': 'Devon Scope', 'squirt-bottle': 'Carapuce à O', 'wailmer-pail': 'Wailmerrosoir', 'berry-piles': 'Tas de baies',
-  'bubbling-spots': 'Bulles', ambush: 'Embuscade', 'sweet-scent': 'Doux Parfum', 'horde': 'Horde', 'poke-radar': 'Poké Radar'
+  'bubbling-spots': 'Bulles', ambush: 'Embuscade', 'sweet-scent': 'Doux Parfum', 'horde': 'Horde', 'poke-radar': 'Poké Radar',
+  'sv-wild': 'Sauvage', 'pla-wild': 'Sauvage', 'pla-distortion': 'Distorsion spatiale', 'pla-landmark': 'Arbre / minerai',
+  'pla-mo': 'Apparition massive', 'pla-mmo': 'Mégapparition', 'honey-tree': 'Arbre à Miel', underground: 'Grands Souterrains',
+  'za-wild': 'Sauvage', 'za-hyperspace': 'Hyperespace',
+  static: 'Rencontre fixe', overworld: 'Visible sur la carte', 'overworld-special': 'Apparition rare', 'overworld-flying': 'En vol',
+  'overworld-flying-special': 'En vol (rare)', 'overworld-water': 'Sur l\'eau', 'overworld-water-special': 'Sur l\'eau (rare)',
+  'overworld-dirt': 'Terrain (dans le sol)', sos: 'Appel à l\'aide', 'sos-from-bubbling-spot': 'Appel à l\'aide (remous)',
+  'max-raid': 'Raid Dynamax', wanderer: 'Errant', 'wanderer-water': 'Errant (eau)', 'hidden-grotto': 'Trouée Cachée',
+  'headbutt-low': 'Coup d\'Boule', 'headbutt-normal': 'Coup d\'Boule', 'headbutt-high': 'Coup d\'Boule (rare)',
+  'sky-ambush': 'Embuscade (ciel)', 'ground-ambush': 'Embuscade (sol)', 'ceiling-ambush': 'Embuscade (plafond)',
+  'trash-can-ambush': 'Poubelle', 'rustling-bush-ambush': 'Buisson qui bouge', 'berry-trees': 'Arbre à baies',
+  'feebas-tile-fishing': 'Pêche (Barpau)', 'pokemon-ranger': 'Pokémon Ranger', 'pokemon-channel-pal': 'Pokémon Channel',
+  'colosseum-bonus-disc-jpn': 'Disque bonus', 'colosseum-bonus-disc-us': 'Disque bonus'
 };
 const methodName = m => METHOD_NAMES[m] || m.replace(/-/g, ' ');
 
-let cache = null;
-const load = () => (cache ||= import('../data/encounters.json').then(m => m.default || m));
 
 // Lieux de capture issus de PokéAPI (données complètes surtout jusqu'à la Gen 7).
 export default function EncountersSection({ pokemon }) {
@@ -23,7 +34,7 @@ export default function EncountersSection({ pokemon }) {
   const [openGame, setOpenGame] = useState(null);
   useEffect(() => {
     let alive = true;
-    load().then(d => { if (alive) setData(d); }).catch(() => { if (alive) setData({ error: true }); });
+    loadEncounters().then(d => { if (alive) setData(d); }).catch(() => { if (alive) setData({ error: true }); });
     return () => { alive = false; };
   }, []);
 
@@ -42,7 +53,7 @@ export default function EncountersSection({ pokemon }) {
       <h3 className="label-caps flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> Où le trouver</h3>
       {data.error || games.length === 0 ? (
         <p className="text-sm text-slate-500 p-3 rounded-2xl bg-slate-950 border border-slate-800">
-          Aucun lieu de rencontre sauvage connu{pokemon.gen >= 8 ? ' (les données de PokéAPI couvrent surtout les Gen 1 à 7)' : ' (évolution, œuf, échange ou évènement)'}.
+          Aucun lieu de rencontre sauvage connu{' (évolution, œuf, échange, raid ou évènement)'}.
         </p>
       ) : games.map(g => {
         const list = byGame.get(g).sort((a, b) => b.chance - a.chance);

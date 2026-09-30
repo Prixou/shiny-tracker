@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Star, Timer, Compass, ExternalLink, Sparkles, ShieldAlert, Crown, Trash2, Plus, ChevronDown, Film, Lock, ListPlus } from 'lucide-react';
+import { Star, Timer, ExternalLink, Sparkles, ShieldAlert, Crown, Trash2, Plus, ChevronDown, Film, Lock, ListPlus } from 'lucide-react';
 import { useStore, huntTotal } from '../state/store.jsx';
 import { useNav } from '../state/nav.jsx';
 import { getPokemon, artworkUrl, animatedUrl, POKEDEX, gamesFor, isPixelArtwork, VARIANT_LABELS } from '../data/pokedex.js';
@@ -9,6 +9,7 @@ import { feedback } from '../lib/hooks.js';
 import { Sheet, TypeBadge, Sprite, BallIcon, useConfirm } from './ui.jsx';
 import CaptureForm from './CaptureForm.jsx';
 import EncountersSection from './EncountersSection.jsx';
+import BestOptions from './BestOptions.jsx';
 import ListsSheet from './ListsSheet.jsx';
 
 export default function PokemonSheet({ pokemonKey, onClose }) {
@@ -164,22 +165,7 @@ function PokemonDetails({ p, onClose }) {
         </section>
       )}
 
-      {tip && (
-        <section className="p-4 rounded-3xl bg-slate-950 border border-amber-500/25 space-y-3">
-          <div className="flex items-center gap-2 label-caps text-amber-400"><Compass className="w-4 h-4" /> Conseil de chasse</div>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800">
-              <div className="text-[10px] font-bold uppercase text-slate-500">Jeu conseillé</div>
-              <div className="font-bold text-slate-100">{tip.game}</div>
-            </div>
-            <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800">
-              <div className="text-[10px] font-bold uppercase text-slate-500">Méthode</div>
-              <div className="font-bold text-amber-300">{tip.method}</div>
-            </div>
-          </div>
-          <p className="text-sm text-slate-300 leading-relaxed">💡 {tip.tip}</p>
-        </section>
-      )}
+      <BestOptions pokemon={p} fallbackTip={tip?.tip} onHunt={cfg => { onClose(); openNewHunt(p.key, cfg); }} />
 
       <EncountersSection pokemon={p} />
 

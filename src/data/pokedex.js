@@ -13,6 +13,7 @@ const build = (base, extra) => {
     isLegendary: !!extra.l,
     isMythical: !!extra.m,
     isBaby: !!extra.b,
+    canBreed: !extra.ne && !extra.l && !extra.m,
     isShinyLocked: SHINY_LOCKED_IDS.has(base.baseId)
   };
   p.search = normalize(`${p.name} ${p.enName} ${p.baseId}`);

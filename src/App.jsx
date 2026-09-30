@@ -56,7 +56,7 @@ export default function App() {
     tab,
     goTo,
     openPokemon: key => setPokemonKey(String(key)),
-    openNewHunt: (targetKey = null) => setNewHunt({ targetKey })
+    openNewHunt: (targetKey = null, preset = null) => setNewHunt({ targetKey, preset })
   }), [tab, goTo]);
 
   const caughtCount = useMemo(() => MAIN_DEX.reduce((n, p) => n + (shinies[p.key] ? 1 : 0), 0), [shinies]);
@@ -177,7 +177,7 @@ export default function App() {
         </nav>
 
         <PokemonSheet pokemonKey={pokemonKey} onClose={() => setPokemonKey(null)} />
-        <NewHuntSheet open={!!newHunt} initialTarget={newHunt?.targetKey} onClose={() => setNewHunt(null)} />
+        <NewHuntSheet open={!!newHunt} initialTarget={newHunt?.targetKey} preset={newHunt?.preset} onClose={() => setNewHunt(null)} />
         <ImportSheet code={importCode} onClose={() => setImportCode(null)} />
       </div>
     </NavContext.Provider>

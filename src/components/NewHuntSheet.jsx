@@ -10,7 +10,7 @@ import { Sheet, Field, Sprite, TypeBadge } from './ui.jsx';
 import PokemonPicker from './PokemonPicker.jsx';
 import OddsConfig from './OddsConfig.jsx';
 
-export default function NewHuntSheet({ open, initialTarget, onClose }) {
+export default function NewHuntSheet({ open, initialTarget, preset, onClose }) {
   const { settings, createHunt } = useStore();
   const { goTo } = useNav();
   const [target, setTarget] = useState(null);
@@ -24,8 +24,11 @@ export default function NewHuntSheet({ open, initialTarget, onClose }) {
     setPicking(!t);
     const game = settings.defaultGame || 'sv';
     const method = defaultMethodFor(game);
-    setForm({ game, method, opts: {}, charm: settings.charm, customOdds: null, step: METHOD_BY_ID[method]?.step || 1, count: 0 });
-  }, [open, initialTarget, settings.defaultGame, settings.charm]);
+    const base = { game, method, opts: {}, charm: settings.charm, customOdds: null, count: 0 };
+    // Préréglage venant des « Meilleures options shiny » de la fiche.
+    const cfg = preset ? { ...base, ...preset, opts: { ...(preset.opts || {}) } } : base;
+    setForm({ ...cfg, step: METHOD_BY_ID[cfg.method]?.step || 1 });
+  }, [open, initialTarget, preset, settings.defaultGame, settings.charm]);
 
   if (!form) return null;
   const update = patch => setForm(f => ({ ...f, ...patch }));
