@@ -138,7 +138,7 @@ export default function DexView() {
   const density = DENSITY_CLASSES[settings.density] ? settings.density : 4;
 
   const activeChips = [
-    ...filters.regions.map(id => ({ key: `r-${id}`, label: <><RegionIcon region={REGION_BY_ID[id]} className="h-7 -my-1 -ml-1" /> {REGION_BY_ID[id]?.name}</>, clear: () => setFilters({ regions: filters.regions.filter(x => x !== id) }) })),
+    ...filters.regions.map(id => ({ key: `r-${id}`, label: <><RegionIcon region={REGION_BY_ID[id]} className="w-4 h-4 text-[9px]" /> {REGION_BY_ID[id]?.name}</>, clear: () => setFilters({ regions: filters.regions.filter(x => x !== id) }) })),
     ...filters.types.map(id => ({ key: `t-${id}`, label: TYPE_BY_ID[id]?.name, color: TYPE_BY_ID[id]?.color, clear: () => setFilters({ types: filters.types.filter(x => x !== id) }) })),
     ...filters.categories.map(id => ({ key: `c-${id}`, label: CATEGORIES.find(c => c.id === id)?.label, clear: () => setFilters({ categories: filters.categories.filter(x => x !== id) }) })),
     ...(filters.game !== 'all' ? [{ key: 'g', label: filters.game.startsWith('platform:') ? `🎮 ${PLATFORMS.find(pl => `platform:${pl.id}` === filters.game)?.name}` : `${GAME_BY_ID[filters.game]?.icon} ${GAME_BY_ID[filters.game]?.short}`, clear: () => setFilters({ game: 'all' }) }] : []),
@@ -321,13 +321,17 @@ function FilterSheet({ open, onClose, filters, setFilters, resultCount, lists })
       <div className="space-y-6">
         <section className="space-y-2">
           <div className="label-caps">Régions</div>
-          <div className="flex flex-wrap gap-2">
-            {REGIONS.filter(r => MAIN_DEX.some(p => p.region === r.id)).map(r => (
-              <button key={r.id} onClick={() => setFilters({ regions: toggleIn(filters.regions, r.id) })}
-                className={`chip ${filters.regions.includes(r.id) ? 'chip-on' : 'chip-off'}`}>
-                <RegionIcon region={r} className="h-9 -my-1.5 -ml-1.5" /> {r.name}
-              </button>
-            ))}
+          <div className="grid grid-cols-3 gap-2">
+            {REGIONS.filter(r => MAIN_DEX.some(p => p.region === r.id)).map(r => {
+              const on = filters.regions.includes(r.id);
+              return (
+                <button key={r.id} onClick={() => setFilters({ regions: toggleIn(filters.regions, r.id) })} aria-pressed={on}
+                  className={`flex items-center gap-1.5 min-h-10 px-2.5 rounded-xl border text-xs font-bold transition active:scale-95 ${on ? 'text-white ring-2 ring-white/40' : 'bg-slate-950 text-slate-300'}`}
+                  style={{ backgroundColor: on ? r.color : undefined, borderColor: on ? r.color : `${r.color}66` }}>
+                  <RegionIcon region={r} mono className="w-4 h-4 text-[9px]" /> {r.name}
+                </button>
+              );
+            })}
           </div>
         </section>
 
