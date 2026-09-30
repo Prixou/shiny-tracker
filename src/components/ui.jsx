@@ -153,8 +153,9 @@ export function Sprite({ pokemon, src, className = 'w-16 h-16', alt, pixel = tru
 }
 
 /** Emblème de région : ses légendaires de jaquette côte à côte (repli : numéro de génération). */
-export function RegionIcon({ region, className = 'h-6' }) {
-  const ids = region?.mascots || [];
+export function RegionIcon({ region, className = 'h-6', mono = false }) {
+  // mono : silhouette blanche d'un seul légendaire, dans le style des icônes de type.
+  const ids = (region?.mascots || []).slice(0, mono ? 1 : 2);
   if (!ids.length) {
     return <span className={`${className} aspect-square inline-flex items-center justify-center rounded-full bg-slate-800 text-[9px] font-black text-slate-300 shrink-0`} aria-hidden="true">G{region?.gen ?? '?'}</span>;
   }
@@ -163,7 +164,7 @@ export function RegionIcon({ region, className = 'h-6' }) {
       {ids.map((id, i) => (
         <img key={id} src={`${SPRITES}/pokemon/${id}.png`} alt="" loading="lazy" decoding="async" draggable="false"
           onError={e => { e.currentTarget.style.visibility = 'hidden'; }}
-          className={`absolute top-0 h-full aspect-square object-contain pixelated ${i ? 'right-0' : 'left-0'}`} />
+          className={`absolute top-0 h-full aspect-square object-contain pixelated ${mono ? 'scale-150 [filter:brightness(0)_invert(1)]' : ''} ${i ? 'right-0' : 'left-0'}`} />
       ))}
     </span>
   );

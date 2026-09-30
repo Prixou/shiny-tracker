@@ -321,13 +321,17 @@ function FilterSheet({ open, onClose, filters, setFilters, resultCount, lists })
       <div className="space-y-6">
         <section className="space-y-2">
           <div className="label-caps">Régions</div>
-          <div className="flex flex-wrap gap-2">
-            {REGIONS.filter(r => MAIN_DEX.some(p => p.region === r.id)).map(r => (
-              <button key={r.id} onClick={() => setFilters({ regions: toggleIn(filters.regions, r.id) })}
-                className={`chip ${filters.regions.includes(r.id) ? 'chip-on' : 'chip-off'}`}>
-                <RegionIcon region={r} className="h-9 -my-1.5 -ml-1.5" /> {r.name}
-              </button>
-            ))}
+          <div className="grid grid-cols-3 gap-2">
+            {REGIONS.filter(r => MAIN_DEX.some(p => p.region === r.id)).map(r => {
+              const on = filters.regions.includes(r.id);
+              return (
+                <button key={r.id} onClick={() => setFilters({ regions: toggleIn(filters.regions, r.id) })} aria-pressed={on}
+                  className={`flex items-center gap-1.5 min-h-10 px-2.5 rounded-xl border text-xs font-bold transition active:scale-95 ${on ? 'text-white ring-2 ring-white/40' : 'bg-slate-950 text-slate-300'}`}
+                  style={{ backgroundColor: on ? r.color : undefined, borderColor: on ? r.color : `${r.color}66` }}>
+                  <RegionIcon region={r} mono className="h-4" /> {r.name}
+                </button>
+              );
+            })}
           </div>
         </section>
 

@@ -60,17 +60,17 @@ export const ballSprite = id => `${SPRITES}/items/${(BALL_BY_ID[id] || POKE_BALL
 
 // Chaque région est représentée par les légendaires de jaquette de ses jeux (comme sur les supports officiels).
 export const REGIONS = [
-  { id: 'kanto', name: 'Kanto', mascots: [6, 9], gen: 1, range: [1, 151] },
-  { id: 'johto', name: 'Johto', mascots: [250, 249], gen: 2, range: [152, 251] },
-  { id: 'hoenn', name: 'Hoenn', mascots: [383, 382], gen: 3, range: [252, 386] },
-  { id: 'sinnoh', name: 'Sinnoh', mascots: [483, 484], gen: 4, range: [387, 493] },
-  { id: 'unova', name: 'Unys', mascots: [643, 644], gen: 5, range: [494, 649] },
-  { id: 'kalos', name: 'Kalos', mascots: [716, 717], gen: 6, range: [650, 721] },
-  { id: 'alola', name: 'Alola', mascots: [791, 792], gen: 7, range: [722, 809] },
-  { id: 'galar', name: 'Galar', mascots: [888, 889], gen: 8, range: [810, 898] },
-  { id: 'hisui', name: 'Hisui', mascots: [493], gen: 8, range: [899, 905] },
-  { id: 'paldea', name: 'Paldea', mascots: [1007, 1008], gen: 9, range: [906, 1025] },
-  { id: 'gen10', name: 'Génération 10', mascots: [], gen: 10, range: [1026, 1300] }
+  { id: 'kanto', name: 'Kanto', color: '#E3350D', mascots: [6, 9], gen: 1, range: [1, 151] },
+  { id: 'johto', name: 'Johto', color: '#C9A227', mascots: [250, 249], gen: 2, range: [152, 251] },
+  { id: 'hoenn', name: 'Hoenn', color: '#2E9E5B', mascots: [383, 382], gen: 3, range: [252, 386] },
+  { id: 'sinnoh', name: 'Sinnoh', color: '#5A7BD8', mascots: [483, 484], gen: 4, range: [387, 493] },
+  { id: 'unova', name: 'Unys', color: '#8A8FA3', mascots: [643, 644], gen: 5, range: [494, 649] },
+  { id: 'kalos', name: 'Kalos', color: '#1E88E5', mascots: [716, 717], gen: 6, range: [650, 721] },
+  { id: 'alola', name: 'Alola', color: '#F28C28', mascots: [791, 792], gen: 7, range: [722, 809] },
+  { id: 'galar', name: 'Galar', color: '#9B4DCA', mascots: [888, 889], gen: 8, range: [810, 898] },
+  { id: 'hisui', name: 'Hisui', color: '#A1887F', mascots: [493], gen: 8, range: [899, 905] },
+  { id: 'paldea', name: 'Paldea', color: '#C2185B', mascots: [1007, 1008], gen: 9, range: [906, 1025] },
+  { id: 'gen10', name: 'Génération 10', color: '#14B8A6', mascots: [], gen: 10, range: [1026, 1300] }
 ];
 export const REGION_BY_ID = Object.fromEntries(REGIONS.map(r => [r.id, r]));
 
