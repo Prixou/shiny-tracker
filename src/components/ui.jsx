@@ -153,12 +153,19 @@ export function Sprite({ pokemon, src, className = 'w-16 h-16', alt, pixel = tru
 }
 
 /** Pastille de région : numéro de génération sur la couleur de la région (mono : blanche, pour les boutons colorés). */
-export function RegionIcon({ region, className = 'w-5 h-5 text-[10px]', mono = false }) {
+export function RegionIcon({ region, className = 'w-5 h-5', mono = false }) {
+  const bg = mono ? '#fff' : region?.color;
+  const fg = mono ? region?.color : '#fff';
+  const label = String(region?.gen ?? '?');
+  const size = label.length > 1 ? 10 : 12.5;
+  // SVG : chiffre centré optiquement (ligne de base décalée de la moitié de la hauteur des chiffres).
   return (
-    <span className={`${className} inline-flex items-center justify-center rounded-full font-black leading-none shrink-0`} aria-hidden="true"
-      style={mono ? { backgroundColor: '#fff', color: region?.color } : { backgroundColor: region?.color, color: '#fff' }}>
-      {region?.gen ?? '?'}
-    </span>
+    <svg viewBox="0 0 20 20" className={`${className} shrink-0`} aria-hidden="true">
+      <circle cx="10" cy="10" r="10" fill={bg} />
+      <circle cx="10" cy="10" r="8.6" fill="none" stroke={fg} strokeOpacity=".28" strokeWidth=".9" />
+      <text x="10" y={10 + size * 0.355} textAnchor="middle" fontSize={size} fontWeight="900" fill={fg}
+        style={{ fontFamily: 'var(--font-sans)', fontVariantNumeric: 'tabular-nums' }}>{label}</text>
+    </svg>
   );
 }
 
