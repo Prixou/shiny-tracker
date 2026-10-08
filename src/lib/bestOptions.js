@@ -1,6 +1,10 @@
 import { GAME_BY_ID, isLockedIn } from '../data/constants.js';
 import { oddsAt, METHOD_BY_ID } from '../data/methods.js';
 import { isAvailableIn } from '../data/pokedex.js';
+import { REGIONAL_FORMS } from '../data/forms.js';
+
+// Jeux dont les rencontres sauvages sont dans la forme régionale (les données de lieux ne distinguent pas les formes).
+const NATIVE_FORM = { sm: 'alola', usum: 'alola', swsh: 'galar', pla: 'hisui', sv: 'paldea' };
 
 // Légendaires disponibles dans les Expéditions Dynamax (Épée / Bouclier, Terres Enneigées).
 const DYNAMAX_LEGENDS = new Set([144, 145, 146, 150, 243, 244, 245, 249, 250, 380, 381, 382, 383, 384, 480, 481, 482, 483, 484, 485, 487, 488,
@@ -35,8 +39,13 @@ export function bestOptions(p, data, prefs = {}) {
   if (!p || p.variantKind === 'mega' || p.variantKind === 'gmax') return { main: [], extra: [], others: [] };
   const enc = indexEncounters(data, p.baseId);
   const options = [];
+  // Forme régionale : seulement dans les jeux qui l'ont. Forme normale : pas dans les jeux où elle est remplacée.
+  const formRegions = new Set(REGIONAL_FORMS.filter(f => f.baseId === p.baseId).map(f => f.region));
+  const wrongForm = game => (p.isForm
+    ? !(GAME_BY_ID[game]?.forms || []).includes(p.region)
+    : !!NATIVE_FORM[game] && formRegions.has(NATIVE_FORM[game]));
   const add = (game, cfg, { label, locations = [], estimate = null, note = null, chain = null }) => {
-    if (isLockedIn(p, game)) return;
+    if (isLockedIn(p, game) || wrongForm(game)) return;
     const full = { game, opts: {}, ...cfg, charm: cfg.charm ?? charmFor(game) };
     const odds = oddsAt(full, chain ?? METHOD_BY_ID[full.method]?.chain ?? 0);
     options.push({ game, cfg: full, odds, label, locations, estimate, note });
