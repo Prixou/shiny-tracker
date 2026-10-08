@@ -8,8 +8,11 @@ import { fmtNumber, fmtOdds, formatDate, formatDuration } from '../../lib/format
 import { BallIcon } from '../../ui/index.js';
 import CaptureForm from './CaptureForm.jsx';
 
-/** Un exemplaire capturé : résumé, chance, détails modifiables. */
-export default function CopyCard({ copy, defaultOpen }) {
+/**
+ * Un exemplaire capturé : résumé, chance, détails modifiables.
+ * `replaced` : exemplaire provisoire alors qu'on possède déjà son propre shiny.
+ */
+export default function CopyCard({ copy, defaultOpen, replaced = false }) {
   const { updateCatch, removeCatch } = useActions();
   const [open, setOpen] = useState(defaultOpen);
   const ratio = catchRatio(copy);
@@ -22,6 +25,7 @@ export default function CopyCard({ copy, defaultOpen }) {
         <span className="flex-1 min-w-0">
           <span className="block text-sm font-bold text-slate-100 truncate">
             {copy.nickname || formatDate(copy.date)}{copy.gender === 'm' ? ' ♂' : copy.gender === 'f' ? ' ♀' : ''}{copy.alpha ? ' · Baron' : ''}
+            {copy.provisional && <span className="ml-1.5 px-1.5 py-0.5 rounded-md bg-sky-500/15 text-sky-300 text-[10px] font-black align-middle">Provisoire</span>}
           </span>
           <span className="block text-xs text-slate-500 truncate">
             {copy.nickname ? `${formatDate(copy.date)} · ` : ''}{game ? `${game.icon} ${game.short} · ` : ''}{METHOD_BY_ID[copy.method]?.name}
@@ -43,6 +47,11 @@ export default function CopyCard({ copy, defaultOpen }) {
                 </div>
               </div>
             </div>
+          )}
+          {copy.provisional && replaced && (
+            <p className="text-xs text-emerald-200 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-3">
+              Tu as maintenant ton propre exemplaire : tu peux supprimer celui-ci.
+            </p>
           )}
           <CaptureForm value={copy} onChange={patch => updateCatch(copy.id, patch)} />
           <button onClick={() => removeCatch(copy.id)} className="btn-ghost w-full text-rose-300"><Trash2 className="w-4 h-4" /> Supprimer cet exemplaire</button>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useActions, useStoreApi } from '../../state/StoreProvider.jsx';
+import MapTool from '../map/MapTool.jsx';
 import RandomTool from './RandomTool.jsx';
 import OddsTool from './OddsTool.jsx';
 import RecipesTool from './RecipesTool.jsx';
@@ -8,6 +9,7 @@ import DataTool from '../backup/DataTool.jsx';
 import SettingsTool from '../settings/SettingsTool.jsx';
 
 const SECTIONS = [
+  { id: 'map', label: 'Carte' },
   { id: 'random', label: 'Tirage' },
   { id: 'odds', label: 'Probas' },
   { id: 'agenda', label: 'Agenda' },
@@ -21,7 +23,7 @@ export default function ToolsView() {
   const { setUiValue } = useActions();
   const [section, setSection] = useState(() => {
     const saved = store.getState().ui.toolsSection;
-    return SECTIONS.some(s => s.id === saved) ? saved : 'random';
+    return SECTIONS.some(s => s.id === saved) ? saved : 'map';
   });
   const change = id => { setSection(id); setUiValue('toolsSection', id); };
   const rowRef = useRef(null);
@@ -39,6 +41,7 @@ export default function ToolsView() {
           </button>
         ))}
       </div>
+      {section === 'map' && <MapTool />}
       {section === 'random' && <RandomTool />}
       {section === 'odds' && <OddsTool />}
       {section === 'agenda' && <AgendaTool />}

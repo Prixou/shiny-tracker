@@ -11,7 +11,7 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 const SHOWN = 3;
 
 /** Carte « Meilleures options shiny » de la fiche Pokémon. */
-export default function BestOptions({ pokemon, onHunt, fallbackTip }) {
+export default function BestOptions({ pokemon, onHunt, fallbackTip, provisional = false }) {
   const data = useEncounters();
   const [expanded, setExpanded] = useState(null);
   const [showAll, setShowAll] = useState(false);
@@ -25,6 +25,11 @@ export default function BestOptions({ pokemon, onHunt, fallbackTip }) {
   return (
     <section className="p-4 rounded-3xl bg-slate-950 border border-amber-500/25 space-y-3">
       <div className="flex items-center gap-2 label-caps text-amber-400"><Trophy className="w-4 h-4" /> Meilleures options shiny</div>
+      {provisional && main.length > 0 && (
+        <p className="text-xs text-sky-200 bg-sky-500/10 border border-sky-500/30 rounded-2xl p-3">
+          Ton exemplaire est provisoire : chasse-le avec l'une de ces options pour avoir le tien, à ton ID.
+        </p>
+      )}
 
       {main.length === 0 ? (
         <p className="flex gap-2 text-sm text-slate-300 leading-relaxed">

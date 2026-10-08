@@ -35,7 +35,7 @@ export default function FoundSheet({ open, onClose, hunt, onFound }) {
           Tu possèdes déjà {owned} exemplaire{owned > 1 ? 's' : ''} de ce shiny : celui-ci sera ajouté en plus.
         </p>
       )}
-      <CaptureForm value={details} onChange={patch => setDetails(d => ({ ...d, ...patch }))} showCounts={false} />
+      <CaptureForm value={details} onChange={patch => setDetails(d => ({ ...d, ...patch }))} showCounts={false} showProvisional={false} />
     </Sheet>
   );
 }

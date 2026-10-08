@@ -59,3 +59,19 @@ export const REGIONAL_FORMS = [
   { id: '128-paldea-aqua', baseId: 128, name: 'Tauros de Paldea (Aquatique)', region: 'paldea', apiName: 'tauros-paldea-aqua-breed' },
   { id: '194-paldea', baseId: 194, name: 'Axoloto de Paldea', region: 'paldea', apiName: 'wooper-paldea' }
 ];
+
+// Jeux dont les rencontres sauvages sont dans la forme régionale (les données de lieux ne distinguent pas les formes).
+export const NATIVE_FORM_REGION = { sm: 'alola', usum: 'alola', swsh: 'galar', pla: 'hisui', sv: 'paldea' };
+
+/**
+ * Clés des Pokémon à afficher pour une espèce rencontrée dans un jeu : sa ou ses formes régionales
+ * si le jeu les remplace (Rattata d'Alola dans Soleil / Lune, trois Tauros de Paldea dans ÉV…), sinon l'espèce.
+ * @param {number} baseId
+ * @param {string} gameId
+ * @returns {string[]}
+ */
+export function formKeysIn(baseId, gameId) {
+  const region = NATIVE_FORM_REGION[gameId];
+  const forms = region ? REGIONAL_FORMS.filter(f => f.baseId === baseId && f.region === region) : [];
+  return forms.length ? forms.map(f => f.id) : [String(baseId)];
+}

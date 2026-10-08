@@ -6,7 +6,7 @@ import { BANK_DEADLINE_SHORT, viaBank } from '../../domain/bank.js';
 import { timestampFromIso } from '../../lib/format.js';
 import { Field, BallIcon, Toggle, GameOptions } from '../../ui/index.js';
 
-export default function CaptureForm({ value, onChange, showCounts = true }) {
+export default function CaptureForm({ value, onChange, showCounts = true, showProvisional = true }) {
   const [more, setMore] = useState(() => !!(value.nature || value.ability || value.level || value.alpha || value.mark || value.teraType));
   const set = key => e => onChange({ [key]: e.target.value });
   const methods = gameMethods(value.game || 'other');
@@ -59,6 +59,13 @@ export default function CaptureForm({ value, onChange, showCounts = true }) {
       {viaBank(value.game) && (
         <div className="card px-4">
           <Toggle checked={!!value.inHome} onChange={inHome => onChange({ inHome })} label="Transféré dans Pokémon HOME" desc={`Via Pokémon Banque (possible jusqu'au ${BANK_DEADLINE_SHORT})`} />
+        </div>
+      )}
+
+      {showProvisional && (
+        <div className="card px-4">
+          <Toggle checked={!!value.provisional} onChange={provisional => onChange({ provisional })} label="Provisoire (distribution)"
+            desc="Shiny Lock reçu par distribution : à remplacer par un shiny à ton ID dès qu'il sera chassable" />
         </div>
       )}
 

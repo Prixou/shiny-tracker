@@ -88,7 +88,8 @@ export const capturesRecentes = {
         rencontres: c.count || null,
         taux: c.odds ? `1/${c.odds}` : null,
         ball: BALL_BY_ID[c.ball]?.name || null,
-        surnom: c.nickname || undefined
+        surnom: c.nickname || undefined,
+        provisoire: c.provisional || undefined
       }))
     };
   }

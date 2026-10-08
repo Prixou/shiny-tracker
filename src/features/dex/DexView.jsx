@@ -13,6 +13,7 @@ import PokemonCard from './PokemonCard.jsx';
 import FilterSheet from './FilterSheet.jsx';
 import SortSheet from './SortSheet.jsx';
 import BankBanner from './BankBanner.jsx';
+import ProvisionalBanner from './ProvisionalBanner.jsx';
 
 const DENSITY_CLASSES = {
   3: 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7',
@@ -161,6 +162,7 @@ export default function DexView() {
       </div>
 
       <BankBanner />
+      <ProvisionalBanner />
 
       {results.length === 0 ? (
         <EmptyState icon={<Search className="w-7 h-7" />} title="Aucun Pokémon trouvé"

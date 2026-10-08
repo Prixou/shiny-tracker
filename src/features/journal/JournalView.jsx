@@ -121,6 +121,7 @@ export default function JournalView() {
                       <span className="text-sm font-black text-amber-200 truncate">{rec.nickname || p.name}</span>
                       {rec.gender === 'm' && <span className="text-sky-400 text-sm">♂</span>}
                       {rec.gender === 'f' && <span className="text-pink-400 text-sm">♀</span>}
+                      {rec.provisional && <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-sky-500/15 text-sky-300 text-[10px] font-black">Provisoire</span>}
                     </div>
                     {rec.nickname && <div className="text-[11px] text-slate-500 -mt-0.5">{p.name}</div>}
                     <div className="text-xs text-slate-400 truncate">{formatDate(rec.date)}{game ? ` · ${game.icon} ${game.short}` : ''}</div>
