@@ -9,6 +9,8 @@ import GameOptions from './GameOptions.jsx';
 export default function OddsConfig({ value, onChange, allowCustom = true, charmFor }) {
   const game = GAME_BY_ID[value.game] || GAME_BY_ID.other;
   const methods = gameMethods(game.id);
+  // Une méthode retirée de la liste du jeu reste affichée pour les chasses déjà créées avec.
+  if (value.method && METHOD_BY_ID[value.method] && !methods.some(m => m.id === value.method)) methods.push(METHOD_BY_ID[value.method]);
   const method = METHOD_BY_ID[value.method] || methods[0];
   const ctx = oddsContext(value);
   const dynamic = isDynamic(ctx);

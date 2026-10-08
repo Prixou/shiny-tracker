@@ -49,7 +49,7 @@ Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex sh
 - Compte à rebours jusqu'à la fin des transferts Banque → HOME (25 février 2027, 19 h heure du Pacifique), rappel dans le Pokédex et dans l'Agenda.
 - **Shiny à chasser en priorité** sur DS/3DS : ceux qu'aucun jeu Switch ne permet de chasser, puis ceux qui sont au moins 3 fois plus faciles (ou absents de tes jeux Switch), regroupés par jeu et méthode, avec bouton « Chasser » et ajout à une liste « Avant la Banque ».
 - **À transférer** : tes shiny DS/3DS pas encore marqués « Transféré dans HOME » (case dans la fiche de capture).
-- Check-list (Banque installée, Premium HOME, transfert test, sauvegardes PKSM) et conseils (Ultra-Brèches, parent shiny en Console virtuelle, Masuda).
+- Check-list (Banque installée, Premium HOME, transfert test, sauvegardes PKSM) et conseils (Ultra-Brèches, Masuda).
 - Meilleures options complétées : Masuda dans les jeux DS/3DS, Épée/Bouclier et Diamant Étincelant / Perle Scintillante, fossiles des Grands Souterrains.
 
 ### 🤖 Assistant de chasse (IA)

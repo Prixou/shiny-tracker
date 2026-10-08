@@ -24,7 +24,6 @@ const CHECKLIST = [
 
 const TIPS = [
   'Ultra-Soleil / Ultra-Lune : dans les Ultra-Brèches les plus rares, après 5 000 années-lumière, les Pokémon non légendaires ont jusqu\'à environ 36 % de chances d\'être shiny.',
-  'Or / Argent / Cristal (Console virtuelle) : un parent shiny donne 1/64 à chaque œuf. Un Métamorph shiny marche avec presque tout ; le Léviator rouge du Lac Colère est garanti.',
   'X / Y, Rubis Oméga / Saphir Alpha, Soleil / Lune : la Masuda avec Charme Chroma donne 1/512, comme sur Switch, pour toutes les espèces de ces jeux.',
   'Après la fermeture, tu pourras continuer à chasser sur 3DS pour le plaisir : tes shiny resteront dans tes jeux et tes sauvegardes.'
 ];
