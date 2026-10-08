@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { runTool, buildContext, TOOL_DEFS, findPokemon } from '../../src/lib/ai/tools.js';
+import { runTool, buildContext, TOOL_DEFS, findPokemon } from '../../src/services/ai/tools.js';
 
 const NOW = Date.now();
 const store = (patch = {}) => ({

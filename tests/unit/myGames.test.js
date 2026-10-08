@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { myGamesSet, ownsGame, hasCharm, bestOptionsPrefs } from '../../src/lib/myGames.js';
+import { myGamesSet, ownsGame, hasCharm, bestOptionsPrefs } from '../../src/domain/myGames.js';
 
 describe('Mes jeux', () => {
   it('sans jeux cochés, tous les jeux comptent', () => {

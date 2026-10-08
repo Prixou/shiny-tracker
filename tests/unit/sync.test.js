@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildExport, parseImport, mergeData, encodeCompact } from '../../src/lib/sync.js';
+import { buildExport, parseImport, mergeData, encodeCompact } from '../../src/domain/backup.js';
 
 const catches = [
   { id: 'c1', key: '25', date: '2026-10-01', method: 'sv_wild', ball: 'pokeball', game: 'sv', count: 120, odds: 512, elapsedMs: 3600000, nickname: 'Pika', updatedAt: 10 },

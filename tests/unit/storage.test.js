@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from 'vitest';
-import { loadState, clearAll, normalizeCatch, normalizeHunt, DEFAULT_SETTINGS } from '../../src/lib/storage.js';
+import { loadState, clearAll, normalizeCatch, normalizeHunt, DEFAULT_SETTINGS } from '../../src/state/persistence.js';
 
 beforeEach(() => localStorage.clear());
 

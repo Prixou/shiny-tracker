@@ -1,11 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { loadState, persist, clearAll, DEFAULT_SETTINGS } from '../lib/storage.js';
-import { mergeData } from '../lib/sync.js';
+import { loadState, persist, clearAll, DEFAULT_SETTINGS } from './persistence.js';
+import { mergeData } from '../domain/backup.js';
 import { GAME_BY_ID } from '../data/constants.js';
 import { oddsAt, cumulativeChance, luckRatio, oddsContext, probAt } from '../data/methods.js';
 import { todayIso, uid } from '../lib/utils.js';
 import { feedback } from '../lib/hooks.js';
-import { hasCharm } from '../lib/myGames.js';
+import { hasCharm } from '../domain/myGames.js';
 
 const StoreContext = createContext(null);
 

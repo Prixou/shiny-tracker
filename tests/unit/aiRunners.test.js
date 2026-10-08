@@ -38,7 +38,7 @@ describe('connexion à Claude', () => {
         ev('message_stop', {})
       ]);
     }));
-    const { runTurn } = await import('../../src/lib/ai/claude.js');
+    const { runTurn } = await import('../../src/services/ai/claude.js');
     const text = [];
     const tools = [];
     const res = await runTurn({
@@ -74,7 +74,7 @@ describe('connexion à Claude', () => {
         ev('message_stop', {})
       ]);
     }));
-    const { runTurn } = await import('../../src/lib/ai/claude.js');
+    const { runTurn } = await import('../../src/services/ai/claude.js');
     await runTurn({ apiKey: 'k', model: 'claude-haiku-5-5', system: 's', history: [], userText: 'x', webSearch: true, execTool: async () => ({}), onText: () => {}, onTool: () => {} });
     expect(body.fallbacks).toBeUndefined();
     expect(body.tools.map(t => t.type).filter(Boolean)).toEqual(['web_search_20250305', 'web_fetch_20250910']);
@@ -86,7 +86,7 @@ describe('connexion à Claude', () => {
       ev('message_delta', { delta: { stop_reason: 'refusal', stop_sequence: null }, usage: { output_tokens: 1 } }),
       ev('message_stop', {})
     ])));
-    const { runTurn } = await import('../../src/lib/ai/claude.js');
+    const { runTurn } = await import('../../src/services/ai/claude.js');
     const res = await runTurn({ apiKey: 'k', model: 'claude-opus-5-5', system: 's', history: [], userText: 'x', execTool: async () => ({}), onText: () => {}, onTool: () => {} });
     expect(res.refused).toBe(true);
     expect(res.history).toHaveLength(1);
@@ -94,7 +94,7 @@ describe('connexion à Claude', () => {
 
   it('message d\'erreur clair pour une clé refusée', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ type: 'error', error: { type: 'authentication_error', message: 'invalid x-api-key' } }), { status: 401, headers: { 'content-type': 'application/json' } })));
-    const { runTurn, describeError } = await import('../../src/lib/ai/claude.js');
+    const { runTurn, describeError } = await import('../../src/services/ai/claude.js');
     const err = await runTurn({ apiKey: 'k', model: 'claude-opus-5-5', system: 's', history: [], userText: 'x', execTool: async () => ({}), onText: () => {}, onTool: () => {} }).catch(e => e);
     expect(describeError(err)).toMatch(/Clé API Claude refusée/);
   });
@@ -110,7 +110,7 @@ describe('connexion à Gemini', () => {
       if (bodies.length === 1) return sse([chunk([{ functionCall: { name: 'mes_chasses', args: {} }, thoughtSignature: 'sig1' }])]);
       return sse([chunk([{ text: 'Rien ' }]), chunk([{ text: 'en cours.' }])]);
     }));
-    const { runTurn } = await import('../../src/lib/ai/gemini.js');
+    const { runTurn } = await import('../../src/services/ai/gemini.js');
     const text = [];
     const res = await runTurn({
       apiKey: 'AIza', model: 'gemini-3.5-flash-lite', system: 'sys', history: [], userText: 'Mes chasses ?',
@@ -126,7 +126,7 @@ describe('connexion à Gemini', () => {
 
   it('quota dépassé : message compréhensible', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: { code: 429, message: 'Resource exhausted', status: 'RESOURCE_EXHAUSTED' } }), { status: 429, headers: { 'content-type': 'application/json' } })));
-    const { runTurn, describeError } = await import('../../src/lib/ai/gemini.js');
+    const { runTurn, describeError } = await import('../../src/services/ai/gemini.js');
     const err = await runTurn({ apiKey: 'AIza', model: 'm', system: 's', history: [], userText: 'x', execTool: async () => ({}), onText: () => {}, onTool: () => {} }).catch(e => e);
     expect(describeError(err)).toMatch(/Quota gratuit atteint/);
   });

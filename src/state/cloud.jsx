@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from './store.jsx';
-import { getCloudConfig, saveCloudConfig, getClient, resetClient, loadMeta, saveMeta, syncCycle, TABLE } from '../lib/cloud.js';
+import { getCloudConfig, saveCloudConfig, getClient, resetClient, loadMeta, saveMeta, syncCycle, TABLE } from '../services/cloud.js';
 
 const CloudContext = createContext({ config: null, status: 'off' });
 export const useCloud = () => useContext(CloudContext);

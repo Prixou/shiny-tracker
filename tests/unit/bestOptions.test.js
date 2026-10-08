@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { bestOptions } from '../../src/lib/bestOptions.js';
-import { loadEncounters } from '../../src/lib/encountersData.js';
+import { bestOptions } from '../../src/domain/bestOptions.js';
+import { loadEncounters } from '../../src/services/encounters.js';
 import { getPokemon, POKEDEX } from '../../src/data/pokedex.js';
 import { GAME_BY_ID } from '../../src/data/games.js';
-import { bestOptionsPrefs } from '../../src/lib/myGames.js';
+import { bestOptionsPrefs } from '../../src/domain/myGames.js';
 
 let data;
 beforeAll(async () => { data = await loadEncounters(); });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { forecast } from '../../src/lib/forecast.js';
+import { forecast } from '../../src/domain/forecast.js';
 import { EVENTS, eventStatus } from '../../src/data/events.js';
 import { formatDuration, fmtOdds, getLuckTier, normalize, catchRatio } from '../../src/lib/utils.js';
 import { MAIN_DEX } from '../../src/data/pokedex.js';
