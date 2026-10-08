@@ -23,7 +23,17 @@ npm run dev      # développement
 npm run lint     # ESLint (doit passer)
 npm run build    # build de production (doit passer)
 npm run data     # régénère src/data/*.json depuis PokéAPI (api-data)
+npm test         # tests unitaires Vitest (doivent passer)
+npm run test:e2e # tests Playwright sur écran de téléphone 412 × 915 (doivent passer)
 ```
+
+## Tests
+
+- Lint, `npm test` et `npm run test:e2e` doivent passer avant chaque push (la CI les relance sur chaque pull request).
+- Toute correction de bug ou nouvelle fonctionnalité s'accompagne d'un test : unitaire dans `tests/unit` pour la logique (taux, meilleures options, Banque, stockage…), de bout en bout dans `tests/e2e` pour un parcours d'écran.
+- Les tests e2e tournent sans réseau extérieur (APIs d'IA simulées avec `page.route`) et vérifient qu'il n'y a ni erreur JavaScript ni défilement horizontal. Figer l'horloge (`page.clock.setFixedTime(TODAY)`) pour tout ce qui dépend de la date (Banque, agenda).
+- Navigateur déjà installé (environnement sans téléchargement) : `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm run test:e2e`.
+- Ne jamais affaiblir ou supprimer un test pour le faire passer : corriger le code ou, si le comportement attendu a changé, mettre à jour l'attente.
 
 ## Repères
 
