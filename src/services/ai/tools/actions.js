@@ -1,9 +1,11 @@
 // Modifications proposées par l'assistant : une carte « Appliquer » s'affiche, l'utilisateur décide.
+/** @import { Tool } from './types.js' */
 import { normalize } from '../../../lib/text.js';
 import { resolveOne } from './lookup.js';
 
 const ACTIONS = ['ajouter_objectifs', 'retirer_objectifs', 'creer_liste', 'ajouter_a_liste', 'retirer_de_liste', 'pause_chasse'];
 
+/** @type {Tool} */
 export const proposerAction = {
   name: 'proposer_action',
   description: 'Propose une modification des données de l\'utilisateur. Une carte « Appliquer » s\'affiche : rien n\'est fait tant qu\'il n\'a pas appuyé dessus, donc ne dis jamais que c\'est fait. Actions : ajouter_objectifs, retirer_objectifs, creer_liste (avec nom et Pokémon), ajouter_a_liste, retirer_de_liste, pause_chasse (arrête le chronomètre de la chasse d\'un Pokémon).',

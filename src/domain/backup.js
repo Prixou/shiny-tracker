@@ -1,4 +1,5 @@
 // Sauvegardes : export JSON, import (toutes versions), fusion et format compact des QR codes et liens.
+/** @import { AppData } from './types.js' */
 import LZString from 'lz-string';
 import { normalizeCatches } from './catch.js';
 import { normalizeHunt, normalizeHunts } from './hunt.js';
@@ -8,6 +9,9 @@ import { uid } from '../lib/id.js';
 
 export const APP_ID = 'shiny-hunter-pro';
 
+/**
+ * @param {AppData & { settings?: object }} data
+ */
 export const buildExport = ({ catches, hunts, wishlist, lists, settings }) => ({
   app: APP_ID,
   version: 3,
@@ -20,7 +24,12 @@ export const buildExport = ({ catches, hunts, wishlist, lists, settings }) => ({
 });
 
 // Accepte le format v3, v2 ({ shinies }), v1 ({ shinyState, hunts }) et le format compact des QR codes / liens.
+/**
+ * @param {string | object} input JSON, lien d'import, code compact ou objet déjà lu.
+ * @returns {AppData & { settings?: object }}
+ */
 export function parseImport(input) {
+  /** @type {any} Données extérieures, de forme inconnue jusqu'aux vérifications ci-dessous. */
   let data = input;
   if (typeof input === 'string') {
     const text = input.trim();
@@ -50,6 +59,11 @@ const mergeById = (mine, theirs) => {
   return [...map.values()];
 };
 
+/**
+ * @param {AppData} current
+ * @param {AppData} incoming
+ * @returns {AppData}
+ */
 export function mergeData(current, incoming) {
   // Les anciens formats n'ont pas d'identifiant de capture : on évite les doublons (même Pokémon, même date).
   const sig = c => `${c.key}|${c.date}|${c.ball}|${c.count}`;
@@ -64,6 +78,10 @@ export function mergeData(current, incoming) {
 }
 
 // Format compact : suffisamment petit pour tenir dans un QR code (sans les notes).
+/**
+ * @param {AppData} data
+ * @returns {string}
+ */
 export function encodeCompact({ catches, hunts, wishlist, lists }) {
   const compact = {
     c: 3,
@@ -79,6 +97,10 @@ export function encodeCompact({ catches, hunts, wishlist, lists }) {
   return LZString.compressToEncodedURIComponent(JSON.stringify(compact));
 }
 
+/**
+ * @param {string} str
+ * @returns {any}
+ */
 export function decodeCompact(str) {
   const json = LZString.decompressFromEncodedURIComponent(str);
   if (!json) throw new Error('Code illisible');
@@ -100,7 +122,12 @@ function expandCompact(c) {
   return { catches, hunts, wishlist, lists };
 }
 
-/** Lien d'import à ouvrir sur un autre appareil (`base` : adresse de l'app). */
+/**
+ * Lien d'import à ouvrir sur un autre appareil (`base` : adresse de l'app).
+ * @param {AppData} data
+ * @param {string} base
+ * @returns {string}
+ */
 export const importLink = (data, base) => `${base}#import=${encodeCompact(data)}`;
 
 export const backupFilename = () => `shiny-hunter-${todayIso()}.json`;

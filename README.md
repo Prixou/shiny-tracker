@@ -74,6 +74,7 @@ Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex sh
 npm install
 npm run dev       # serveur de dev
 npm run lint      # ESLint
+npm run typecheck # vérification des types (JSDoc + TypeScript)
 npm run build     # build de production dans dist/
 npm run preview   # prévisualiser le build
 npm run data      # régénérer src/data/pokedex.json et encounters.json depuis PokéAPI (api-data)
@@ -81,7 +82,7 @@ npm test          # tests unitaires (Vitest)
 npm run test:e2e  # tests de bout en bout sur écran de téléphone (Playwright)
 ```
 
-Stack : React 19, Vite, Tailwind CSS 4, vite-plugin-pwa (Workbox), zustand (état global), lucide-react, qrcode, lz-string, supabase-js (chargé seulement si la synchro est configurée).
+Stack : React 19, Vite, Tailwind CSS 4, vite-plugin-pwa (Workbox), zustand (état global), TypeScript (vérification des types JSDoc), lucide-react, qrcode, lz-string, supabase-js (chargé seulement si la synchro est configurée).
 
 ### Architecture
 
@@ -97,14 +98,14 @@ src/
   app/        coquille : en-tête, barre du bas, annulation
 ```
 
-Chaque couche n'importe que les couches inférieures (vérifié par ESLint). Les composants s'abonnent à l'état par sélecteur : un appui sur le compteur ne redessine que l'écran de chasse. Le détail des règles est dans [`CLAUDE.md`](CLAUDE.md).
+Chaque couche n'importe que les couches inférieures (vérifié par ESLint). Les données (captures, chasses, listes, réglages, Pokémon…) sont typées en JSDoc (`src/domain/types.js`) et vérifiées par TypeScript, sans réécrire le code en TypeScript. Les composants s'abonnent à l'état par sélecteur : un appui sur le compteur ne redessine que l'écran de chasse. Le détail des règles est dans [`CLAUDE.md`](CLAUDE.md).
 
 ### Tests automatiques
 
 - **Unitaires** (`tests/unit`, Vitest, quelques secondes) : store (annulation, chasses, synchro, sauvegarde automatique), taux shiny publiés de chaque méthode (Charme, chaînes, Masuda, sandwichs, apparitions massives…), meilleures options par Pokémon (formes régionales, Shiny Lock, « Mes jeux », Charme par jeu), priorités avant la fermeture de la Banque, migrations et stockage local, export / import / QR / fusion de la synchro, date de fin estimée, agenda, outils de l'assistant (validation des arguments, actions proposées) et dialogue avec Gemini et Claude (réseau simulé).
 - **De bout en bout** (`tests/e2e`, Playwright) : l'app de production tourne dans Chromium en **412 × 915, tactile, en français**, sans réseau extérieur. Parcours testés : Pokédex (recherche, capture, annulation, filtres et bouton retour), fiche et chasse pré-réglée, compteur de chasse conservé après rechargement, shiny trouvé puis annulé, évènement shiny boosté, Mes jeux, date de fin estimée, Agenda, plan Pokémon Banque et assistant (Gemini simulé). Chaque test vérifie aussi l'absence d'erreur JavaScript et de défilement horizontal.
 - Première fois : `npx playwright install chromium` (ou `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/chemin/vers/chrome` pour utiliser un navigateur déjà installé).
-- Le workflow `.github/workflows/ci.yml` lance le lint et tous les tests sur chaque pull request et sur `main` ; le déploiement ne part que si les tests unitaires passent.
+- Le workflow `.github/workflows/ci.yml` lance le lint, la vérification des types et tous les tests sur chaque pull request et sur `main` ; le déploiement ne part que si les tests unitaires passent.
 
 ## Déploiement (GitHub Pages)
 

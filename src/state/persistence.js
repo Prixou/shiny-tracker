@@ -1,4 +1,6 @@
 // Lecture et écriture du stockage local (localStorage), migration des anciennes clés comprise.
+/** @import { AppData } from '../domain/types.js' */
+/** @import { Settings } from '../domain/settings.js' */
 import { normalizeCatches } from '../domain/catch.js';
 import { normalizeHunts } from '../domain/hunt.js';
 import { normalizeLists } from '../domain/lists.js';
@@ -38,7 +40,10 @@ export const persist = (key, value) => {
   }
 };
 
-/** État initial lu depuis l'appareil, au format actuel. */
+/**
+ * État initial lu depuis l'appareil, au format actuel.
+ * @returns {AppData & { settings: Settings, ui: Record<string, any>, stamp: number }}
+ */
 export function loadState() {
   let catches = read(KEYS.catches);
   const migrated = catches === undefined;
@@ -78,6 +83,8 @@ const SAVED = ['catches', 'hunts', 'wishlist', 'lists', 'settings', 'ui', 'stamp
 /**
  * Enregistre automatiquement les tranches modifiées du store (regroupées par `delay` ms).
  * Renvoie { flush, detach } : `flush` écrit tout de suite ce qui est en attente.
+ * @param {import('zustand/vanilla').StoreApi<any>} store
+ * @param {{ delay?: number }} [options]
  */
 export function attachPersistence(store, { delay = 250 } = {}) {
   const timers = new Map();

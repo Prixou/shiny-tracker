@@ -1,4 +1,5 @@
 // Projection de fin du living dex shiny, d'après le rythme récent de nouvelles espèces.
+/** @import { Catch } from './types.js' */
 import { MAIN_DEX } from '../data/pokedex.js';
 import { REGIONS } from '../data/constants.js';
 
@@ -9,6 +10,8 @@ const MIN_NEW = 3;
 /**
  * `catches` : toutes les captures. Seules les espèces chassables (hors Shiny Lock) comptent.
  * Renvoie { pace (par jour), window (jours), recent, remaining, eta (timestamp|null), regions[] } ou null.
+ * @param {Catch[]} catches
+ * @param {number} [now]
  */
 export function forecast(catches, now = Date.now()) {
   const first = new Map();

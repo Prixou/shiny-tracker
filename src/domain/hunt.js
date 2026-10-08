@@ -1,24 +1,61 @@
 // Chasses : création, migration des anciennes sauvegardes et calculs (compteur, chrono, chance).
+/** @import { Hunt } from './types.js' */
 import { GAME_BY_ID, gameIdFrom } from '../data/games.js';
 import { cumulativeChance, migrateMethod, oddsAt, oddsContext, probAt } from '../data/methods.js';
 import { uid } from '../lib/id.js';
 
-/** Temps de chasse en ms, chrono en cours compris. */
+/**
+ * Temps de chasse en ms, chrono en cours compris.
+ * @param {Hunt} h
+ * @param {number} [now]
+ * @returns {number}
+ */
 export const huntElapsed = (h, now = Date.now()) => h.elapsedMs + (h.startedAt ? Math.max(0, now - h.startedAt) : 0);
-/** Rencontres totales (phases précédentes comprises). */
+/**
+ * Rencontres totales (phases précédentes comprises).
+ * @param {Hunt} h
+ * @returns {number}
+ */
 export const huntTotal = h => h.count + h.phases.reduce((sum, p) => sum + (p.count || 0), 0);
-/** Compteurs de chaque phase, puis de la phase en cours (une chaîne repart à 0 à chaque phase). */
+/**
+ * Compteurs de chaque phase, puis de la phase en cours (une chaîne repart à 0 à chaque phase).
+ * @param {Hunt} h
+ * @returns {number[]}
+ */
 export const huntSegments = h => [...h.phases.map(p => p.count || 0), h.count];
-/** Probabilité d'avoir déjà eu au moins un shiny. */
+/**
+ * Probabilité d'avoir déjà eu au moins un shiny.
+ * @param {Hunt} h
+ * @returns {number}
+ */
 export const huntChance = h => cumulativeChance(h, huntSegments(h));
-/** Taux actuel (1/x), chaîne en cours comprise. */
+/**
+ * Taux actuel (1/x), chaîne en cours comprise.
+ * @param {Hunt} h
+ * @returns {number}
+ */
 export const huntOdds = h => 1 / probAt(oddsContext(h), h.count);
-/** Arrête le chrono en cumulant le temps écoulé. */
+/**
+ * Arrête le chrono en cumulant le temps écoulé.
+ * @param {Hunt} h
+ * @param {number} [now]
+ * @returns {Hunt}
+ */
 export const pauseHunt = (h, now = Date.now()) => (h.startedAt ? { ...h, elapsedMs: huntElapsed(h, now), startedAt: null } : h);
 
-/** Méthode proposée par défaut pour un jeu. */
+/**
+ * Méthode proposée par défaut pour un jeu.
+ * @param {string} gameId
+ * @returns {string}
+ */
 export const defaultMethodFor = gameId => (GAME_BY_ID[gameId]?.methods || ['wild'])[0];
 
+/**
+ * Nouvelle chasse active, compteur à `count`.
+ * @param {Partial<Hunt> & { targetId: string | number }} fields
+ * @param {{ defaultGame?: string, now?: number }} [options]
+ * @returns {Hunt}
+ */
 export function createHunt({ targetId, game, method, opts = {}, charm, customOdds = null, step, count = 0 }, { defaultGame = 'sv', now = Date.now() } = {}) {
   const g = game || defaultGame;
   return {
@@ -29,7 +66,11 @@ export function createHunt({ targetId, game, method, opts = {}, charm, customOdd
   };
 }
 
-/** Chasse au format actuel à partir de n'importe quelle version (null si inexploitable). */
+/**
+ * Chasse au format actuel à partir de n'importe quelle version (null si inexploitable).
+ * @param {any} h Chasse lue (toutes versions).
+ * @returns {Hunt | null}
+ */
 export function normalizeHunt(h) {
   if (!h || !h.targetId) return null;
   const { method, opts } = migrateMethod(h.method);
@@ -58,4 +99,8 @@ export function normalizeHunt(h) {
     notes: h.notes || ''
   };
 }
+/**
+ * @param {unknown} arr
+ * @returns {Hunt[]}
+ */
 export const normalizeHunts = arr => (Array.isArray(arr) ? arr.map(normalizeHunt).filter(Boolean) : []);

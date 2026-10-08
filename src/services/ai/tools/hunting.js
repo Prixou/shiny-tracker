@@ -1,4 +1,5 @@
 // Outils de conseil de chasse : meilleures options, jeux, chasse proposée, priorités avant la Banque.
+/** @import { Tool } from './types.js' */
 import { gamesFor, isAvailableIn } from '../../../data/pokedex.js';
 import { GAMES, GAME_BY_ID, isLockedIn } from '../../../data/games.js';
 import { METHOD_BY_ID, gameMethods, oddsAt } from '../../../data/methods.js';
@@ -9,6 +10,7 @@ import { loadEncounters } from '../../encounters.js';
 import { clampInt } from './validate.js';
 import { resolveOne } from './lookup.js';
 
+/** @type {Tool} */
 export const meilleuresOptions = {
   name: 'meilleures_options',
   description: 'Meilleures façons d\'obtenir un Pokémon en shiny, classées par taux, avec le jeu, la méthode, le taux, les lieux et si le Pokémon pourra aller dans Pokémon HOME. Ce sont les données de référence de l\'app : base tes conseils dessus.',
@@ -49,6 +51,7 @@ export const meilleuresOptions = {
   }
 };
 
+/** @type {Tool} */
 export const infosJeu = {
   name: 'infos_jeu',
   description: 'Méthodes de chasse disponibles dans un jeu (identifiant et nom), taux de base, Charme Chroma, conseil et possibilité de transfert vers Pokémon HOME.',
@@ -74,6 +77,7 @@ export const infosJeu = {
   }
 };
 
+/** @type {Tool} */
 export const proposerChasse = {
   name: 'proposer_chasse',
   description: 'Affiche sous ta réponse une carte avec un bouton pour lancer cette chasse dans l\'app (l\'utilisateur confirme lui-même). Utilise-la quand tu recommandes une chasse précise. Si jeu et méthode correspondent à une option de meilleures_options, ses réglages (sandwich, apparition massive…) sont repris.',
@@ -112,6 +116,7 @@ export const proposerChasse = {
   }
 };
 
+/** @type {Tool} */
 export const prioritesBanque = {
   name: 'priorites_banque',
   description: 'Shiny manquants à chasser en priorité sur DS/3DS avant la fermeture de Pokémon Banque : ceux qu\'on ne peut avoir que sur DS/3DS, puis ceux qui y sont bien plus faciles que sur Switch (selon les jeux de l\'utilisateur).',

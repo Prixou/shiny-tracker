@@ -1,4 +1,5 @@
 // Outils de lecture de la collection : Pokémon, shiny manquants, chasses, captures.
+/** @import { Tool } from './types.js' */
 import { MAIN_DEX, getPokemon, gamesFor } from '../../../data/pokedex.js';
 import { GAME_BY_ID, isLockedIn } from '../../../data/games.js';
 import { METHOD_BY_ID } from '../../../data/methods.js';
@@ -6,6 +7,7 @@ import { REGIONS, POKEMON_TYPES, BALL_BY_ID } from '../../../data/constants.js';
 import { clampInt } from './validate.js';
 import { findPokemon, describePokemon, huntSummary, regionName } from './lookup.js';
 
+/** @type {Tool} */
 export const chercherPokemon = {
   name: 'chercher_pokemon',
   description: 'Cherche un Pokémon par nom français ou anglais, ou par numéro. Renvoie sa clé interne, ses types, sa région, les jeux où il est disponible et si l\'utilisateur l\'a déjà en shiny.',
@@ -21,6 +23,7 @@ export const chercherPokemon = {
   }
 };
 
+/** @type {Tool} */
 export const pokemonManquants = {
   name: 'pokemon_manquants',
   description: 'Liste les Pokémon que l\'utilisateur n\'a pas encore en shiny, avec des filtres facultatifs.',
@@ -52,6 +55,7 @@ export const pokemonManquants = {
   }
 };
 
+/** @type {Tool} */
 export const mesChasses = {
   name: 'mes_chasses',
   description: 'Chasses en cours (rencontres, taux actuel, chance cumulée, durée) et dernières chasses terminées.',
@@ -63,6 +67,7 @@ export const mesChasses = {
   }
 };
 
+/** @type {Tool} */
 export const capturesRecentes = {
   name: 'captures_recentes',
   description: 'Derniers shiny capturés par l\'utilisateur, avec jeu, méthode, rencontres et date.',

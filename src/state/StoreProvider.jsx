@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
+/** @import { AppState, AppStore, Actions } from './store.js' */
 import { createAppStore, selectCatchesByKey, selectShinies } from './store.js';
 import { attachPersistence, clearAll, loadState } from './persistence.js';
 import { feedback } from '../lib/feedback.js';
@@ -39,16 +40,25 @@ export function StoreProvider({ children, store: provided = null }) {
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>;
 }
 
-/** Le store lui-même (lecture ponctuelle avec getState(), sans abonnement). */
+/**
+ * Le store lui-même (lecture ponctuelle avec getState(), sans abonnement).
+ * @returns {AppStore}
+ */
 export const useStoreApi = () => useContext(StoreContext);
 
 /**
  * Abonnement à une partie de l'état : le composant n'est rendu à nouveau que si elle change.
  * Ex. : `const hunts = useAppState(s => s.hunts)` ou `const { ui, settings } = useAppState(s => ({ ui: s.ui, settings: s.settings }))`.
+ * @template T
+ * @param {(s: AppState) => T} selector
+ * @returns {T}
  */
 export const useAppState = selector => useStore(useStoreApi(), useShallow(selector));
 
-/** Actions du store (référence stable, sans abonnement). */
+/**
+ * Actions du store (référence stable, sans abonnement).
+ * @returns {Actions}
+ */
 export const useActions = () => useStoreApi().getState().actions;
 
 /** Dernière capture de chaque espèce : { clé: capture }. */

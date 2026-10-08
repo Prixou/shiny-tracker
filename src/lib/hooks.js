@@ -92,7 +92,7 @@ export function useBackClose(open, onClose) {
 export function useInstallPrompt() {
   const [event, setEvent] = useState(null);
   const [installed, setInstalled] = useState(() =>
-    window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true);
+    window.matchMedia?.('(display-mode: standalone)').matches || /** @type {any} */ (window.navigator).standalone === true);
   useEffect(() => {
     const onPrompt = e => { e.preventDefault(); setEvent(e); };
     const onInstalled = () => { setInstalled(true); setEvent(null); };
@@ -137,6 +137,7 @@ export function useDebouncedValue(value, delay = 150) {
 /**
  * Affichage progressif d'une longue liste (rendu par paquets de `page` éléments au défilement).
  * Renvoie [limite, ref à poser sur un élément sentinelle en bas de liste]. La limite repart à `page` quand `resetKey` change.
+ * @param {{ page?: number, resetKey?: unknown }} [options]
  */
 export function useProgressiveList({ page = 72, resetKey } = {}) {
   const [limit, setLimit] = useState(page);

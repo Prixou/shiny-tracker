@@ -4,8 +4,37 @@ import { SPRITES, STARTER_IDS, SHINY_LOCKED_IDS, regionForId, genForId } from '.
 import { GAMES, GAME_BY_ID, MEGA_GAMES, GMAX_GAMES } from './games.js';
 import { normalize } from '../lib/text.js';
 
+/**
+ * Pokémon de l'application : espèce, forme régionale ou variante.
+ * @typedef {object} Pokemon
+ * @property {string} key Clé de sauvegarde (« 25 », « 37-alola », « 6-mega-x »…), à ne jamais changer.
+ * @property {number} id Numéro du Pokédex national.
+ * @property {number} baseId Numéro de l'espèce de base.
+ * @property {number} pokeId Identifiant PokéAPI (sprites, artworks).
+ * @property {string} name Nom français.
+ * @property {string} enName
+ * @property {string[]} types
+ * @property {string} region
+ * @property {number} gen
+ * @property {boolean} isForm Forme régionale.
+ * @property {boolean} isVariant Méga, Gigamax, forme alternative ou femelle.
+ * @property {'mega' | 'gmax' | 'form' | 'gender'} [variantKind]
+ * @property {string} [spritePath]
+ * @property {boolean} [hasArtwork]
+ * @property {boolean} isStarter
+ * @property {boolean} isLegendary
+ * @property {boolean} isMythical
+ * @property {boolean} isBaby
+ * @property {boolean} canBreed
+ * @property {boolean} isShinyLocked
+ * @property {string} search Texte de recherche normalisé.
+ */
+
+/** @typedef {{ id: number, n: string, e: string, t: string[], g?: number, l?: number, m?: number, b?: number, ne?: number }} RawSpecies */
+/** @type {Map<number, RawSpecies>} */
 const speciesById = new Map(raw.species.map(s => [s.id, s]));
 
+/** @returns {Pokemon} */
 const build = (base, extra) => {
   const p = {
     ...base,
@@ -27,9 +56,11 @@ const species = raw.species.map(s => build({
   isForm: false, isVariant: false
 }, s));
 
+/** @type {Map<string, { id: string, p?: number, t?: string[] }>} */
 const formData = new Map(raw.forms.map(f => [f.id, f]));
 const forms = REGIONAL_FORMS.map(f => {
-  const data = formData.get(f.id) || {};
+  const data = formData.get(f.id) || { id: f.id };
+  /** @type {Partial<RawSpecies>} */
   const base = speciesById.get(f.baseId) || {};
   return build({
     key: f.id, id: f.baseId, baseId: f.baseId, pokeId: data.p || f.baseId,
@@ -43,6 +74,7 @@ const forms = REGIONAL_FORMS.map(f => {
 const VARIANT_LABELS = { mega: 'Méga', gmax: 'Gigamax', form: 'Forme', gender: 'Femelle' };
 const variants = [
   ...(raw.variants || []).map(v => {
+    /** @type {Partial<RawSpecies>} */
     const base = speciesById.get(v.b) || {};
     return build({
       key: v.k, id: v.b, baseId: v.b, pokeId: v.p || v.b, spritePath: v.s,
@@ -61,9 +93,11 @@ const variants = [
 export { VARIANT_LABELS };
 
 const order = p => (p.isVariant ? 2 : p.isForm ? 1 : 0);
+/** @type {Pokemon[]} */
 export const POKEDEX = [...species, ...forms, ...variants].sort((a, b) => a.id - b.id || order(a) - order(b) || a.key.localeCompare(b.key));
 export const MAIN_DEX = POKEDEX.filter(p => !p.isVariant);
 export const POKEMON_BY_KEY = new Map(POKEDEX.map(p => [p.key, p]));
+/** @returns {Pokemon | undefined} */
 export const getPokemon = key => POKEMON_BY_KEY.get(String(key));
 
 // Disponibilité par jeu d'après les Pokédex régionaux.

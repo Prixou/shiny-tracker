@@ -1,4 +1,5 @@
 // Statistiques de la collection et des chasses (écran Stats).
+/** @import { Catch, Hunt } from './types.js' */
 import { MAIN_DEX, POKEDEX, getPokemon } from '../data/pokedex.js';
 import { REGIONS, POKEMON_TYPES, POKE_BALLS } from '../data/constants.js';
 import { GAMES } from '../data/games.js';
@@ -8,7 +9,11 @@ import { huntTotal } from './hunt.js';
 
 const progress = (all, shinies) => ({ total: all.length, value: all.filter(p => shinies[p.key]).length });
 
-/** Captures des 12 derniers mois (le mois en cours en dernier). */
+/**
+ * Captures des 12 derniers mois (le mois en cours en dernier).
+ * @param {Catch[]} catches
+ * @param {Date} [now]
+ */
 export function monthlyCatches(catches, now = new Date()) {
   return Array.from({ length: 12 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
@@ -22,6 +27,9 @@ export function monthlyCatches(catches, now = new Date()) {
   });
 }
 
+/**
+ * @param {{ shinies: Record<string, Catch>, catches: Catch[], hunts: Hunt[], now?: Date }} input
+ */
 export function computeStats({ shinies, catches, hunts, now = new Date() }) {
   const recs = catches.map(rec => ({ p: getPokemon(rec.key), rec })).filter(r => r.p);
   const huntable = MAIN_DEX.filter(p => !p.isShinyLocked);

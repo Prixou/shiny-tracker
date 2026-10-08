@@ -1,4 +1,5 @@
 // Paliers de chance d'une capture, selon le ratio « rencontres / taux » (1 = pile dans le taux).
+/** @import { Catch } from './types.js' */
 
 export const NO_LUCK = { id: 'none', name: 'Non renseigné', desc: 'Saisie manuelle sans compteur', emoji: '🎲', color: 'text-slate-400', bg: 'bg-slate-800/60 border-slate-700' };
 
@@ -12,8 +13,15 @@ export const LUCK_TIERS = [
   { id: 'forgotten', max: Infinity, name: 'Arceus t\'a Oublié', desc: 'Over Odds mythique, tu mérites une statue de seum.', emoji: '🗿', color: 'text-purple-400', bg: 'bg-purple-500/15 border-purple-500/40' }
 ];
 
-/** Palier correspondant à un ratio (null ou 0 : pas de compteur). */
+/**
+ * Palier correspondant à un ratio (null ou 0 : pas de compteur).
+ * @param {number | null | undefined} ratio
+ */
 export const getLuckTier = ratio => (ratio == null || !(ratio > 0) ? NO_LUCK : LUCK_TIERS.find(t => ratio <= t.max));
 
-/** Ratio de chance d'une capture enregistrée (null si inconnu). */
+/**
+ * Ratio de chance d'une capture enregistrée (null si inconnu).
+ * @param {Partial<Catch> | null | undefined} rec
+ * @returns {number | null}
+ */
 export const catchRatio = rec => (rec?.luck != null ? rec.luck : rec?.count > 0 && rec?.odds > 0 ? rec.count / rec.odds : null);
