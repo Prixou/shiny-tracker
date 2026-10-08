@@ -6,7 +6,7 @@ import { Field, Toggle } from './ui.jsx';
 import GameOptions from './GameOptions.jsx';
 
 /** Choix jeu + méthode + options + Charme, avec calcul du taux en direct. */
-export default function OddsConfig({ value, onChange, allowCustom = true }) {
+export default function OddsConfig({ value, onChange, allowCustom = true, charmFor }) {
   const game = GAME_BY_ID[value.game] || GAME_BY_ID.other;
   const methods = gameMethods(game.id);
   const method = METHOD_BY_ID[value.method] || methods[0];
@@ -18,7 +18,7 @@ export default function OddsConfig({ value, onChange, allowCustom = true }) {
   const changeGame = id => {
     const ms = gameMethods(id);
     const next = ms.some(m => m.id === value.method) ? value.method : ms[0].id;
-    onChange({ game: id, method: next, opts: {}, step: METHOD_BY_ID[next]?.step || 1 });
+    onChange({ game: id, method: next, opts: {}, step: METHOD_BY_ID[next]?.step || 1, ...(charmFor ? { charm: charmFor(id) } : {}) });
   };
 
   return (

@@ -50,10 +50,15 @@ export const METHODS = [
   { id: 'pla_mmo', name: 'Mégapparition (LPA)', icon: '📜', unit: 'rencontres', options: [RESEARCH], p: x => roll(x.base, 13 + x.charm + (x.o.research || 0)) },
   {
     id: 'sv_wild', name: 'Sauvage / Apparition massive (ÉV)', icon: '🥪', unit: 'rencontres',
-    options: [SPARKLING('Sandwich Brillance'), { id: 'outbreak', label: 'Apparition massive (compter les KO)', type: 'toggle' }],
+    options: [
+      SPARKLING('Sandwich Brillance'),
+      { id: 'outbreak', label: 'Apparition massive (compter les KO)', type: 'toggle' },
+      { id: 'eventBoost', label: 'Évènement shiny boosté (+0,5 %)', type: 'toggle' }
+    ],
     chain: 60,
-    p: x => roll(x.base, 1 + x.charm + (x.o.sparkling || 0) + (x.o.outbreak ? tier(x.c, [[30, 1], [60, 2]]) : 0)),
-    note: 'En apparition massive : +1 tirage à 30 KO, +2 à 60 KO.'
+    // Évènements boostés : une chance fixe de 0,5 % est tirée avant le sandwich et le Charme.
+    p: x => addRolls(roll(x.base, 1 + x.charm + (x.o.sparkling || 0) + (x.o.outbreak ? tier(x.c, [[30, 1], [60, 2]]) : 0)), 200, x.o.eventBoost ? 1 : 0),
+    note: 'En apparition massive : +1 tirage à 30 KO, +2 à 60 KO. Certaines apparitions massives évènementielles ajoutent 0,5 % de chance shiny.'
   },
   { id: 'za_wild', name: 'Rencontre sauvage (Z-A)', icon: '🍩', unit: 'rencontres', options: [SPARKLING('Donut Brillance')], p: x => roll(x.base, 1 + x.charm + (x.o.sparkling || 0)), note: 'Avec un donut Brillance Nv. 3, la quête d\'Hyperespace « Attraper un shiny » garantit un shiny.' },
   // Resets d'apparitions : chaque cycle relance toutes les apparitions proches (jusqu'à 50 m).

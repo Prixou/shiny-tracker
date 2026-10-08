@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Trophy, MapPin, Timer, Info, ShieldAlert } from 'lucide-react';
 import { GAME_BY_ID } from '../data/constants.js';
 import { bestOptions } from '../lib/bestOptions.js';
+import { bestOptionsPrefs, myGamesSet } from '../lib/myGames.js';
+import { useStore } from '../state/store.jsx';
 import { loadEncounters } from '../lib/encountersData.js';
 import { fmtOdds } from '../lib/utils.js';
 
@@ -13,6 +15,8 @@ export default function BestOptions({ pokemon, onHunt, fallbackTip }) {
   const [data, setData] = useState(null);
   const [expanded, setExpanded] = useState(null);
   const [showAll, setShowAll] = useState(false);
+  const [showOthers, setShowOthers] = useState(false);
+  const { settings } = useStore();
   useEffect(() => {
     let alive = true;
     loadEncounters().then(d => { if (alive) setData(d); }).catch(() => { if (alive) setData({}); });
@@ -20,7 +24,8 @@ export default function BestOptions({ pokemon, onHunt, fallbackTip }) {
   }, []);
 
   if (!data) return <div className="h-40 rounded-3xl bg-slate-950 border border-slate-800 animate-pulse" />;
-  const { main, extra } = bestOptions(pokemon, data);
+  const { main, extra, others } = bestOptions(pokemon, data, bestOptionsPrefs(settings));
+  const filtered = !!myGamesSet(settings);
 
   return (
     <section className="p-4 rounded-3xl bg-slate-950 border border-amber-500/25 space-y-3">
@@ -29,7 +34,7 @@ export default function BestOptions({ pokemon, onHunt, fallbackTip }) {
       {main.length === 0 ? (
         <p className="flex gap-2 text-sm text-slate-300 leading-relaxed">
           {pokemon.isShinyLocked ? <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" /> : <Info className="w-4 h-4 shrink-0 mt-0.5 text-slate-500" />}
-          {fallbackTip || 'Pas de méthode de chasse connue : évolution, échange ou distribution.'}
+          {filtered && others.length ? 'Aucune option dans tes jeux.' : fallbackTip || 'Pas de méthode de chasse connue : évolution, échange ou distribution.'}
         </p>
       ) : main.slice(0, showAll ? main.length : SHOWN).map((o, i) => {
         const game = GAME_BY_ID[o.game];
@@ -77,13 +82,30 @@ export default function BestOptions({ pokemon, onHunt, fallbackTip }) {
         </button>
       )}
 
+      {others.length > 0 && (
+        <div className="space-y-1.5">
+          <button onClick={() => setShowOthers(v => !v)} className="btn-ghost w-full min-h-10 text-xs">
+            {showOthers ? 'Masquer les jeux que tu n\'as pas' : `${others.length} option${others.length > 1 ? 's' : ''} dans des jeux que tu n'as pas`}
+          </button>
+          {showOthers && others.map(o => {
+            const game = GAME_BY_ID[o.game];
+            return (
+              <button key={o.game} onClick={() => onHunt(o.cfg)} className="w-full flex items-center justify-between gap-3 px-3 min-h-11 rounded-2xl bg-slate-900 border border-slate-800 text-left opacity-80">
+                <span className="text-xs text-slate-300 min-w-0"><strong className="text-slate-100">{game?.icon} {game?.short}</strong> · {o.label}</span>
+                <span className="text-sm font-mono font-black text-slate-200 shrink-0">{fmtOdds(o.odds)}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {extra.map(o => (
         <button key={o.game} onClick={() => onHunt(o.cfg)} className="w-full flex items-center justify-between gap-3 px-3 min-h-11 rounded-2xl bg-slate-900 border border-slate-800 text-left">
           <span className="text-xs text-slate-300 min-w-0"><strong className="text-slate-100">📱 Pokémon GO</strong> · {o.label}</span>
           <span className="text-sm font-mono font-black text-slate-200 shrink-0">{fmtOdds(o.odds)}</span>
         </button>
       ))}
-      <p className="text-[11px] text-slate-500">Taux maximaux (Charme Chroma et bonus inclus). Lieux : PokéAPI et PKHeX ; les apparitions massives d'ÉV sont estimées.</p>
+      <p className="text-[11px] text-slate-500">{filtered ? 'Selon tes jeux et tes Charmes Chroma (Réglages → Mes jeux).' : 'Taux maximaux (Charme Chroma et bonus inclus).'} Lieux : PokéAPI et PKHeX ; les apparitions massives d'ÉV sont estimées.</p>
     </section>
   );
 }

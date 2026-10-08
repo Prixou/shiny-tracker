@@ -11,7 +11,8 @@ Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex sh
 - **Disponibilité réelle par jeu** d'après les Pokédex régionaux (Z-A + Mega Dimension, ÉV + DLC, Champions, LPA, EB + DLC…) et **Shiny Lock par jeu**.
 - **Plusieurs exemplaires** d'un même shiny, chacun avec ses détails (nature, talent, niveau, Baron, marque, type Téra…).
 - **Listes perso** (« À faire en Z-A », « Préférés »…) en plus des Objectifs.
-- **Meilleures options shiny** sur chaque fiche : les jeux classés par meilleur taux atteignable (méthode, bonus, lieux) avec un bouton « Chasser » pré-réglé.
+- **Meilleures options shiny** sur chaque fiche : les jeux classés par meilleur taux atteignable (méthode, bonus, lieux, et à défaut pleine chance ou Soft Reset) avec un bouton « Chasser » pré-réglé.
+- **Mes jeux** : jeux possédés et Charme Chroma jeu par jeu ; meilleures options, nouvelles chasses, filtre « Dans mes jeux » et assistant en tiennent compte.
 - **Où le trouver** : lieux de capture de tous les jeux, en français (Gen 1 à 9, Légendes Arceus avec apparitions massives et Mégapparitions, Z-A et Hyperespace).
 - Recherche instantanée tolérante aux accents (« electhor » trouve « Électhor »), par nom FR/EN ou numéro.
 - Filtres dans un panneau glissant : régions, types (double type possible), catégories (légendaires, fabuleux, starters, bébés, formes, Shiny Lock), jeu, méthode, Poké Ball.
@@ -23,6 +24,7 @@ Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex sh
 - Plusieurs chasses en parallèle, chronomètre (pause auto quand l'app passe en arrière-plan), **écran maintenu allumé**.
 - **Taux exacts par jeu** (1/8192 en Gen 2-5, 1/4096 ensuite, Charme Chroma ×4 en Z-A…) calculés par « tirages » et combinables : Brillance (sandwich / donut), recherche Pokédex LPA, apparitions massives, Parfum…
 - **Taux dynamiques** qui évoluent avec la chaîne : Combo Capture, SOS, pêche à la chaîne, Poké Radar, KO en apparition massive (ÉV).
+- **Apparitions massives boostées** d'ÉV : option « Évènement shiny boosté » (+0,5 %, tirée avant sandwich et Charme).
 - **Mode œufs** (+30 = une boîte, décompte des boîtes) et hordes (+5).
 - **Méthodes Z-A** : téléportation en boucle, banc jour/nuit et escalier de la Zone Sauvage 3, avec le nombre de Pokémon ciblés par cycle.
 - **Phases** (un autre shiny apparaît : le compteur repart, le total est conservé), chance cumulée, rythme/heure, temps estimé.
@@ -31,10 +33,11 @@ Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex sh
 
 ### 📚 Journal & 📊 Statistiques
 - Journal groupé par mois, recherche (nom, surnom, notes), tris (chance, rencontres…), **export CSV**.
-- Stats : progression globale (et hors Shiny Lock), par région, type, méthode, jeu, Ball, répartition de la chance, podiums, captures sur 12 mois.
+- Stats : progression globale (et hors Shiny Lock), **date de fin estimée** du living dex (au total et par région, selon ton rythme récent), par région, type, méthode, jeu, Ball, répartition de la chance, podiums, captures sur 12 mois.
 
 ### 🧰 Outils
 - **Tirage aléatoire** de la prochaine cible (manquants / objectifs / tous, par région, type et jeu).
+- **Agenda des jeux** : raids 7★, apparitions massives, distributions, codes Cadeau Mystère (copie en un geste) et échéances (fermeture de Pokémon Banque), mis à jour à la main (`src/data/events.js`).
 - **Recettes** : sandwichs Brillance Nv.3 par type (ÉV) et donuts Brillance (Z-A Mega Dimension).
 - **Calculateur de probabilités** avec courbe interactive (glisser le doigt) et rencontres nécessaires pour 50/75/90/95/99 %.
 - **Synchronisation cloud** (optionnelle) : compte par e-mail, données à jour en direct entre téléphone et PC.
@@ -45,6 +48,8 @@ Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex sh
 ### 🤖 Assistant de chasse (IA)
 - **Bouton flottant** ✨ : une discussion en panneau glissant, qui connaît ta collection, tes chasses, tes objectifs et les meilleures options de l'app.
 - **Cartes « Chasser »** : quand l'assistant recommande une chasse, un bouton la lance pré-réglée (jeu, méthode, bonus).
+- **Cartes « Appliquer »** : l'assistant peut proposer d'ajouter des objectifs, créer ou remplir une liste, mettre un chrono en pause ; rien n'est fait sans ta validation (et tout est annulable).
+- **Recherche web** (avec Claude) pour l'actualité : raids, évènements, codes, avec les sources affichées (≈ 1 centime par recherche, désactivable).
 - **Deux fournisseurs au choix** : **Gemini** avec une clé gratuite Google AI Studio (quota quotidien), ou **Claude** avec une clé API Anthropic payante à l'usage (Opus 5.5, Sonnet 5.5 ou Haiku 5.5).
 - **Clé gardée sur l'appareil** : jamais incluse dans les sauvegardes, QR codes ni la synchro cloud. Les bibliothèques IA ne sont téléchargées qu'à la première utilisation.
 - Champ « Ce que l'assistant doit savoir sur toi » (préférences, consoles, règles de ton living dex) et rappel de la fermeture de Pokémon Banque (27/02/2027).

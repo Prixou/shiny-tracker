@@ -6,12 +6,41 @@ const MAX_ROUNDS = 8;
 
 const client = apiKey => new Anthropic({ apiKey, dangerouslyAllowBrowser: true, maxRetries: 2 });
 
-const tools = TOOL_DEFS.map(t => ({
+const appTools = TOOL_DEFS.map(t => ({
   name: t.name,
   description: t.description,
   input_schema: t.schema,
   eager_input_streaming: true // les arguments arrivent au fil de l'eau ; on les valide avant d'exécuter l'outil
 }));
+
+// Recherche et lecture web (outils exécutés par Anthropic, ≈ 0,01 $ par recherche).
+// Haiku n'a pas le filtrage dynamique : il garde les versions de base.
+function webTools(model) {
+  const dynamic = model !== 'claude-haiku-5-5';
+  return [
+    {
+      type: dynamic ? 'web_search_20260209' : 'web_search_20250305', name: 'web_search', max_uses: 3,
+      user_location: { type: 'approximate', country: 'FR', timezone: 'Europe/Paris' }
+    },
+    { type: dynamic ? 'web_fetch_20260209' : 'web_fetch_20250910', name: 'web_fetch', max_uses: 3, max_content_tokens: 8000 }
+  ];
+}
+
+/** Sources citées (ou trouvées) par la recherche web dans un message. */
+function collectSources(content, into) {
+  for (const block of content) {
+    if (block.type === 'text') {
+      for (const c of block.citations || []) if (c.url) into.set(c.url, c.title || null);
+    }
+  }
+  if (!into.size) {
+    for (const block of content) {
+      if (block.type === 'web_search_tool_result' && Array.isArray(block.content)) {
+        for (const r of block.content.slice(0, 4)) if (r.url) into.set(r.url, r.title || null);
+      }
+    }
+  }
+}
 
 /** Message d'erreur compréhensible à partir d'une erreur du SDK. */
 export function describeError(err) {
@@ -37,8 +66,11 @@ export async function checkKey(apiKey, model) {
  * Un tour de conversation : envoie l'historique (format Anthropic, jamais modifié, seulement complété),
  * exécute les outils demandés et recommence jusqu'à la réponse finale.
  */
-export async function runTurn({ apiKey, model, system, history, userText, execTool, onText, onTool, onRound, signal }) {
+export async function runTurn({ apiKey, model, system, history, userText, execTool, onText, onTool, onRound, signal, webSearch = false }) {
   const anthropic = client(apiKey);
+  const tools = webSearch ? [...appTools, ...webTools(model)] : appTools;
+  const sources = new Map();
+  const result = extra => ({ ...extra, sources: [...sources].map(([url, title]) => ({ url, title })) });
   const messages = [...history, { role: 'user', content: userText }];
   const fallback = model !== 'claude-haiku-5-5'; // pas de repli côté serveur pour Haiku
   let jsonRetries = 0;
@@ -57,6 +89,10 @@ export async function runTurn({ apiKey, model, system, history, userText, execTo
     };
     const stream = anthropic.beta.messages.stream(params, { signal });
     stream.on('text', delta => onText(delta));
+    // Les outils web s'exécutent côté serveur : on l'indique dès le début du bloc.
+    stream.on('streamEvent', event => {
+      if (event.type === 'content_block_start' && event.content_block.type === 'server_tool_use') onTool(event.content_block.name);
+    });
 
     let message;
     try {
@@ -69,13 +105,14 @@ export async function runTurn({ apiKey, model, system, history, userText, execTo
     }
 
     if (message.stop_reason === 'refusal') {
-      return { history: messages, refused: true };
+      return result({ history: messages, refused: true });
     }
+    collectSources(message.content, sources);
     messages.push({ role: 'assistant', content: message.content });
     if (message.stop_reason === 'pause_turn') continue;
 
     const calls = message.content.filter(b => b.type === 'tool_use');
-    if (!calls.length) return { history: messages, truncated: message.stop_reason === 'max_tokens' };
+    if (!calls.length) return result({ history: messages, truncated: message.stop_reason === 'max_tokens' });
     if (message.stop_reason === 'max_tokens') throw new Error('Réponse coupée pendant un appel d\'outil : réessaie avec une question plus simple.');
 
     const results = await Promise.all(calls.map(async call => {

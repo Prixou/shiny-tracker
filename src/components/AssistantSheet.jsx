@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Sparkles, Send, Square, Settings2, SquarePen, Timer, Info, WifiOff, AlertTriangle, KeyRound } from 'lucide-react';
+import { Sparkles, Send, Square, Settings2, SquarePen, Timer, Info, WifiOff, AlertTriangle, KeyRound, Check, Star, ListPlus, PauseCircle, Globe, ExternalLink } from 'lucide-react';
 import { useStore } from '../state/store.jsx';
 import { useNav } from '../state/nav.jsx';
 import { getPokemon, MAIN_DEX } from '../data/pokedex.js';
 import { GAME_BY_ID } from '../data/constants.js';
 import { METHOD_BY_ID, oddsAt } from '../data/methods.js';
-import { loadAiConfig, saveAiConfig, loadChat, saveChat, activeModel, isConfigured, PROVIDERS, CLAUDE_MODELS } from '../lib/ai/config.js';
+import { loadAiConfig, saveAiConfig, loadChat, saveChat, activeModel, isConfigured, webSearchOn, PROVIDERS, CLAUDE_MODELS } from '../lib/ai/config.js';
 import { buildContext, runTool } from '../lib/ai/tools.js';
 import { useOnline, feedback } from '../lib/hooks.js';
 import { fmtOdds } from '../lib/utils.js';
-import { Sheet, Sprite } from './ui.jsx';
+import { Sheet, Sprite, useToast } from './ui.jsx';
 import AiSettingsSheet from './AiSettingsSheet.jsx';
 
 const TOOL_LABELS = {
@@ -19,7 +19,9 @@ const TOOL_LABELS = {
   mes_chasses: 'Lecture de tes chasses…',
   captures_recentes: 'Lecture de tes captures…',
   infos_jeu: 'Consultation du jeu…',
-  proposer_chasse: 'Préparation de la chasse…'
+  proposer_chasse: 'Préparation de la chasse…',
+  proposer_action: 'Préparation de la modification…',
+  web_search: 'Recherche sur le web…'
 };
 
 const REFUSAL = 'Je ne peux pas répondre à cette demande. Reformule-la ou pose une autre question sur ta chasse.';
@@ -96,7 +98,90 @@ function HuntCard({ action }) {
   );
 }
 
-function Message({ item }) {
+const CHANGE_TEXT = {
+  ajouter_objectifs: a => ({ icon: Star, title: `Ajouter ${a.keys.length} Pokémon à tes objectifs` }),
+  retirer_objectifs: a => ({ icon: Star, title: `Retirer ${a.keys.length} Pokémon de tes objectifs` }),
+  creer_liste: a => ({ icon: ListPlus, title: `Créer la liste ${a.emoji} ${a.name}${a.keys.length ? ` (${a.keys.length} Pokémon)` : ''}` }),
+  ajouter_a_liste: a => ({ icon: ListPlus, title: `Ajouter ${a.keys.length} Pokémon à ${a.emoji} ${a.name}` }),
+  retirer_de_liste: a => ({ icon: ListPlus, title: `Retirer ${a.keys.length} Pokémon de ${a.emoji} ${a.name}` }),
+  pause_chasse: a => ({ icon: PauseCircle, title: `Mettre en pause le chrono de ${getPokemon(a.keys[0])?.name || 'la chasse'}` })
+};
+
+/** Carte de modification proposée par l'assistant : rien n'est fait avant « Appliquer ». */
+function ChangeCard({ action, onStatus }) {
+  const { setWishes, createList, setInList, toggleTimer, lists, hunts } = useStore();
+  const toast = useToast();
+  const text = CHANGE_TEXT[action.kind]?.(action);
+  if (!text) return null;
+  const Icon = text.icon;
+  const pokemons = action.keys.map(getPokemon).filter(Boolean);
+  const apply = () => {
+    const keyMap = Object.fromEntries(action.keys.map(k => [k, true]));
+    switch (action.kind) {
+      case 'ajouter_objectifs': setWishes(action.keys, true); break;
+      case 'retirer_objectifs': setWishes(action.keys, false); break;
+      case 'creer_liste': createList({ name: action.name, emoji: action.emoji, keys: keyMap }); break;
+      case 'ajouter_a_liste':
+      case 'retirer_de_liste':
+        if (!lists.some(l => l.id === action.listId)) { toast('Cette liste n\'existe plus', { type: 'error' }); return; }
+        setInList(action.listId, action.keys, action.kind === 'ajouter_a_liste');
+        break;
+      case 'pause_chasse': {
+        const h = hunts.find(x => x.id === action.huntId);
+        if (h?.startedAt) toggleTimer(h.id);
+        break;
+      }
+      default: return;
+    }
+    feedback.success();
+    onStatus('done');
+  };
+  return (
+    <div className={`mt-2 p-3 rounded-2xl border space-y-3 ${action.status === 'done' ? 'bg-emerald-500/5 border-emerald-500/30' : 'bg-slate-950 border-sky-500/30'}`}>
+      <div className="flex items-start gap-2.5">
+        <Icon className="w-5 h-5 shrink-0 text-sky-300 mt-0.5" />
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-black text-white">{text.title}</div>
+          {action.label && <div className="text-xs text-slate-400 mt-0.5">{action.label}</div>}
+        </div>
+      </div>
+      {pokemons.length > 0 && action.kind !== 'pause_chasse' && (
+        <div className="flex flex-wrap gap-1">
+          {pokemons.slice(0, 10).map(p => <Sprite key={p.key} pokemon={p} className="w-9 h-9" />)}
+          {pokemons.length > 10 && <span className="self-center text-xs font-bold text-slate-400">+{pokemons.length - 10}</span>}
+        </div>
+      )}
+      {action.status === 'done' ? (
+        <div className="flex items-center gap-1.5 text-sm font-bold text-emerald-300"><Check className="w-4 h-4" /> Fait · annulable avec le bouton ↶ en haut de l'écran</div>
+      ) : action.status === 'dismissed' ? (
+        <div className="text-xs font-bold text-slate-500">Ignoré</div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          <button className="btn-primary min-h-11" onClick={apply}><Check className="w-4 h-4" /> Appliquer</button>
+          <button className="btn-secondary min-h-11" onClick={() => onStatus('dismissed')}>Ignorer</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Sources({ sources }) {
+  return (
+    <div className="mt-3 space-y-1.5">
+      <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-slate-500"><Globe className="w-3.5 h-3.5" /> Sources</div>
+      <div className="flex flex-wrap gap-1.5">
+        {sources.slice(0, 6).map(src => (
+          <a key={src.url} href={src.url} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 max-w-full min-h-8 px-2.5 rounded-full bg-slate-950 border border-slate-800 text-xs text-slate-300">
+            <span className="truncate max-w-[14rem]">{src.title || new URL(src.url).hostname}</span> <ExternalLink className="w-3 h-3 shrink-0 text-slate-500" />
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Message({ item, onActionStatus }) {
   if (item.role === 'user') {
     return (
       <div className="flex justify-end">
@@ -120,7 +205,10 @@ function Message({ item }) {
             <Sparkles className="w-3.5 h-3.5 animate-spin" /> {TOOL_LABELS[item.tool] || 'Consultation de l\'app…'}
           </div>
         )}
-        {item.actions?.map((a, i) => <HuntCard key={i} action={a} />)}
+        {item.actions?.map((a, i) => (a.type === 'change'
+          ? <ChangeCard key={i} action={a} onStatus={status => onActionStatus(i, status)} />
+          : <HuntCard key={i} action={a} />))}
+        {item.sources?.length > 0 && <Sources sources={item.sources} />}
         {item.error && (
           <div className="mt-2 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-sm text-rose-200 flex gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" /> {item.error}
@@ -185,9 +273,10 @@ export default function AssistantSheet({ open, onClose }) {
     const provider = cfg.provider;
     const s = storeRef.current;
     // Changer de fournisseur ou de modèle démarre une nouvelle conversation (historiques incompatibles).
-    const base = chat && chat.provider === provider && chat.model === model
+    const web = webSearchOn(cfg);
+    const base = chat && chat.provider === provider && chat.model === model && !!chat.webSearch === web
       ? chat
-      : { provider, model, system: buildContext(s, cfg.profile), native: [], items: chat?.items?.length ? [...chat.items, { role: 'note', text: `Nouvelle conversation avec ${PROVIDERS[provider].name}` }] : [] };
+      : { provider, model, webSearch: web, system: buildContext(s, cfg.profile, { webSearch: web }), native: [], items: chat?.items?.length ? [...chat.items, { role: 'note', text: `Nouvelle conversation avec ${PROVIDERS[provider].name}` }] : [] };
     setInput('');
     setBusy(true);
     feedback.tap();
@@ -215,6 +304,7 @@ export default function AssistantSheet({ open, onClose }) {
         history: base.native,
         userText: text,
         signal: ctl.signal,
+        webSearch: web,
         execTool: (name, args) => runTool(name, args, {
           s: storeRef.current,
           onAction: a => { actions.push(a); patchLast({ actions: [...actions] }); }
@@ -230,7 +320,7 @@ export default function AssistantSheet({ open, onClose }) {
       setChat(c => {
         if (!c) return c;
         const next = [...c.items];
-        next[next.length - 1] = { ...next[next.length - 1], text: res.refused ? REFUSAL : acc, pending: false, tool: null };
+        next[next.length - 1] = { ...next[next.length - 1], text: res.refused ? REFUSAL : acc, pending: false, tool: null, sources: res.sources?.length ? res.sources : undefined };
         return { ...c, native: res.history, items: next };
       });
       if (!res.refused) feedback.vibrate(8);
@@ -245,6 +335,18 @@ export default function AssistantSheet({ open, onClose }) {
   };
 
   const stop = () => abortRef.current?.abort();
+
+  // Mémorise « appliqué » / « ignoré » sur une carte de modification.
+  const setActionStatus = (itemIndex, actionIndex, status) => setChat(c => {
+    if (!c) return c;
+    const next = [...c.items];
+    const item = next[itemIndex];
+    if (!item?.actions?.[actionIndex]) return c;
+    const actions = [...item.actions];
+    actions[actionIndex] = { ...actions[actionIndex], status };
+    next[itemIndex] = { ...item, actions };
+    return { ...c, items: next };
+  });
 
   const missingWish = MAIN_DEX.find(p => store.wishlist[p.key] && !store.shinies[p.key]);
   const suggestions = [
@@ -326,7 +428,7 @@ export default function AssistantSheet({ open, onClose }) {
           <div className="space-y-5 pb-2">
             {items.map((item, i) => (item.role === 'note'
               ? <div key={i} className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-500">{item.text}</div>
-              : <Message key={i} item={item} />))}
+              : <Message key={i} item={item} onActionStatus={(ai, status) => setActionStatus(i, ai, status)} />))}
           </div>
         )}
       </Sheet>

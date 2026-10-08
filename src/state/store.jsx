@@ -5,6 +5,7 @@ import { GAME_BY_ID } from '../data/constants.js';
 import { oddsAt, cumulativeChance, luckRatio, oddsContext, probAt } from '../data/methods.js';
 import { todayIso, uid } from '../lib/utils.js';
 import { feedback } from '../lib/hooks.js';
+import { hasCharm } from '../lib/myGames.js';
 
 const StoreContext = createContext(null);
 
@@ -166,7 +167,7 @@ export function StoreProvider({ children }) {
       const now = Date.now();
       return {
         id: uid(), key: String(key), date: todayIso(), timestamp: now, method, opts: {}, ball: 'pokeball', game,
-        count: 0, elapsedMs: 0, odds: Math.round(oddsAt({ game, method, charm: settings.charm, opts: extra.opts || {} })), luck: null,
+        count: 0, elapsedMs: 0, odds: Math.round(oddsAt({ game, method, charm: hasCharm(settings, game), opts: extra.opts || {} })), luck: null,
         phases: 0, nickname: '', gender: '', notes: '', huntId: null, updatedAt: now, ...extra
       };
     };
@@ -210,6 +211,24 @@ export function StoreProvider({ children }) {
           if (next[key]) delete next[key]; else next[key] = true;
           return next;
         });
+      },
+      // Versions groupées (une seule entrée d'annulation), utilisées par l'assistant.
+      setWishes(keys, on) {
+        pushUndo(on ? 'Objectifs ajoutés' : 'Objectifs retirés', { wishlist: keys });
+        setWishlist(prev => {
+          const next = { ...prev };
+          keys.forEach(k => { if (on) next[k] = true; else delete next[k]; });
+          return next;
+        });
+      },
+      setInList(listId, keys, on) {
+        pushUndo('Liste modifiée', { lists: [listId] });
+        setLists(prev => prev.map(l => {
+          if (l.id !== listId) return l;
+          const next = { ...l.keys };
+          keys.forEach(k => { if (on) next[k] = true; else delete next[k]; });
+          return { ...l, keys: next, updatedAt: Date.now() };
+        }));
       },
       createList({ name, emoji = '📌', keys = {} }) {
         const list = { id: uid(), name: name.trim().slice(0, 40) || 'Nouvelle liste', emoji, keys, updatedAt: Date.now() };
@@ -326,7 +345,7 @@ export function StoreProvider({ children }) {
         setUi(keepUi);
       }
     };
-  }, [settings.defaultGame, settings.charm, setSettings, setUiValue, updateHunt, pushUndo, undo]);
+  }, [settings, setSettings, setUiValue, updateHunt, pushUndo, undo]);
 
   const value = useMemo(() => ({
     catches, shinies, catchesByKey, hunts, wishlist, lists, settings, ui, undoStack, dataStamp, ...actions

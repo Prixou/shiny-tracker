@@ -12,7 +12,7 @@ export const PROVIDERS = {
     keyHint: 'Commence par « AIza »',
     // Modèle choisi par défaut si la liste des modèles n'a pas pu être lue.
     defaultModel: 'gemini-flash-lite-latest',
-    note: 'Clé gratuite créée sur Google AI Studio avec ton compte Google, sans carte bancaire. Quota limité par jour (environ 500 requêtes en Flash-Lite, une vingtaine en Flash). Sur l\'offre gratuite, Google peut utiliser tes questions pour améliorer ses produits.'
+    note: 'Clé gratuite créée sur Google AI Studio avec ton compte Google, sans carte bancaire. Quota limité par jour (environ 500 requêtes en Flash-Lite, une vingtaine en Flash). Sur l\'offre gratuite, Google peut utiliser tes questions pour améliorer ses produits, et la recherche web n\'est pas disponible.'
   },
   claude: {
     id: 'claude',
@@ -32,7 +32,7 @@ export const CLAUDE_MODELS = [
   { id: 'claude-haiku-5-5', name: 'Claude Haiku 5.5', desc: 'Le plus économique · < 0,001 $ par question' }
 ];
 
-const DEFAULTS = { provider: 'gemini', keys: {}, models: {} };
+const DEFAULTS = { provider: 'gemini', keys: {}, models: {}, webSearch: true };
 
 export function loadAiConfig() {
   try {
@@ -53,6 +53,8 @@ export function saveAiConfig(cfg) {
 
 export const activeModel = cfg => cfg.models[cfg.provider] || PROVIDERS[cfg.provider].defaultModel;
 export const isConfigured = cfg => !!cfg.keys[cfg.provider];
+// La recherche web n'est proposée qu'avec Claude (l'offre gratuite de Gemini ne la permet pas avec ses outils).
+export const webSearchOn = cfg => cfg.provider === 'claude' && cfg.webSearch !== false;
 
 export function loadChat() {
   try {

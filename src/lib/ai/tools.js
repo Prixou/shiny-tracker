@@ -7,9 +7,13 @@ import { huntTotal, huntOdds, huntChance, huntElapsed } from '../../state/store.
 import { bestOptions } from '../bestOptions.js';
 import { loadEncounters } from '../encountersData.js';
 import { normalize, formatDuration } from '../utils.js';
+import { bestOptionsPrefs, hasCharm, myGamesSet } from '../myGames.js';
+import { EVENTS, EVENTS_UPDATED, eventStatus } from '../../data/events.js';
 
 // Fermeture de Pokémon Banque (et donc de Poké Transporter) : plus de transfert 3DS/DS → HOME.
-export const BANK_CLOSING = '2027-02-27';
+// Fin février 2027 : le 25 aux États-Unis, le 26 ou 27 selon les sources ; on retient la date la plus prudente.
+export const BANK_CLOSING = '2027-02-25';
+const BANK_TEXT = 'fin février 2027 (avant le 25 pour être sûr)';
 const bankOpen = () => new Date() < new Date(`${BANK_CLOSING}T00:00:00`);
 
 /** Le jeu permet-il d'envoyer un Pokémon dans Pokémon HOME ? */
@@ -18,11 +22,11 @@ function homeTransfer(gameId) {
   if (!g) return 'inconnu';
   if (g.platform === 'switch' || g.platform === 'mobile') return g.id === 'champions' ? 'à vérifier' : 'oui';
   if (g.platform === '3ds' || g.platform === 'ds' || g.vc3ds) {
-    return bankOpen() ? `oui, via Pokémon Banque jusqu'au 27/02/2027 seulement` : 'non (Pokémon Banque fermée le 27/02/2027)';
+    return bankOpen() ? `oui, via Pokémon Banque jusqu'à ${BANK_TEXT} seulement` : 'non (Pokémon Banque fermée fin février 2027)';
   }
   // Rouge Feu / Vert Feuille sur Switch : compatibles avec HOME depuis la version 4.1.0 (7 octobre 2026).
-  if (g.id === 'frlg') return `oui depuis la version Switch (HOME 4.1.0, octobre 2026) ; depuis la cartouche GBA, seulement via une DS puis la Banque${bankOpen() ? ' jusqu\'au 27/02/2027' : ' (plus possible)'}`;
-  if (g.platform === 'gba') return bankOpen() ? 'seulement via une DS (Pal Park) puis la Banque, jusqu\'au 27/02/2027' : 'non';
+  if (g.id === 'frlg') return `oui depuis la version Switch (HOME 4.1.0, octobre 2026) ; depuis la cartouche GBA, seulement via une DS puis la Banque${bankOpen() ? ` jusqu'à ${BANK_TEXT}` : ' (plus possible)'}`;
+  if (g.platform === 'gba') return bankOpen() ? `seulement via une DS (Pal Park) puis la Banque, jusqu'à ${BANK_TEXT}` : 'non';
   return 'inconnu';
 }
 
@@ -85,6 +89,8 @@ function huntSummary(h) {
     phases: h.phases.length
   };
 }
+
+const ACTIONS = ['ajouter_objectifs', 'retirer_objectifs', 'creer_liste', 'ajouter_a_liste', 'retirer_de_liste', 'pause_chasse'];
 
 /* ---------- Définitions (format neutre : JSON Schema) ---------- */
 export const TOOL_DEFS = [
@@ -155,6 +161,21 @@ export const TOOL_DEFS = [
       },
       required: ['pokemon', 'jeu']
     }
+  },
+  {
+    name: 'proposer_action',
+    description: 'Propose une modification des données de l\'utilisateur. Une carte « Appliquer » s\'affiche : rien n\'est fait tant qu\'il n\'a pas appuyé dessus, donc ne dis jamais que c\'est fait. Actions : ajouter_objectifs, retirer_objectifs, creer_liste (avec nom et Pokémon), ajouter_a_liste, retirer_de_liste, pause_chasse (arrête le chronomètre de la chasse d\'un Pokémon).',
+    schema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ACTIONS, description: 'Type de modification' },
+        pokemon: { type: 'array', items: { type: 'string' }, description: 'Clés internes ou noms des Pokémon concernés (30 au plus)' },
+        liste: { type: 'string', description: 'Nom de la liste (creer_liste, ajouter_a_liste, retirer_de_liste)' },
+        emoji: { type: 'string', description: 'Emoji de la nouvelle liste (facultatif)' },
+        resume: { type: 'string', description: 'Une phrase courte affichée sur la carte' }
+      },
+      required: ['action']
+    }
   }
 ];
 
@@ -169,8 +190,10 @@ function validate(def, args) {
     if (!spec) continue;
     const ok = spec.type === 'integer' ? Number.isFinite(Number(value))
       : spec.type === 'boolean' ? typeof value === 'boolean'
-        : typeof value === 'string';
+        : spec.type === 'array' ? Array.isArray(value) && value.every(v => typeof v === 'string' || typeof v === 'number')
+          : typeof value === 'string';
     if (!ok) throw new Error(`Argument « ${key} » : type ${spec.type} attendu.`);
+    if (spec.enum && !spec.enum.includes(value)) throw new Error(`Argument « ${key} » : valeur parmi ${spec.enum.join(', ')} attendue.`);
   }
 }
 
@@ -196,7 +219,7 @@ export async function runTool(name, args, ctx) {
     case 'meilleures_options': {
       const p = resolveOne(args.pokemon);
       const data = await loadEncounters();
-      const { main, extra } = bestOptions(p, data);
+      const { main, extra, others } = bestOptions(p, data, bestOptionsPrefs(s.settings));
       const fmt = o => {
         const g = GAME_BY_ID[o.game];
         return {
@@ -209,6 +232,7 @@ export async function runTool(name, args, ctx) {
           lieux: o.locations.slice(0, 8),
           estimation: o.estimate || undefined,
           remarque: o.note || undefined,
+          charme_chroma_compte: !!o.cfg.charm,
           transfert_home: homeTransfer(o.game)
         };
       };
@@ -216,7 +240,8 @@ export async function runTool(name, args, ctx) {
         pokemon: p.name,
         cle: p.key,
         shiny_capture: !!s.shinies[p.key],
-        options: main.map(fmt),
+        options: main.slice(0, 8).map(fmt),
+        options_dans_des_jeux_non_possedes: myGamesSet(s.settings) ? others.slice(0, 5).map(fmt) : undefined,
         pokemon_go: extra.map(fmt),
         a_savoir: main.length ? undefined : 'Aucune option sauvage connue : évènement, échange, reproduction ou évolution.'
       };
@@ -291,16 +316,61 @@ export async function runTool(name, args, ctx) {
       }
       if (isLockedIn(p, g.id)) throw new Error(`${p.name} est Shiny Lock dans ${g.short}.`);
       let cfg;
-      const options = data ? bestOptions(p, data).main : [];
+      const options = data ? (({ main, others }) => [...main, ...others])(bestOptions(p, data, bestOptionsPrefs(s.settings))) : [];
       const match = options.find(o => o.game === g.id && (!args.methode || o.cfg.method === args.methode));
       if (match) cfg = match.cfg;
       else {
         const methods = gameMethods(g.id);
         const method = methods.find(m => m.id === args.methode) || methods[0];
-        cfg = { game: g.id, method: method.id, opts: {}, charm: s.settings.charm };
+        cfg = { game: g.id, method: method.id, opts: {}, charm: hasCharm(s.settings, g.id) };
       }
       ctx.onAction({ type: 'hunt', key: p.key, cfg, label: args.resume || null });
       return { ok: true, carte: `Carte « Chasser ${p.name} en ${g.short} » affichée.`, taux: `1/${Math.round(oddsAt(cfg, METHOD_BY_ID[cfg.method]?.chain || 0))}` };
+    }
+
+    case 'proposer_action': {
+      const keys = [...new Set((args.pokemon || []).slice(0, 30).map(q => resolveOne(String(q)).key))];
+      const listName = (args.liste || '').trim();
+      const findList = () => {
+        const n = normalize(listName);
+        const list = s.lists.find(l => normalize(l.name) === n) || s.lists.find(l => normalize(l.name).includes(n));
+        if (!list) throw new Error(`Liste introuvable : « ${listName} ». Listes existantes : ${s.lists.map(l => l.name).join(', ') || 'aucune'}.`);
+        return list;
+      };
+      const needKeys = () => { if (!keys.length) throw new Error('Indique au moins un Pokémon dans « pokemon ».'); };
+      let action;
+      switch (args.action) {
+        case 'ajouter_objectifs':
+        case 'retirer_objectifs': {
+          needKeys();
+          action = { kind: args.action, keys };
+          break;
+        }
+        case 'creer_liste': {
+          if (!listName) throw new Error('Indique le nom de la liste dans « liste ».');
+          action = { kind: 'creer_liste', keys, name: listName.slice(0, 40), emoji: (args.emoji || '📌').slice(0, 4) };
+          break;
+        }
+        case 'ajouter_a_liste':
+        case 'retirer_de_liste': {
+          needKeys();
+          const list = findList();
+          action = { kind: args.action, keys, listId: list.id, name: list.name, emoji: list.emoji };
+          break;
+        }
+        case 'pause_chasse': {
+          needKeys();
+          const hunt = s.hunts.find(h => h.status === 'active' && h.targetId === keys[0]);
+          if (!hunt) throw new Error('Aucune chasse en cours pour ce Pokémon.');
+          if (!hunt.startedAt) return { deja_en_pause: true, message: 'Le chronomètre de cette chasse est déjà arrêté.' };
+          action = { kind: 'pause_chasse', keys: [hunt.targetId], huntId: hunt.id };
+          break;
+        }
+        default:
+          throw new Error('Action inconnue.');
+      }
+      ctx.onAction({ type: 'change', ...action, label: args.resume || null });
+      return { en_attente: true, message: 'Carte affichée. L\'utilisateur doit appuyer sur « Appliquer » : ne dis pas que c\'est déjà fait.' };
     }
 
     default:
@@ -317,12 +387,15 @@ Règles :
 - Pour les lieux, les taux et les méthodes, appuie-toi sur les outils de l'app (meilleures_options, infos_jeu) plutôt que sur ta mémoire. Si tu complètes avec tes connaissances, dis-le et reste prudent.
 - Pour connaître la collection, les chasses ou ce qui manque, appelle les outils : ne devine pas.
 - Quand tu recommandes une chasse précise, appelle proposer_chasse pour que l'utilisateur puisse la lancer d'un geste.
-- Pokémon Banque ferme le 27/02/2027 : après cette date, les Pokémon des jeux 3DS, DS et Console virtuelle ne peuvent plus aller dans Pokémon HOME. Signale-le quand c'est utile.
+- Pour modifier ses objectifs ou ses listes, ou mettre en pause le chrono d'une chasse, appelle proposer_action : l'utilisateur valide lui-même.
+- Si l'utilisateur a renseigné ses jeux, privilégie-les ; ne propose un autre jeu que s'il le demande ou si c'est nettement plus simple, en le signalant.
+- Pokémon Banque ferme fin février 2027 (le 25 aux États-Unis) : après, les Pokémon des jeux 3DS, DS et Console virtuelle ne peuvent plus aller dans Pokémon HOME. Signale-le quand c'est utile.
+- Pour l'actualité (raids, évènements, codes), sers-toi de l'agenda ci-dessous ; s'il est daté et que tu as la recherche web, vérifie en ligne. Sans recherche web, renvoie vers Outils → Agenda.
 - Les taux s'écrivent « 1/512 ». Le Charme Chroma, les sandwichs (Écarlate/Violet), les apparitions massives, les chaînes et la recherche du Pokédex (Légendes Arceus) changent les taux : précise les conditions.
 - Reste dans le sujet Pokémon et chasse aux shiny.`;
 
 /** Instantané de la collection, figé au début de la conversation (les outils donnent l'état à jour). */
-export function buildContext(s, profile) {
+export function buildContext(s, profile, { webSearch = false } = {}) {
   const caught = MAIN_DEX.filter(p => s.shinies[p.key]).length;
   const byRegion = REGIONS.map(r => {
     const inRegion = MAIN_DEX.filter(p => p.region === r.id);
@@ -332,15 +405,28 @@ export function buildContext(s, profile) {
   const active = s.hunts.filter(h => h.status === 'active');
   const wish = Object.keys(s.wishlist).filter(k => s.wishlist[k] && !s.shinies[k]).map(k => getPokemon(k)?.name).filter(Boolean);
   const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const owned = myGamesSet(s.settings);
+  const mine = owned ? GAMES.filter(g => owned.has(g.id)) : [];
+  const day = d => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  const agenda = EVENTS.filter(e => eventStatus(e) !== 'past')
+    .map(e => `${e.title} (${GAME_BY_ID[e.game]?.short || 'tous jeux'}, ${e.end ? `${day(e.start)} → ${day(e.end)}` : `depuis le ${day(e.start)}`}${e.approx ? ', à confirmer' : ''})`).join(' ; ');
   const lines = [
     `Date du jour : ${today}.`,
     `Collection shiny : ${caught}/${MAIN_DEX.length} (espèces et formes régionales), ${s.catches.length} exemplaire(s) au total.`,
     `Par région : ${byRegion}.`,
     `Chasses en cours : ${active.length ? active.map(h => `${getPokemon(h.targetId)?.name || h.targetId} (${GAME_BY_ID[h.game]?.short}, ${huntTotal(h)} rencontres)`).join(', ') : 'aucune'}.`,
     `Objectifs non capturés : ${wish.length ? wish.slice(0, 40).join(', ') + (wish.length > 40 ? '…' : '') : 'aucun'}.`,
-    `Jeu principal : ${GAME_BY_ID[s.settings.defaultGame]?.name || '?'} · Charme Chroma : ${s.settings.charm ? 'oui' : 'non'}.`,
+    `Jeu principal : ${GAME_BY_ID[s.settings.defaultGame]?.name || '?'}.`,
+    mine.length
+      ? `Jeux possédés : ${mine.map(g => `${g.short}${g.charm > 0 ? (hasCharm(s.settings, g.id) ? ' (avec Charme Chroma)' : ' (sans Charme)') : ''}`).join(', ')}.`
+      : `Jeux possédés : non renseignés. Charme Chroma : ${s.settings.charm ? 'oui' : 'non'} (réglage général).`,
+    `Listes perso : ${s.lists.length ? s.lists.map(l => `${l.emoji} ${l.name} (${Object.keys(l.keys).length})`).join(', ') : 'aucune'}.`,
+    `Agenda de l'app (mis à jour le ${EVENTS_UPDATED}) : ${agenda || 'rien en cours'}.`,
     `Jeux (identifiant : nom court, plateforme) : ${GAMES.filter(g => g.id !== 'other').map(g => `${g.id}: ${g.short} (${g.platform})`).join(' ; ')}.`
   ];
   const about = profile?.trim() ? `\n\nCe que l'utilisateur veut que tu saches sur lui :\n${profile.trim()}` : '';
-  return `${INSTRUCTIONS}\n\nÉtat de l'app au début de la conversation :\n${lines.join('\n')}${about}`;
+  const web = webSearch
+    ? '\n\nTu as la recherche web (web_search, web_fetch) : sers-t\'en pour l\'actualité (raids, évènements, codes, nouveautés, dates), pas pour les taux et lieux que l\'app connaît. Une recherche coûte environ 1 centime : n\'en fais que si c\'est utile, et cite tes sources.'
+    : '\n\nTu n\'as pas accès au web : pour l\'actualité, appuie-toi sur l\'agenda de l\'app et dis que l\'information peut avoir changé.';
+  return `${INSTRUCTIONS}${web}\n\nÉtat de l'app au début de la conversation :\n${lines.join('\n')}${about}`;
 }
