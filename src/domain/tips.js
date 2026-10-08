@@ -1,4 +1,9 @@
 // Conseil de chasse générique, affiché quand aucune option précise n'est connue pour un Pokémon.
+/** @import { Pokemon } from '../data/pokedex.js' */
+/**
+ * @param {Pokemon | null | undefined} p
+ * @returns {{ game: string, method: string, tip: string } | null}
+ */
 export const getHuntingTip = p => {
   if (!p) return null;
   if (p.isShinyLocked) {

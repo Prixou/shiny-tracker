@@ -1,4 +1,7 @@
 // Fermeture de Pokémon Banque : fin des transferts DS/3DS → Pokémon HOME.
+/** @import { BestOption, EncounterData } from './types.js' */
+/** @import { BestOptionsPrefs } from './settings.js' */
+/** @import { Pokemon } from '../data/pokedex.js' */
 import { GAME_BY_ID } from '../data/games.js';
 import { MAIN_DEX } from '../data/pokedex.js';
 import { bestOptions } from './bestOptions.js';
@@ -10,16 +13,33 @@ export const BANK_DEADLINE_SHORT = '25 février 2027';
 export const BANK_DEADLINE_TEXT = '25 février 2027 à 19 h heure du Pacifique (26 février, 4 h en France)';
 const DAY = 86400000;
 
+/**
+ * @param {number} [now]
+ * @returns {boolean}
+ */
 export const bankOpen = (now = Date.now()) => now < BANK_DEADLINE;
+/**
+ * @param {number} [now]
+ * @returns {number}
+ */
 export const bankDaysLeft = (now = Date.now()) => Math.max(0, Math.ceil((BANK_DEADLINE - now) / DAY));
 
-/** Jeux dont les Pokémon ne peuvent rejoindre HOME que par Poké Transporter / Pokémon Banque. */
+/**
+ * Jeux dont les Pokémon ne peuvent rejoindre HOME que par Poké Transporter / Pokémon Banque.
+ * @param {string} gameId
+ * @returns {boolean}
+ */
 export const viaBank = gameId => {
   const g = GAME_BY_ID[gameId];
   return !!g && (g.platform === '3ds' || g.platform === 'ds' || !!g.vc3ds);
 };
 
-/** Le jeu permet-il d'envoyer ses Pokémon dans Pokémon HOME ? (texte court, en français) */
+/**
+ * Le jeu permet-il d'envoyer ses Pokémon dans Pokémon HOME ? (texte court, en français)
+ * @param {string} gameId
+ * @param {number} [now]
+ * @returns {string}
+ */
 export function homeTransfer(gameId, now = Date.now()) {
   const g = GAME_BY_ID[gameId];
   if (!g) return 'inconnu';
@@ -34,6 +54,17 @@ export function homeTransfer(gameId, now = Date.now()) {
 
 const onSwitch = gameId => GAME_BY_ID[gameId]?.platform === 'switch' && gameId !== 'champions';
 
+/**
+ * Shiny à chasser sur DS/3DS avant la fermeture.
+ * @typedef {object} BankPriority
+ * @property {Pokemon} p
+ * @property {BestOption} best Meilleure option DS/3DS.
+ * @property {BestOption | null} switchBest Meilleure option Switch dans les jeux de l'utilisateur.
+ * @property {number} gain Rapport des taux Switch / DS-3DS (Infinity : seul moyen).
+ * @property {boolean} [notOwned] L'option DS/3DS est dans un jeu non possédé.
+ * @property {BestOption} [switchElsewhere] Option Switch dans un jeu non possédé.
+ */
+
 // Écart minimal de taux pour qu'une chasse DS/3DS soit « bien plus facile ».
 export const MIN_GAIN = 3;
 
@@ -42,6 +73,9 @@ export const MIN_GAIN = 3;
  * `only` : aucune option dans aucun jeu Switch (vraiment perdus après la fermeture) ;
  * `easier` : au moins MIN_GAIN fois plus facile sur DS/3DS que dans tes jeux Switch, ou absent de tes jeux Switch.
  * Chaque entrée : { p, best (option DS/3DS), switchBest (option Switch ou null), gain, notOwned, switchElsewhere }.
+ * @param {EncounterData} data Données de lieux (services/encounters.js).
+ * @param {{ shinies: Record<string, unknown>, prefs?: BestOptionsPrefs }} options
+ * @returns {{ only: BankPriority[], easier: BankPriority[] }}
  */
 export function bankPriorities(data, { shinies, prefs = {} }) {
   const owns = prefs.owns || (() => true);
@@ -72,7 +106,11 @@ export function bankPriorities(data, { shinies, prefs = {} }) {
   return { only, easier };
 }
 
-/** Regroupe des priorités par jeu et méthode (une session de chasse = un jeu, une méthode). */
+/**
+ * Regroupe des priorités par jeu et méthode (une session de chasse = un jeu, une méthode).
+ * @param {BankPriority[]} entries
+ * @returns {Array<{ id: string, game: string, label: string, odds: number, items: BankPriority[] }>}
+ */
 export function groupByMethod(entries) {
   const groups = new Map();
   for (const e of entries) {

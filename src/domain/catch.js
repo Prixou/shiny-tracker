@@ -1,4 +1,6 @@
 // Captures (exemplaires shiny) : création et migration des anciennes sauvegardes.
+/** @import { Catch } from './types.js' */
+/** @import { Settings } from './settings.js' */
 import { BALL_BY_ID } from '../data/constants.js';
 import { gameIdFrom } from '../data/games.js';
 import { migrateMethod, oddsAt } from '../data/methods.js';
@@ -10,7 +12,14 @@ import { hasCharm } from './settings.js';
 // Détails facultatifs, conservés seulement s'ils sont renseignés.
 export const CATCH_FIELDS = ['nature', 'ability', 'level', 'alpha', 'mark', 'teraType', 'language', 'inHome'];
 
-/** Nouvelle capture : jeu par défaut, méthode du jeu et taux calculé (Charme selon « Mes jeux »). */
+/**
+ * Nouvelle capture : jeu par défaut, méthode du jeu et taux calculé (Charme selon « Mes jeux »).
+ * @param {string | number} key Clé du Pokémon.
+ * @param {Partial<Catch>} [extra] Champs imposés (jeu, méthode, compteur…).
+ * @param {Partial<Settings>} [settings]
+ * @param {number} [now]
+ * @returns {Catch}
+ */
 export function createCatch(key, extra = {}, settings = {}, now = Date.now()) {
   const game = extra.game ?? settings.defaultGame ?? 'sv';
   const method = extra.method || defaultMethodFor(game);
@@ -31,7 +40,12 @@ const parseDate = (date, ts) => {
   return ts ? isoFromTimestamp(ts) : '';
 };
 
-/** Capture au format actuel à partir de n'importe quelle version (null si inexploitable). */
+/**
+ * Capture au format actuel à partir de n'importe quelle version (null si inexploitable).
+ * @param {any} rec Capture lue (toutes versions).
+ * @param {string} [key] Clé (anciens formats : objet { clé: capture }).
+ * @returns {Catch | null}
+ */
 export function normalizeCatch(rec, key) {
   if (!rec || rec.caught === false) return null;
   const k = String(rec.key ?? key ?? '');
@@ -64,21 +78,33 @@ export function normalizeCatch(rec, key) {
   return out;
 }
 
-/** Accepte un tableau de captures (v3) ou un objet { clé: capture } (v1/v2). */
+/**
+ * Accepte un tableau de captures (v3) ou un objet { clé: capture } (v1/v2).
+ * @param {unknown} input
+ * @returns {Catch[]}
+ */
 export function normalizeCatches(input) {
   if (Array.isArray(input)) return input.map(c => normalizeCatch(c)).filter(Boolean);
   if (input && typeof input === 'object') return Object.entries(input).map(([k, r]) => normalizeCatch(r, k)).filter(Boolean);
   return [];
 }
 
-/** Dernière capture de chaque espèce (la plus récente). */
+/**
+ * Dernière capture de chaque espèce (la plus récente).
+ * @param {Catch[]} catches
+ * @returns {Record<string, Catch>}
+ */
 export function latestByKey(catches) {
   const map = {};
   for (const c of catches) if (!map[c.key] || c.timestamp > map[c.key].timestamp) map[c.key] = c;
   return map;
 }
 
-/** Tous les exemplaires de chaque espèce, du plus récent au plus ancien. */
+/**
+ * Tous les exemplaires de chaque espèce, du plus récent au plus ancien.
+ * @param {Catch[]} catches
+ * @returns {Record<string, Catch[]>}
+ */
 export function groupByKey(catches) {
   const map = {};
   for (const c of catches) (map[c.key] ||= []).push(c);

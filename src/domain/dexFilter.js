@@ -1,4 +1,6 @@
 // Filtres et tri du Pokédex shiny.
+/** @import { Catch, PokemonList, Wishlist } from './types.js' */
+/** @import { Pokemon } from '../data/pokedex.js' */
 import { POKEDEX, MAIN_DEX, isAvailableIn } from '../data/pokedex.js';
 import { gamesOnPlatform, isLockedIn } from '../data/games.js';
 import { normalize, collator } from '../lib/text.js';
@@ -24,17 +26,43 @@ export const SORTS = [
   { id: 'copies', label: 'Nombre d\'exemplaires' }
 ];
 
-// `game` : 'all', 'mine' (mes jeux), 'platform:<console>' ou un identifiant de jeu.
+/**
+ * Filtres du Pokédex (mémorisés dans l'interface).
+ * @typedef {object} DexFilters
+ * @property {'all' | 'caught' | 'missing' | 'wish'} status
+ * @property {string[]} regions
+ * @property {string[]} types Deux au plus (double type).
+ * @property {string} game 'all', 'mine' (mes jeux), 'platform:<console>' ou un identifiant de jeu.
+ * @property {string} method
+ * @property {string} ball
+ * @property {string[]} categories
+ * @property {string[]} lists
+ * @property {'id' | 'name' | 'recent' | 'encounters' | 'copies'} sort
+ */
+
+/** @type {DexFilters} */
 export const DEFAULT_FILTERS = { status: 'all', regions: [], types: [], game: 'all', method: 'all', ball: 'all', categories: [], lists: [], sort: 'id' };
 
-/** Jeu précis choisi dans le filtre (null pour « tous », « mes jeux » ou une console). */
+/**
+ * Jeu précis choisi dans le filtre (null pour « tous », « mes jeux » ou une console).
+ * @param {string} game
+ * @returns {string | null}
+ */
 export const singleGame = game => (game !== 'all' && game !== 'mine' && !game.startsWith('platform:') ? game : null);
 
-/** Nombre de filtres actifs (hors statut et tri). */
+/**
+ * Nombre de filtres actifs (hors statut et tri).
+ * @param {DexFilters} f
+ * @returns {number}
+ */
 export const countActive = f => f.regions.length + f.types.length + f.categories.length + f.lists.length +
-  (f.game !== 'all') + (f.method !== 'all') + (f.ball !== 'all');
+  Number(f.game !== 'all') + Number(f.method !== 'all') + Number(f.ball !== 'all');
 
-/** Pokémon affichés pour des filtres, une recherche et l'état de la collection. */
+/**
+ * Pokémon affichés pour des filtres, une recherche et l'état de la collection.
+ * @param {{ filters: DexFilters, query?: string, shinies: Record<string, Catch>, catchesByKey: Record<string, Catch[]>, wishlist: Wishlist, lists: PokemonList[], hideLocked?: boolean, showVariants?: boolean, myGames?: string[] }} input
+ * @returns {Pokemon[]}
+ */
 export function filterPokedex({ filters, query = '', shinies, catchesByKey, wishlist, lists, hideLocked, showVariants, myGames }) {
   const q = normalize(query);
   const platform = filters.game.startsWith('platform:') ? filters.game.slice(9) : null;

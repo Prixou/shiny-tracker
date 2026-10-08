@@ -1,6 +1,6 @@
 // Connexion à Gemini (API Google) depuis le navigateur, avec la clé gratuite de l'utilisateur.
 import { GoogleGenAI, ApiError } from '@google/genai';
-import { TOOL_DEFS } from './tools.js';
+import { TOOL_DEFS } from './tools/index.js';
 
 const MAX_ROUNDS = 6; // chaque tour compte dans le quota quotidien gratuit
 

@@ -21,6 +21,7 @@ Interface, textes, commentaires et messages de commit en **français**.
 ```bash
 npm run dev      # développement
 npm run lint     # ESLint (doit passer)
+npm run typecheck # types JSDoc vérifiés par TypeScript (doit passer)
 npm run build    # build de production (doit passer)
 npm run data     # régénère src/data/*.json depuis PokéAPI (api-data)
 npm test         # tests unitaires Vitest (doivent passer)
@@ -29,7 +30,7 @@ npm run test:e2e # tests Playwright sur écran de téléphone 412 × 915 (doiven
 
 ## Tests
 
-- Lint, `npm test` et `npm run test:e2e` doivent passer avant chaque push (la CI les relance sur chaque pull request).
+- Lint, `npm run typecheck`, `npm test` et `npm run test:e2e` doivent passer avant chaque push (la CI les relance sur chaque pull request).
 - Toute correction de bug ou nouvelle fonctionnalité s'accompagne d'un test : unitaire dans `tests/unit` pour la logique (taux, meilleures options, Banque, stockage…), de bout en bout dans `tests/e2e` pour un parcours d'écran.
 - Les tests e2e tournent sans réseau extérieur (APIs d'IA simulées avec `page.route`) et vérifient qu'il n'y a ni erreur JavaScript ni défilement horizontal. Figer l'horloge (`page.clock.setFixedTime(TODAY)`) pour tout ce qui dépend de la date (Banque, agenda).
 - Navigateur déjà installé (environnement sans téléchargement) : `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm run test:e2e`.
@@ -58,6 +59,8 @@ Règles :
 - Lecture ponctuelle sans abonnement (dans un gestionnaire d'évènement) : `useStoreApi().getState()`.
 - Panneaux et onglets secondaires chargés à la demande (`lazy`) dans `app/App.jsx`.
 - Un fichier = un rôle ; au-delà d'environ 200 lignes, découper (sous-composants, hook `useXxx.js`, logique vers `domain/`).
+- Types : les formes des données (capture, chasse, liste, réglages, Pokémon, jeu, méthode…) sont décrites en JSDoc dans `src/domain/types.js` et à côté de leurs tables (`data/games.js`, `data/methods.js`, `data/pokedex.js`, `domain/settings.js`). Toute nouvelle fonction de `domain/`, `data/`, `services/` ou du store annote ses paramètres et son retour (`@param`, `@returns`, `/** @import { Catch } from './types.js' */`). `npm run typecheck` vérifie ces couches ; les écrans en profitent pour l'autocomplétion.
+- Assistant : un outil = un objet `{ name, description, schema, run }` (type `Tool`) dans `services/ai/tools/<thème>.js`, ajouté à `TOOLS` dans `services/ai/tools/index.js`, avec un test dans `tests/unit/aiTools.test.js`.
 - Grilles : toujours une colonne explicite (`grid-cols-1 sm:grid-cols-2`), sinon un texte tronqué élargit la page sur mobile.
 
 ## Repères
@@ -65,5 +68,6 @@ Règles :
 - Taux shiny : `src/data/methods.js` (moteur par « tirages ») et `src/data/games.js` (jeux, Charme, méthodes, Pokédex régionaux).
 - Meilleures options : `src/domain/bestOptions.js` ; Banque : `src/domain/bank.js` (date limite et libellés uniques).
 - État global, actions et annulation : `src/state/store.js` ; sauvegarde locale : `src/state/persistence.js` ; synchro cloud : `src/state/cloud.jsx` + `src/services/cloud.js`.
-- Assistant : `src/services/ai/` (outils, Claude, Gemini) et `src/features/assistant/` (`useChat.js`).
+- Assistant : `src/services/ai/` (`tools/` par thème, `context.js`, Claude, Gemini) et `src/features/assistant/` (`useChat.js`).
+- Types des données : `src/domain/types.js`.
 - Composants d'interface communs : `src/ui/index.js`.

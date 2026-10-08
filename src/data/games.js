@@ -1,6 +1,26 @@
 // Jeux suivis. `base` = taux de base (1/x), `charm` = tirages ajoutés par le Charme Chroma (0 = absent),
 // `dexes` = Pokédex régionaux PokéAPI définissant les Pokémon disponibles (null = tous),
 // `forms` = régions dont les formes régionales sont présentes, `methods` = méthodes proposées.
+/**
+ * Jeu suivi.
+ * @typedef {object} Game
+ * @property {string} id
+ * @property {'switch' | '3ds' | 'ds' | 'gba' | 'gb' | 'mobile' | 'other'} platform
+ * @property {string} name
+ * @property {string} short Nom court (puces, listes).
+ * @property {string} icon
+ * @property {number} gen
+ * @property {number} base Taux de base (1/x).
+ * @property {number} charm Tirages ajoutés par le Charme Chroma (0 = absent).
+ * @property {string[] | null} dexes Pokédex régionaux PokéAPI (null = tous les Pokémon).
+ * @property {number[]} [extra] Pokémon disponibles hors de ces Pokédex.
+ * @property {string[]} forms Régions dont les formes régionales sont présentes.
+ * @property {string[]} methods Méthodes proposées, la première par défaut.
+ * @property {boolean} [vc3ds] Aussi sur 3DS (Console virtuelle).
+ * @property {string} [tip]
+ */
+
+/** @type {Game[]} */
 export const GAMES = [
   { id: 'za', platform: 'switch', name: 'Légendes Pokémon : Z-A (+ Mega Dimension)', short: 'Z-A', icon: '🗼', gen: 9, base: 4096, charm: 3,
     dexes: ['lumiose-city', 'hyperspace'], forms: ['alola', 'galar', 'hisui', 'paldea'],
@@ -102,6 +122,11 @@ const GAME_LOCKS = {
   bw: { ids: [494, 643, 644] }
 };
 
+/**
+ * Le Pokémon est-il Shiny Lock (impossible à obtenir chromatique) dans ce jeu ?
+ * @param {import('./pokedex.js').Pokemon} p
+ * @param {string | null} [gameId] null ou 'all' : partout.
+ */
 export function isLockedIn(p, gameId) {
   if (!gameId || gameId === 'all') return p.isShinyLocked;
   if (gameId === 'pogo' || gameId === 'other') return false;

@@ -6,14 +6,52 @@ const roll = (base, n) => 1 - Math.pow(1 - 1 / base, n);
 const addRolls = (p, base, n) => 1 - (1 - p) * Math.pow(1 - 1 / base, n);
 const tier = (c, steps) => steps.reduce((bonus, [min, value]) => (c >= min ? value : bonus), 0);
 
+/** @returns {MethodOption} */
 const SPARKLING = label => ({ id: 'sparkling', label, type: 'select', values: [[0, 'Aucune'], [1, 'Nv. 1'], [2, 'Nv. 2'], [3, 'Nv. 3']] });
+/** @type {MethodOption} */
 const SPAWNS = { id: 'spawns', label: 'Pokémon ciblés par cycle', type: 'select', default: 1, values: [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [6, '6'], [8, '8']] };
 // Z-A : probabilité qu'au moins une des apparitions ciblées d'un cycle soit shiny.
 const cycle = x => 1 - Math.pow(1 - roll(x.base, 1 + x.charm + (x.o.sparkling || 0)), x.o.spawns || 1);
+/** @type {MethodOption} */
 const RESEARCH = { id: 'research', label: 'Recherche Pokédex', type: 'select', values: [[0, 'Incomplète'], [1, 'Niveau 10'], [3, 'Parfaite']] };
 
 // `p(ctx)` renvoie la probabilité qu'une rencontre soit shiny. ctx = { base, gen, charm (tirages), c (chaîne en cours), o (options) }.
 // `chain` : le taux dépend du compteur (la chaîne repart à 0 à chaque phase).
+/**
+ * Contexte de calcul d'une méthode.
+ * @typedef {object} RollContext
+ * @property {number} base Taux de base du jeu (1/x).
+ * @property {number} gen
+ * @property {number} charm Tirages du Charme Chroma (0 si absent ou non coché).
+ * @property {number} c Longueur de la chaîne en cours.
+ * @property {Record<string, any>} o Options de la méthode.
+ */
+/**
+ * Option réglable d'une méthode (case à cocher ou choix).
+ * @typedef {object} MethodOption
+ * @property {string} id
+ * @property {string} label
+ * @property {'toggle' | 'select'} type
+ * @property {Array<[number, string]>} [values]
+ * @property {number} [default]
+ */
+/**
+ * Méthode de chasse.
+ * @typedef {object} Method
+ * @property {string} id
+ * @property {string} name
+ * @property {string} icon
+ * @property {string} unit Ce qu'on compte (« rencontres », « œufs »…).
+ * @property {(x: RollContext) => number} p Probabilité qu'une rencontre soit shiny.
+ * @property {number} [chain] Le taux progresse jusqu'à cette chaîne.
+ * @property {number} [step] Pas par défaut du compteur.
+ * @property {boolean} [eggs]
+ * @property {false} [charm] false : le Charme Chroma ne s'applique pas.
+ * @property {MethodOption[]} [options]
+ * @property {string} [note]
+ */
+
+/** @type {Method[]} */
 export const METHODS = [
   { id: 'wild', name: 'Rencontre sauvage', icon: '🌿', unit: 'rencontres', p: x => roll(x.base, 1 + x.charm) },
   { id: 'reset', name: 'Soft Reset', icon: '🔄', unit: 'resets', p: x => roll(x.base, 1 + x.charm) },
@@ -94,7 +132,10 @@ export const gameMethods = gameId => (GAME_BY_ID[gameId]?.methods || ['wild', 'o
 
 export const charmAvailable = (gameId, methodId) => (GAME_BY_ID[gameId]?.charm || 0) > 0 && METHOD_BY_ID[methodId]?.charm !== false;
 
-/** Contexte de calcul pour une configuration { game, method, charm, opts, customOdds }. */
+/**
+ * Contexte de calcul pour une configuration de taux.
+ * @param {import('../domain/types.js').OddsConfig} cfg
+ */
 export function oddsContext(cfg) {
   const game = GAME_BY_ID[cfg.game] || GAME_BY_ID.other;
   const method = METHOD_BY_ID[cfg.method] || METHOD_BY_ID.wild;

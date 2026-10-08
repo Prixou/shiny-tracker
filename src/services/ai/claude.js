@@ -1,6 +1,6 @@
 // Connexion à Claude (API Anthropic) depuis le navigateur, avec la clé de l'utilisateur.
 import Anthropic from '@anthropic-ai/sdk';
-import { TOOL_DEFS } from './tools.js';
+import { TOOL_DEFS } from './tools/index.js';
 
 const MAX_ROUNDS = 8;
 
@@ -17,12 +17,15 @@ const appTools = TOOL_DEFS.map(t => ({
 // Haiku n'a pas le filtrage dynamique : il garde les versions de base.
 function webTools(model) {
   const dynamic = model !== 'claude-haiku-5-5';
+  const search = dynamic
+    ? { type: /** @type {const} */ ('web_search_20260209'), name: /** @type {const} */ ('web_search') }
+    : { type: /** @type {const} */ ('web_search_20250305'), name: /** @type {const} */ ('web_search') };
+  const fetch = dynamic
+    ? { type: /** @type {const} */ ('web_fetch_20260209'), name: /** @type {const} */ ('web_fetch') }
+    : { type: /** @type {const} */ ('web_fetch_20250910'), name: /** @type {const} */ ('web_fetch') };
   return [
-    {
-      type: dynamic ? 'web_search_20260209' : 'web_search_20250305', name: 'web_search', max_uses: 3,
-      user_location: { type: 'approximate', country: 'FR', timezone: 'Europe/Paris' }
-    },
-    { type: dynamic ? 'web_fetch_20260209' : 'web_fetch_20250910', name: 'web_fetch', max_uses: 3, max_content_tokens: 8000 }
+    { ...search, max_uses: 3, user_location: { type: /** @type {const} */ ('approximate'), country: 'FR', timezone: 'Europe/Paris' } },
+    { ...fetch, max_uses: 3, max_content_tokens: 8000 }
   ];
 }
 
@@ -49,7 +52,7 @@ export function describeError(err) {
   if (err instanceof Anthropic.PermissionDeniedError) return 'Cette clé n\'a pas accès à ce modèle.';
   if (err instanceof Anthropic.NotFoundError) return 'Modèle introuvable : choisis-en un autre dans les réglages.';
   if (err instanceof Anthropic.RateLimitError) return 'Trop de demandes d\'un coup : réessaie dans une minute.';
-  if (err instanceof Anthropic.BadRequestError) return `Requête refusée par Claude : ${err.error?.error?.message || err.message}`;
+  if (err instanceof Anthropic.BadRequestError) return `Requête refusée par Claude : ${/** @type {any} */ (err.error)?.error?.message || err.message}`;
   if (err instanceof Anthropic.InternalServerError) return 'Claude est surchargé en ce moment : réessaie dans un instant.';
   if (err instanceof Anthropic.APIConnectionError) return 'Connexion impossible : vérifie ta connexion internet.';
   if (err instanceof Anthropic.APIError) return `Erreur de l'API Claude (${err.status ?? '?'}) : ${err.message}`;
@@ -83,9 +86,9 @@ export async function runTurn({ apiKey, model, system, history, userText, execTo
       system,
       tools,
       messages,
-      cache_control: { type: 'ephemeral' }, // met en cache le début de la conversation
-      output_config: { effort: 'medium' },
-      ...(fallback ? { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' } : {})
+      cache_control: { type: /** @type {const} */ ('ephemeral') }, // met en cache le début de la conversation
+      output_config: { effort: /** @type {const} */ ('medium') },
+      ...(fallback ? { betas: ['server-side-fallback-2026-07-01'], fallbacks: /** @type {const} */ ('default') } : {})
     };
     const stream = anthropic.beta.messages.stream(params, { signal });
     stream.on('text', delta => onText(delta));

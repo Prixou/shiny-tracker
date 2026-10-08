@@ -3,6 +3,7 @@ let audioCtx = null;
 export const feedback = {
   enabledHaptics: true,
   enabledSound: false,
+  /** @param {number | number[]} [pattern] Durée(s) en ms. */
   vibrate(pattern = 12) {
     if (this.enabledHaptics && navigator.vibrate) {
       try { navigator.vibrate(pattern); } catch { /* ignoré */ }
@@ -11,7 +12,7 @@ export const feedback = {
   beep(freq = 880, duration = 0.05) {
     if (!this.enabledSound) return;
     try {
-      audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+      audioCtx ||= new (window.AudioContext || /** @type {any} */ (window).webkitAudioContext)();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.frequency.value = freq;

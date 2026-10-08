@@ -1,3 +1,6 @@
+/** @import { BestOption, EncounterData } from './types.js' */
+/** @import { BestOptionsPrefs } from './settings.js' */
+/** @import { Pokemon } from '../data/pokedex.js' */
 import { GAME_BY_ID, isLockedIn } from '../data/games.js';
 import { oddsAt, METHOD_BY_ID } from '../data/methods.js';
 import { isAvailableIn } from '../data/pokedex.js';
@@ -34,6 +37,10 @@ const uniqueNames = list => [...new Set((list || []).map(l => l.name))];
  * Chaque option contient une configuration de chasse prête à l'emploi (`cfg`).
  * `prefs.owns(jeu)` limite `main` aux jeux possédés (les autres vont dans `others`) ;
  * `prefs.charmFor(jeu)` indique si le Charme Chroma est compté.
+ * @param {Pokemon | null | undefined} p
+ * @param {EncounterData} data Données de lieux (services/encounters.js).
+ * @param {BestOptionsPrefs} [prefs]
+ * @returns {{ main: BestOption[], extra: BestOption[], others: BestOption[] }}
  */
 export function bestOptions(p, data, prefs = {}) {
   const owns = prefs.owns || (() => true);
