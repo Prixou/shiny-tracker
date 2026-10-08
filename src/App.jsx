@@ -16,6 +16,7 @@ const JournalView = lazy(() => import('./views/JournalView.jsx'));
 const StatsView = lazy(() => import('./views/StatsView.jsx'));
 const ToolsView = lazy(() => import('./views/ToolsView.jsx'));
 const AssistantSheet = lazy(() => import('./components/AssistantSheet.jsx'));
+const BankPlanSheet = lazy(() => import('./components/BankPlanSheet.jsx'));
 
 const NAV = [
   { id: 'dex', label: 'Pokédex', icon: Layers },
@@ -39,6 +40,8 @@ export default function App() {
   const [newHunt, setNewHunt] = useState(null);
   const [assistant, setAssistant] = useState(false);
   const [assistantMounted, setAssistantMounted] = useState(false);
+  const [bankPlan, setBankPlan] = useState(false);
+  const [bankPlanMounted, setBankPlanMounted] = useState(false);
   const [importCode, setImportCode] = useState(() => {
     const m = window.location.hash.match(/#import=(.+)$/);
     return m ? m[1] : null;
@@ -60,7 +63,8 @@ export default function App() {
     goTo,
     openPokemon: key => setPokemonKey(String(key)),
     openNewHunt: (targetKey = null, preset = null) => setNewHunt({ targetKey, preset }),
-    openAssistant: () => { setAssistantMounted(true); setAssistant(true); }
+    openAssistant: () => { setAssistantMounted(true); setAssistant(true); },
+    openBankPlan: () => { setBankPlanMounted(true); setBankPlan(true); }
   }), [tab, goTo]);
 
   const caughtCount = useMemo(() => MAIN_DEX.reduce((n, p) => n + (shinies[p.key] ? 1 : 0), 0), [shinies]);
@@ -186,6 +190,11 @@ export default function App() {
             <MessageCircle className="w-6 h-6" />
             <Sparkles className="w-3.5 h-3.5 absolute top-2.5 right-2.5" />
           </button>
+        )}
+        {bankPlanMounted && (
+          <Suspense fallback={null}>
+            <BankPlanSheet open={bankPlan} onClose={() => setBankPlan(false)} />
+          </Suspense>
         )}
         {assistantMounted && (
           <Suspense fallback={null}>

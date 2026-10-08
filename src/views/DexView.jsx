@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Search, SlidersHorizontal, X, Check, Star, ShieldAlert, ArrowUpDown, Grid3x3, Sparkles, ListPlus } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Check, Star, ShieldAlert, ArrowUpDown, Grid3x3, Sparkles, ListPlus, Hourglass, ChevronRight } from 'lucide-react';
 import { useStore } from '../state/store.jsx';
 import { useNav } from '../state/nav.jsx';
 import { POKEDEX, MAIN_DEX, isAvailableIn } from '../data/pokedex.js';
@@ -10,6 +10,7 @@ import { Sheet, Segmented, Sprite, BallIcon, RegionIcon, TypeIcon, EmptyState, u
 import ListsSheet from '../components/ListsSheet.jsx';
 import GameOptions from '../components/GameOptions.jsx';
 import { PLATFORMS, gamesOnPlatform } from '../data/games.js';
+import { bankOpen, bankDaysLeft } from '../lib/bank.js';
 
 const PAGE = 72;
 
@@ -82,7 +83,7 @@ const DENSITY_CLASSES = {
 
 export default function DexView() {
   const { shinies, catchesByKey, wishlist, lists, settings, ui, setUiValue, setSettings, addCatch, removeCatchesOf } = useStore();
-  const { openPokemon } = useNav();
+  const { openPokemon, openBankPlan } = useNav();
   const confirm = useConfirm();
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query, 120);
@@ -216,6 +217,17 @@ export default function DexView() {
           <span className="text-amber-400">{caughtInResults}</span>/{results.length} · {pct}%
         </span>
       </div>
+
+      {bankOpen() && !ui.hideBankBanner && (
+        <div className="flex items-center gap-1 pl-3 rounded-2xl bg-amber-500/10 border border-amber-500/30">
+          <button onClick={openBankPlan} className="flex-1 min-w-0 flex items-center gap-2.5 min-h-12 text-left">
+            <Hourglass className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="flex-1 min-w-0 text-sm text-slate-200 truncate"><strong className="text-amber-300">Banque : J-{bankDaysLeft()}</strong> · mon plan de chasse</span>
+            <ChevronRight className="w-4 h-4 text-amber-400 shrink-0" />
+          </button>
+          <button onClick={() => setUiValue('hideBankBanner', true)} className="icon-btn" aria-label="Masquer ce rappel"><X className="w-4 h-4" /></button>
+        </div>
+      )}
 
       {results.length === 0 ? (
         <EmptyState icon={<Search className="w-7 h-7" />} title="Aucun Pokémon trouvé"

@@ -191,6 +191,19 @@ export function StoreProvider({ children }) {
         dropWish(String(key));
         return c.id;
       },
+      // Marque des captures comme transférées dans Pokémon HOME (une seule entrée d'annulation).
+      markInHome(ids, on) {
+        if (!ids.length) return;
+        pushUndo(on ? 'Marqué comme transféré dans HOME' : 'Marque HOME retirée', { catches: ids });
+        const set = new Set(ids);
+        const now = Date.now();
+        setCatches(prev => prev.map(c => {
+          if (!set.has(c.id)) return c;
+          const next = { ...c, updatedAt: now };
+          if (on) next.inHome = true; else delete next.inHome;
+          return next;
+        }));
+      },
       updateCatch(id, patch) {
         setCatches(prev => prev.map(c => (c.id === id ? { ...c, ...patch, updatedAt: Date.now() } : c)));
       },

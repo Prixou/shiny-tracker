@@ -11,6 +11,8 @@ const DYNAMAX_LEGENDS = new Set([144, 145, 146, 150, 243, 244, 245, 249, 250, 38
   641, 642, 643, 644, 645, 646, 716, 717, 718, 785, 786, 787, 788, 791, 792, 793, 794, 795, 796, 797, 798, 799, 800, 805, 806]);
 
 const AREA_ZERO = /^Zone Zéro/;
+// Fossiles de Kanto, Hoenn et Sinnoh (et leurs évolutions) dans Diamant Étincelant / Perle Scintillante.
+const BDSP_FOSSILS = new Set([138, 139, 140, 141, 142, 345, 346, 347, 348, 408, 409, 410, 411]);
 // Rencontres uniques : pas de chaîne, pas de combo, pas de Poké Radar.
 const NOT_WILD = new Set(['static', 'gift', 'gift-egg', 'only-one', 'npc-trade', 'pokeflute', 'max-raid', 'roaming-grass', 'roaming-water']);
 
@@ -71,6 +73,10 @@ export function bestOptions(p, data, prefs = {}) {
   if (p.canBreed && isAvailableIn(p, 'sv')) {
     add('sv', { method: 'masuda' }, { label: 'Méthode Masuda (Métamorph étranger)', note: 'Reproduction : lieu sans importance.' });
   }
+  // Masuda dans les autres jeux : 1/512 avec Charme (Gen 6 à 8), 1/1024 en Noir 2/Blanc 2, 1/1638 en Gen 4.
+  for (const g of ['swsh', 'bdsp', 'usum', 'sm', 'oras', 'xy', 'b2w2', 'bw', 'hgss', 'dpp']) {
+    if (p.canBreed && isAvailableIn(p, g)) add(g, { method: 'masuda' }, { label: 'Méthode Masuda (Métamorph étranger)', note: 'Reproduction avec un Métamorph (ou un parent) d\'une autre langue.' });
+  }
 
   // Légendes Arceus
   if (has('pla', 'pla-mo')) add('pla', { method: 'pla_mo', opts: { research: 3 } }, { label: 'Apparition massive + recherche parfaite', locations: locs('pla', 'pla-mo') });
@@ -110,6 +116,11 @@ export function bestOptions(p, data, prefs = {}) {
       label: 'Reproduction avec un parent shiny (Console virtuelle 3DS)',
       note: 'Il faut un parent shiny compatible : un Métamorph shiny marche avec tout (le Léviator rouge du Lac Colère convient aux groupes Eau 2 et Dragon). L\'œuf donne la première forme de l\'évolution. Transfert ensuite via Pokémon Banque et Poké Transporter.'
     });
+  }
+
+  // Diamant Étincelant / Perle Scintillante : fossiles des Grands Souterrains, ranimés au musée de Charbourg (Soft Reset possible).
+  if (BDSP_FOSSILS.has(p.baseId) && !p.isForm) {
+    add('bdsp', { method: 'reset' }, { label: 'Fossile des Grands Souterrains', note: 'Ranimé au musée de Charbourg : sauvegarde avant et Soft Reset. Les évolutions s\'obtiennent en faisant évoluer le shiny.' });
   }
 
   // Épée / Bouclier

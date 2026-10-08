@@ -63,7 +63,7 @@ const parseDate = (date, ts) => {
 
 const gameIdFrom = g => (GAME_BY_ID[g] ? g : (GAMES.find(x => x.name === g)?.id || ''));
 
-export const CATCH_FIELDS = ['nature', 'ability', 'level', 'alpha', 'mark', 'teraType', 'language'];
+export const CATCH_FIELDS = ['nature', 'ability', 'level', 'alpha', 'mark', 'teraType', 'language', 'inHome'];
 
 export function normalizeCatch(rec, key) {
   if (!rec || rec.caught === false) return null;

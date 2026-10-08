@@ -6,7 +6,8 @@ export const NavContext = createContext({
   goTo: () => {},
   openPokemon: () => {},
   openNewHunt: () => {},
-  openAssistant: () => {}
+  openAssistant: () => {},
+  openBankPlan: () => {}
 });
 
 export const useNav = () => useContext(NavContext);

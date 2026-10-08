@@ -17,9 +17,9 @@ export const EVENTS = [
   {
     id: 'bank-closing', game: 'other', type: 'deadline', important: true,
     title: 'Fermeture de Pokémon Banque et Poké Transporter',
-    start: '2026-08-13T00:00:00Z', end: '2027-02-25T00:00:00Z',
-    desc: 'Après la fermeture, plus aucun transfert 3DS, DS ou Console virtuelle vers Pokémon HOME. Date annoncée : fin février 2027 (le 25 aux États-Unis, le 26 ou 27 selon les sources) : fais tes transferts avant le 25.',
-    url: 'https://www.nintendolife.com/news/2026/08/pokemon-bank-is-shutting-down-in-february-2027'
+    start: '2026-08-13T00:00:00Z', end: '2027-02-26T03:00:00Z',
+    desc: 'Fin des transferts le 25 février 2027 à 19 h, heure du Pacifique (le 26 à 4 h en France). Après, plus aucun transfert 3DS, DS ou Console virtuelle vers Pokémon HOME. L\'abonnement Premium de HOME est nécessaire pour transférer, et la Banque ne peut plus être téléchargée : ne la supprime pas.',
+    url: 'https://support.pokemon.com/hc/en-us/articles/52629477077012-Pok%C3%A9mon-Bank-and-Pok%C3%A9mon-HOME', plan: true
   },
   {
     id: 'sv-tyranitar-7', game: 'sv', type: 'raid',
