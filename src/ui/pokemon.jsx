@@ -46,8 +46,10 @@ export function RegionIcon({ region, className = 'w-5 h-5', mono = false }) {
   );
 }
 
+// Hors ligne (sprite pas encore en cache), l'icône est masquée plutôt que de laisser déborder son texte alternatif.
 export const BallIcon = ({ id, className = 'w-6 h-6' }) => (
-  <img src={ballSprite(id)} alt={BALL_BY_ID[id]?.name || 'Poké Ball'} title={BALL_BY_ID[id]?.name} className={`${className} object-contain pixelated`} loading="lazy" draggable="false" />
+  <img src={ballSprite(id)} alt={BALL_BY_ID[id]?.name || 'Poké Ball'} title={BALL_BY_ID[id]?.name} className={`${className} object-contain pixelated`} loading="lazy" draggable="false"
+    onError={e => { e.currentTarget.style.visibility = 'hidden'; }} />
 );
 
 const TYPE_ICON_URL = id => `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${id}.svg`;

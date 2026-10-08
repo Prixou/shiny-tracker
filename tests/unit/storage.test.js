@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach } from 'vitest';
-import { loadState, clearAll } from '../../src/state/persistence.js';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { loadState, clearAll, attachPersistence } from '../../src/state/persistence.js';
+import { createAppStore } from '../../src/state/store.js';
 import { normalizeCatch } from '../../src/domain/catch.js';
 import { normalizeHunt } from '../../src/domain/hunt.js';
 import { DEFAULT_SETTINGS } from '../../src/domain/settings.js';
@@ -59,5 +60,32 @@ describe('effacement', () => {
     expect(localStorage.getItem('shp:catches')).toBe(null);
     expect(localStorage.getItem('shp:ai-chat')).toBe(null);
     expect(localStorage.getItem('shp:ai')).not.toBe(null);
+  });
+});
+
+describe('sauvegarde automatique du store', () => {
+  it('écrit seulement les tranches modifiées, regroupées après un court délai', () => {
+    vi.useFakeTimers();
+    try {
+      const store = createAppStore(loadState());
+      const { flush, detach } = attachPersistence(store, { delay: 250 });
+      const { actions } = store.getState();
+      actions.toggleWish('25');
+      actions.toggleWish('133');
+      expect(localStorage.getItem('shp:wishlist')).toBe(null);
+      vi.advanceTimersByTime(250);
+      expect(JSON.parse(localStorage.getItem('shp:wishlist'))).toEqual({ 25: true, 133: true });
+      expect(localStorage.getItem('shp:catches')).toBe(null); // non modifiées : pas réécrites
+      // Écriture immédiate (application en arrière-plan).
+      actions.setUiValue('tab', 'stats');
+      flush();
+      expect(JSON.parse(localStorage.getItem('shp:ui')).tab).toBe('stats');
+      detach();
+      actions.toggleWish('4');
+      vi.advanceTimersByTime(1000);
+      expect(JSON.parse(localStorage.getItem('shp:wishlist'))['4']).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

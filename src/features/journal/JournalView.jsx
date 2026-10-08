@@ -105,7 +105,7 @@ export default function JournalView() {
       {groups.map(g => (
         <section key={g.key} className="space-y-2">
           {g.label && <h3 className="label-caps pt-2 flex items-center justify-between">{g.label}<span className="text-slate-600">{g.items.length}</span></h3>}
-          <div className="grid gap-2 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             {g.items.map(({ key, id, rec, p }) => {
               const luck = getLuckTier(catchRatio(rec));
               const game = GAME_BY_ID[rec.game];

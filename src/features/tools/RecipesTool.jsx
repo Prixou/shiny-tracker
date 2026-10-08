@@ -52,7 +52,7 @@ export default function RecipesTool() {
             <Search className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             <input type="search" className="input pl-11" value={q} onChange={e => setQ(e.target.value)} placeholder="Type ou ingrédient…" />
           </div>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {list.map(r => (
               <div key={r.type} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/80 border border-slate-800">
                 <div className="w-24 shrink-0"><TypeBadge type={r.type} /></div>

@@ -91,7 +91,7 @@ export default function FilterSheet({ open, onClose, filters, setFilters, result
           </div>
         </section>
 
-        <section className="grid sm:grid-cols-2 gap-4">
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <label className="block space-y-1.5">
             <span className="label-caps">Disponible dans le jeu</span>
             <select className="input" value={filters.game} onChange={e => setFilters({ game: e.target.value })}>

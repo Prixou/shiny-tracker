@@ -57,7 +57,7 @@ export default function StatsView() {
       <MonthlyChart months={s.months} />
 
       {(s.luckiest.length > 0) && (
-        <section className="grid sm:grid-cols-2 gap-3">
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Podium title="Les plus chanceux" icon={<Trophy className="w-4 h-4 text-amber-400" />} items={s.luckiest} onOpen={openPokemon} />
           {s.unluckiest.length > 0 && <Podium title="Les plus douloureux" icon={<Frown className="w-4 h-4 text-rose-400" />} items={s.unluckiest} onOpen={openPokemon} />}
         </section>
