@@ -7,11 +7,12 @@ import { useUndo } from './useUndo.js';
 import Header from './Header.jsx';
 import BottomNav from './BottomNav.jsx';
 import DexView from '../features/dex/DexView.jsx';
-import HuntsView from '../features/hunts/HuntsView.jsx';
-import PokemonSheet from '../features/pokemon/PokemonSheet.jsx';
-import NewHuntSheet from '../features/hunts/NewHuntSheet.jsx';
-import ImportSheet from '../features/backup/ImportSheet.jsx';
 
+// Chargés à la demande (fichiers déjà en cache grâce au service worker) : démarrage plus léger.
+const HuntsView = lazy(() => import('../features/hunts/HuntsView.jsx'));
+const PokemonSheet = lazy(() => import('../features/pokemon/PokemonSheet.jsx'));
+const NewHuntSheet = lazy(() => import('../features/hunts/NewHuntSheet.jsx'));
+const ImportSheet = lazy(() => import('../features/backup/ImportSheet.jsx'));
 const JournalView = lazy(() => import('../features/journal/JournalView.jsx'));
 const StatsView = lazy(() => import('../features/stats/StatsView.jsx'));
 const ToolsView = lazy(() => import('../features/tools/ToolsView.jsx'));
@@ -70,8 +71,8 @@ export default function App() {
 
         <main className="relative max-w-6xl mx-auto px-4 pt-4 pb-[calc(var(--nav-h)+var(--safe-bottom)+24px)] md:pb-10">
           {tab === 'dex' && <DexView />}
-          {tab === 'hunts' && <HuntsView />}
           <Suspense fallback={<Loading />}>
+            {tab === 'hunts' && <HuntsView />}
             {tab === 'journal' && <JournalView />}
             {tab === 'stats' && <StatsView />}
             {tab === 'tools' && <ToolsView />}
@@ -92,9 +93,11 @@ export default function App() {
           {mounted.assistant && <AssistantSheet open={open.assistant} onClose={() => hide('assistant')} />}
         </Suspense>
 
-        <PokemonSheet pokemonKey={pokemonKey} onClose={() => setPokemonKey(null)} />
-        <NewHuntSheet open={!!newHunt} initialTarget={newHunt?.targetKey} preset={newHunt?.preset} onClose={() => setNewHunt(null)} />
-        <ImportSheet code={importCode} onClose={() => setImportCode(null)} />
+        <Suspense fallback={null}>
+          {pokemonKey && <PokemonSheet pokemonKey={pokemonKey} onClose={() => setPokemonKey(null)} />}
+          {newHunt && <NewHuntSheet open initialTarget={newHunt.targetKey} preset={newHunt.preset} onClose={() => setNewHunt(null)} />}
+          {importCode && <ImportSheet code={importCode} onClose={() => setImportCode(null)} />}
+        </Suspense>
       </div>
     </NavContext.Provider>
   );
