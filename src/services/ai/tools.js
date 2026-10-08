@@ -3,30 +3,14 @@ import { MAIN_DEX, POKEDEX, getPokemon, gamesFor, isAvailableIn } from '../../da
 import { GAMES, GAME_BY_ID, isLockedIn } from '../../data/games.js';
 import { METHOD_BY_ID, gameMethods, oddsAt } from '../../data/methods.js';
 import { REGIONS, REGION_BY_ID, TYPE_BY_ID, POKEMON_TYPES, BALL_BY_ID } from '../../data/constants.js';
-import { huntTotal, huntOdds, huntChance, huntElapsed } from '../../state/store.jsx';
+import { huntTotal, huntOdds, huntChance, huntElapsed } from '../../domain/hunt.js';
 import { bestOptions } from '../../domain/bestOptions.js';
 import { loadEncounters } from '../encounters.js';
-import { normalize, formatDuration } from '../../lib/utils.js';
-import { bestOptionsPrefs, hasCharm, myGamesSet } from '../../domain/myGames.js';
+import { normalize } from '../../lib/text.js';
+import { formatDuration } from '../../lib/format.js';
+import { bestOptionsPrefs, hasCharm, myGamesSet } from '../../domain/settings.js';
 import { EVENTS, EVENTS_UPDATED, eventStatus } from '../../data/events.js';
-import { bankOpen, bankDaysLeft, bankPriorities } from '../../domain/bank.js';
-
-// Fermeture de Pokémon Banque (et donc de Poké Transporter) : plus de transfert 3DS/DS → HOME.
-const BANK_TEXT = 'le 25 février 2027 à 19 h heure du Pacifique (26 février, 4 h en France)';
-
-/** Le jeu permet-il d'envoyer un Pokémon dans Pokémon HOME ? */
-function homeTransfer(gameId) {
-  const g = GAME_BY_ID[gameId];
-  if (!g) return 'inconnu';
-  if (g.platform === 'switch' || g.platform === 'mobile') return g.id === 'champions' ? 'à vérifier' : 'oui';
-  if (g.platform === '3ds' || g.platform === 'ds' || g.vc3ds) {
-    return bankOpen() ? `oui, via Pokémon Banque jusqu'à ${BANK_TEXT} seulement` : 'non (Pokémon Banque fermée depuis février 2027)';
-  }
-  // Rouge Feu / Vert Feuille sur Switch : compatibles avec HOME depuis la version 4.1.0 (7 octobre 2026).
-  if (g.id === 'frlg') return `oui depuis la version Switch (HOME 4.1.0, octobre 2026) ; depuis la cartouche GBA, seulement via une DS puis la Banque${bankOpen() ? ` jusqu'à ${BANK_TEXT}` : ' (plus possible)'}`;
-  if (g.platform === 'gba') return bankOpen() ? `seulement via une DS (Pal Park) puis la Banque, jusqu'à ${BANK_TEXT}` : 'non';
-  return 'inconnu';
-}
+import { BANK_DEADLINE_TEXT, bankDaysLeft, bankPriorities, homeTransfer } from '../../domain/bank.js';
 
 const regionName = id => REGION_BY_ID[id]?.name || id;
 const typeNames = types => types.map(t => TYPE_BY_ID[t]?.name || t);
@@ -419,7 +403,7 @@ Règles :
 - Quand tu recommandes une chasse précise, appelle proposer_chasse pour que l'utilisateur puisse la lancer d'un geste.
 - Pour modifier ses objectifs ou ses listes, ou mettre en pause le chrono d'une chasse, appelle proposer_action : l'utilisateur valide lui-même.
 - Si l'utilisateur a renseigné ses jeux, privilégie-les ; ne propose un autre jeu que s'il le demande ou si c'est nettement plus simple, en le signalant.
-- Pokémon Banque ferme le 25 février 2027 à 19 h heure du Pacifique (le 26 à 4 h en France) : après, les Pokémon des jeux 3DS, DS et Console virtuelle ne peuvent plus aller dans Pokémon HOME. Pour savoir quoi chasser avant, appelle priorites_banque. L'écran « Avant la fermeture de la Banque » de l'app (bouton dans le Pokédex et l'Agenda) donne le plan complet.
+- Pokémon Banque ferme le ${BANK_DEADLINE_TEXT} : après, les Pokémon des jeux 3DS, DS et Console virtuelle ne peuvent plus aller dans Pokémon HOME. Pour savoir quoi chasser avant, appelle priorites_banque. L'écran « Avant la fermeture de la Banque » de l'app (bouton dans le Pokédex et l'Agenda) donne le plan complet.
 - Pour l'actualité (raids, évènements, codes), sers-toi de l'agenda ci-dessous ; s'il est daté et que tu as la recherche web, vérifie en ligne. Sans recherche web, renvoie vers Outils → Agenda.
 - Les taux s'écrivent « 1/512 ». Le Charme Chroma, les sandwichs (Écarlate/Violet), les apparitions massives, les chaînes et la recherche du Pokédex (Légendes Arceus) changent les taux : précise les conditions.
 - Reste dans le sujet Pokémon et chasse aux shiny.`;

@@ -1,5 +1,7 @@
 import { mergeData } from '../domain/backup.js';
-import { normalizeCatches, normalizeHunts, normalizeLists } from '../state/persistence.js';
+import { normalizeCatches } from '../domain/catch.js';
+import { normalizeHunts } from '../domain/hunt.js';
+import { normalizeLists } from '../domain/lists.js';
 
 // Synchronisation cloud (Supabase). Une ligne par utilisateur dans `shiny_data` contient tout le document.
 export const TABLE = 'shiny_data';

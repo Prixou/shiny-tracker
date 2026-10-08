@@ -1,81 +1,19 @@
-import { useMemo, useState } from 'react';
-import { BarChart3, Timer, Clock, Target, Sparkles, Trophy, Frown, Hourglass, ChevronDown } from 'lucide-react';
-import { useStore, huntTotal } from '../../state/store.jsx';
+import { useMemo } from 'react';
+import { BarChart3, Timer, Clock, Target, Sparkles, Trophy, Frown } from 'lucide-react';
+import { useAppState, useShinies } from '../../state/StoreProvider.jsx';
 import { useNav } from '../../app/nav.jsx';
-import { MAIN_DEX, POKEDEX, getPokemon } from '../../data/pokedex.js';
-import { REGIONS, POKEMON_TYPES, SHINY_METHODS, POKE_BALLS, GAMES } from '../../data/constants.js';
-import { fmtNumber, fmtRatio, formatDuration, getLuckTier, formatDate, catchRatio } from '../../lib/utils.js';
-import { Sprite, BallIcon, TypeIcon, EmptyState, RegionIcon } from '../../ui/ui.jsx';
-import { forecast } from '../../domain/forecast.js';
-
-const TIERS = [
-  { id: 'king', ratio: 0.25 }, { id: 'lucky', ratio: 0.75 }, { id: 'fair', ratio: 1.25 },
-  { id: 'sweat', ratio: 2 }, { id: 'suffer', ratio: 3 }, { id: 'forgotten', ratio: 4 }
-];
+import { computeStats } from '../../domain/stats.js';
+import { fmtNumber, fmtRatio, formatDuration } from '../../lib/format.js';
+import { BallIcon, TypeIcon, EmptyState, RegionIcon } from '../../ui/index.js';
+import { Tile, Panel, BarRow, MonthlyChart, Podium } from './charts.jsx';
+import Forecast from './Forecast.jsx';
 
 export default function StatsView() {
-  const { shinies, catches, hunts } = useStore();
+  const shinies = useShinies();
+  const { catches, hunts } = useAppState(s => ({ catches: s.catches, hunts: s.hunts }));
   const { openPokemon, goTo } = useNav();
 
-  const s = useMemo(() => {
-    const caught = MAIN_DEX.filter(p => shinies[p.key]);
-    const recs = catches.map(rec => ({ p: getPokemon(rec.key), rec })).filter(r => r.p);
-    const huntable = MAIN_DEX.filter(p => !p.isShinyLocked);
-    const variantsAll = POKEDEX.filter(p => p.isVariant);
-    const byRegion = REGIONS.map(r => {
-      const all = MAIN_DEX.filter(p => p.region === r.id);
-      return { ...r, total: all.length, value: all.filter(p => shinies[p.key]).length };
-    }).filter(r => r.total > 0);
-    const byType = POKEMON_TYPES.map(t => {
-      const all = MAIN_DEX.filter(p => p.types.includes(t.id));
-      return { ...t, total: all.length, value: all.filter(p => shinies[p.key]).length };
-    });
-    const countBy = (list, field) => list.map(item => ({ ...item, value: recs.filter(r => r.rec[field] === item.id).length }))
-      .filter(x => x.value > 0).sort((a, b) => b.value - a.value);
-    const withCount = recs.filter(r => r.rec.count > 0);
-    const ratios = recs.map(r => ({ ...r, ratio: catchRatio(r.rec) })).filter(r => r.ratio != null).sort((a, b) => a.ratio - b.ratio);
-    const luck = TIERS.map(t => ({ ...getLuckTier(t.ratio), id: t.id, value: 0 }));
-    ratios.forEach(r => { const tier = getLuckTier(r.ratio); const l = luck.find(x => x.id === tier.id); if (l) l.value++; });
-
-    const now = new Date();
-    const months = Array.from({ length: 12 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      return {
-        key,
-        short: d.toLocaleDateString('fr-FR', { month: 'narrow' }),
-        label: d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
-        value: recs.filter(r => r.rec.date?.startsWith(key)).length
-      };
-    });
-
-    const huntEncounters = hunts.filter(h => h.status === 'active').reduce((n, h) => n + huntTotal(h), 0);
-    const huntTime = hunts.filter(h => h.status === 'active').reduce((n, h) => n + h.elapsedMs, 0);
-
-    return {
-      caught: caught.length,
-      total: MAIN_DEX.length,
-      copies: recs.length,
-      variantsCaught: variantsAll.filter(p => shinies[p.key]).length,
-      variantsTotal: variantsAll.length,
-      huntableCaught: huntable.filter(p => shinies[p.key]).length,
-      huntableTotal: huntable.length,
-      encounters: withCount.reduce((n, r) => n + r.rec.count, 0),
-      time: recs.reduce((n, r) => n + (r.rec.elapsedMs || 0), 0),
-      avg: withCount.length ? withCount.reduce((n, r) => n + r.rec.count, 0) / withCount.length : 0,
-      avgRatio: ratios.length ? ratios.reduce((n, r) => n + r.ratio, 0) / ratios.length : 0,
-      luckiest: ratios.slice(0, 3),
-      unluckiest: ratios.length > 3 ? ratios.slice(-Math.min(3, ratios.length - 3)).reverse() : [],
-      byRegion, byType,
-      byMethod: countBy(SHINY_METHODS, 'method'),
-      byBall: countBy(POKE_BALLS, 'ball'),
-      byGame: countBy(GAMES, 'game'),
-      luck,
-      months,
-      huntEncounters, huntTime,
-      activeHunts: hunts.filter(h => h.status === 'active').length
-    };
-  }, [shinies, catches, hunts]);
+  const s = useMemo(() => computeStats({ shinies, catches, hunts }), [shinies, catches, hunts]);
 
   if (!s.caught && !s.activeHunts) {
     return (
@@ -155,145 +93,5 @@ export default function StatsView() {
         </Panel>
       )}
     </div>
-  );
-}
-
-const Tile = ({ icon, label, value, sub }) => (
-  <div className="card p-3.5">
-    <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">{icon}{label}</div>
-    <div className="text-xl font-black font-mono text-slate-100 mt-1 truncate">{value}</div>
-    {sub && <div className="text-[11px] text-slate-500">{sub}</div>}
-  </div>
-);
-
-const Panel = ({ title, children }) => (
-  <section className="card p-4 space-y-2.5">
-    <h3 className="label-caps">{title}</h3>
-    <div className="space-y-2">{children}</div>
-  </section>
-);
-
-// Barre horizontale : `total` = progression (x/total), sinon comparaison au `max`.
-function BarRow({ label, icon, value, total, max }) {
-  const ratio = total ? value / total : max ? value / max : 0;
-  return (
-    <div className="flex items-center gap-2.5">
-      <span className="w-5 flex justify-center shrink-0">{icon}</span>
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between text-xs mb-1">
-          <span className="font-semibold text-slate-300 truncate">{label}</span>
-          <span className="font-mono font-bold text-slate-200 shrink-0 ml-2">
-            {value}{total ? <span className="text-slate-500">/{total}</span> : null}
-          </span>
-        </div>
-        <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-          <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${Math.max(value ? 2 : 0, ratio * 100)}%` }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MonthlyChart({ months }) {
-  const [sel, setSel] = useState(null);
-  const max = Math.max(1, ...months.map(m => m.value));
-  const total = months.reduce((n, m) => n + m.value, 0);
-  const shown = sel != null ? months[sel] : null;
-  const peak = months.reduce((best, m, i) => (m.value > (months[best]?.value || 0) ? i : best), 0);
-  return (
-    <section className="card p-4 space-y-3">
-      <div className="flex items-baseline justify-between gap-2">
-        <h3 className="label-caps">Captures sur 12 mois</h3>
-        <span className="text-xs text-slate-400 text-right">
-          {shown ? <><strong className="text-slate-100 capitalize">{shown.label}</strong> : {shown.value} shiny</> : <>{total} au total</>}
-        </span>
-      </div>
-      <div className="relative h-36 pt-5 flex items-end gap-1.5" role="img" aria-label={`Captures par mois : ${months.map(m => `${m.label} ${m.value}`).join(', ')}`}>
-        <div className="absolute inset-x-0 bottom-0 border-t border-slate-700" />
-        {months.map((m, i) => (
-          <button key={m.key} onClick={() => setSel(sel === i ? null : i)} className="relative flex-1 h-full flex flex-col justify-end items-center group" aria-label={`${m.label} : ${m.value}`}>
-            {(i === sel || (sel == null && i === peak && m.value > 0)) && (
-              <span className="absolute text-[11px] font-mono font-bold text-slate-100" style={{ bottom: `calc(${(m.value / max) * 100}% + 4px)` }}>{m.value}</span>
-            )}
-            <span className={`w-full max-w-7 rounded-t-[4px] transition-all ${sel === i ? 'bg-amber-300' : 'bg-amber-500'} ${m.value ? '' : 'opacity-0'}`}
-              style={{ height: `${(m.value / max) * 85}%`, minHeight: m.value ? 4 : 0 }} />
-          </button>
-        ))}
-      </div>
-      <div className="flex gap-1.5">
-        {months.map((m, i) => <span key={m.key} className={`flex-1 text-center text-[10px] font-bold uppercase ${sel === i ? 'text-amber-300' : 'text-slate-500'}`}>{m.short}</span>)}
-      </div>
-    </section>
-  );
-}
-
-function Podium({ title, icon, items, onOpen }) {
-  return (
-    <section className="card p-4 space-y-2">
-      <h3 className="label-caps flex items-center gap-1.5">{icon}{title}</h3>
-      {items.map(({ p, rec, ratio }) => (
-        <button key={rec.id} onClick={() => onOpen(p.key)} className="w-full flex items-center gap-3 p-1.5 rounded-2xl active:bg-slate-800 text-left">
-          <Sprite pokemon={p} className="w-11 h-11" />
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-bold text-slate-100 truncate">{p.name}</div>
-            <div className="text-[11px] text-slate-500">{fmtNumber(rec.count)} renc. · {formatDate(rec.date)}</div>
-          </div>
-          <span className="text-xs font-mono font-black text-slate-200">{fmtRatio(ratio)}</span>
-        </button>
-      ))}
-    </section>
-  );
-}
-
-const monthYear = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
-
-/** Date de fin estimée du living dex shiny, au rythme des derniers mois. */
-function Forecast({ catches }) {
-  const [open, setOpen] = useState(false);
-  const f = useMemo(() => forecast(catches), [catches]);
-  const perMonth = f.pace * 30.44;
-  const fmtPace = n => (n >= 10 ? Math.round(n) : n.toFixed(1).replace('.', ','));
-  return (
-    <section className="card p-4 space-y-3">
-      <div className="flex items-center gap-2 label-caps"><Hourglass className="w-4 h-4 text-amber-400" /> Date de fin estimée</div>
-      {f.remaining === 0 ? (
-        <p className="text-sm text-emerald-300 font-bold">Living dex shiny terminé (hors Shiny Lock) ! 🎉</p>
-      ) : !f.window ? (
-        <p className="text-sm text-slate-400">Pas assez de captures récentes : il faut au moins 3 nouvelles espèces sur les 12 derniers mois pour estimer une date.</p>
-      ) : (
-        <>
-          <div className="flex items-end justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-2xl font-black text-white capitalize">{monthYear.format(f.eta)}</div>
-              <div className="text-xs text-slate-400">au rythme de <strong className="text-slate-200">{fmtPace(perMonth)} nouvelle{perMonth >= 2 ? 's' : ''} espèce{perMonth >= 2 ? 's' : ''} par mois</strong> ({f.recent} sur les {f.window === 90 ? '3' : '12'} derniers mois)</div>
-            </div>
-            <div className="shrink-0 text-right">
-              <div className="text-lg font-black font-mono text-amber-400">{fmtNumber(f.remaining)}</div>
-              <div className="text-[10px] font-bold uppercase text-slate-500">restants</div>
-            </div>
-          </div>
-          <button onClick={() => setOpen(o => !o)} aria-expanded={open} className="w-full flex items-center justify-between min-h-11 text-sm font-bold text-slate-300">
-            Par région <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
-          </button>
-          {open && (
-            <ul className="space-y-2">
-              {f.regions.map(r => (
-                <li key={r.id} className="flex items-center gap-2.5">
-                  <span className="w-5 flex justify-center shrink-0"><RegionIcon region={r} /></span>
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-sm font-semibold text-slate-300 truncate">{r.name}</span>
-                    {r.eta !== 0 && <span className="block text-[11px] text-slate-500">{r.left} restants</span>}
-                  </span>
-                  <span className={`shrink-0 text-xs font-bold text-right ${r.eta === 0 ? 'text-emerald-400' : r.eta ? 'text-slate-200' : 'text-slate-500'}`}>
-                    {r.eta === 0 ? 'Terminée ✓' : r.eta ? monthYear.format(r.eta) : 'pas de capture récente'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="text-[11px] text-slate-500">Estimation simple, hors Shiny Lock : les dernières espèces sont souvent les plus longues à obtenir.</p>
-        </>
-      )}
-    </section>
   );
 }

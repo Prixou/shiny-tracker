@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Search, Star, Check } from 'lucide-react';
-import { useStore } from '../../state/store.jsx';
+import { useAppState, useShinies } from '../../state/StoreProvider.jsx';
 import { POKEDEX, getPokemon } from '../../data/pokedex.js';
-import { normalize } from '../../lib/utils.js';
+import { normalize } from '../../lib/text.js';
 import { useDebouncedValue } from '../../lib/hooks.js';
-import { Sprite } from '../../ui/ui.jsx';
+import { Sprite } from '../../ui/index.js';
 
 export default function PokemonPicker({ onPick, autoFocus = true, placeholder = 'Rechercher le Pokémon ciblé…' }) {
-  const { shinies, wishlist } = useStore();
+  const shinies = useShinies();
+  const wishlist = useAppState(s => s.wishlist);
   const [query, setQuery] = useState('');
   const q = useDebouncedValue(normalize(query), 100);
 

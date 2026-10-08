@@ -5,6 +5,9 @@ import { bestOptions } from './bestOptions.js';
 
 // Date officielle : 25 février 2027 à 19 h, heure du Pacifique (= 26 février 03:00 UTC, 4 h en France).
 export const BANK_DEADLINE = Date.parse('2027-02-26T03:00:00Z');
+// Libellés de la date limite, à réutiliser partout (une seule source).
+export const BANK_DEADLINE_SHORT = '25 février 2027';
+export const BANK_DEADLINE_TEXT = '25 février 2027 à 19 h heure du Pacifique (26 février, 4 h en France)';
 const DAY = 86400000;
 
 export const bankOpen = (now = Date.now()) => now < BANK_DEADLINE;
@@ -15,6 +18,19 @@ export const viaBank = gameId => {
   const g = GAME_BY_ID[gameId];
   return !!g && (g.platform === '3ds' || g.platform === 'ds' || !!g.vc3ds);
 };
+
+/** Le jeu permet-il d'envoyer ses Pokémon dans Pokémon HOME ? (texte court, en français) */
+export function homeTransfer(gameId, now = Date.now()) {
+  const g = GAME_BY_ID[gameId];
+  if (!g) return 'inconnu';
+  const open = bankOpen(now);
+  if (g.platform === 'switch' || g.platform === 'mobile') return g.id === 'champions' ? 'à vérifier' : 'oui';
+  if (viaBank(gameId)) return open ? `oui, via Pokémon Banque jusqu'au ${BANK_DEADLINE_TEXT} seulement` : 'non (Pokémon Banque fermée depuis février 2027)';
+  // Rouge Feu / Vert Feuille sur Switch : compatibles avec HOME depuis la version 4.1.0 (7 octobre 2026).
+  if (g.id === 'frlg') return `oui depuis la version Switch (HOME 4.1.0, octobre 2026) ; depuis la cartouche GBA, seulement via une DS puis la Banque${open ? ` jusqu'au ${BANK_DEADLINE_TEXT}` : ' (plus possible)'}`;
+  if (g.platform === 'gba') return open ? `seulement via une DS (Pal Park) puis la Banque, jusqu'au ${BANK_DEADLINE_TEXT}` : 'non';
+  return 'inconnu';
+}
 
 const onSwitch = gameId => GAME_BY_ID[gameId]?.platform === 'switch' && gameId !== 'champions';
 

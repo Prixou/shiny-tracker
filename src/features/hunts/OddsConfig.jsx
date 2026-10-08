@@ -1,9 +1,8 @@
 import { Info } from 'lucide-react';
-import { GAME_BY_ID } from '../../data/constants.js';
+import { GAME_BY_ID } from '../../data/games.js';
 import { gameMethods, METHOD_BY_ID, charmAvailable, oddsAt, oddsContext, isDynamic } from '../../data/methods.js';
-import { fmtOdds } from '../../lib/utils.js';
-import { Field, Toggle } from '../../ui/ui.jsx';
-import GameOptions from '../../ui/GameOptions.jsx';
+import { fmtOdds } from '../../lib/format.js';
+import { Field, Toggle, GameOptions } from '../../ui/index.js';
 
 /** Choix jeu + méthode + options + Charme, avec calcul du taux en direct. */
 export default function OddsConfig({ value, onChange, allowCustom = true, charmFor }) {

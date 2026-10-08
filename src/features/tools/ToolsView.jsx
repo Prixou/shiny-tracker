@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useStore } from '../../state/store.jsx';
+import { useActions, useStoreApi } from '../../state/StoreProvider.jsx';
 import RandomTool from './RandomTool.jsx';
 import OddsTool from './OddsTool.jsx';
 import RecipesTool from './RecipesTool.jsx';
@@ -17,8 +17,12 @@ const SECTIONS = [
 ];
 
 export default function ToolsView() {
-  const { ui, setUiValue } = useStore();
-  const [section, setSection] = useState(SECTIONS.some(s => s.id === ui.toolsSection) ? ui.toolsSection : 'random');
+  const store = useStoreApi();
+  const { setUiValue } = useActions();
+  const [section, setSection] = useState(() => {
+    const saved = store.getState().ui.toolsSection;
+    return SECTIONS.some(s => s.id === saved) ? saved : 'random';
+  });
   const change = id => { setSection(id); setUiValue('toolsSection', id); };
   const rowRef = useRef(null);
   // Garde l'onglet actif visible dans la rangée défilante.

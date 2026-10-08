@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { useStore } from './store.jsx';
+import { useAppState, useStoreApi } from './StoreProvider.jsx';
 import { getCloudConfig, saveCloudConfig, getClient, resetClient, loadMeta, saveMeta, syncCycle, TABLE } from '../services/cloud.js';
 
 const CloudContext = createContext({ config: null, status: 'off' });
@@ -8,8 +8,8 @@ export const useCloud = () => useContext(CloudContext);
 const AUTO_DELAY = 2500;
 
 export function CloudProvider({ children }) {
-  const store = useStore();
-  const { catches, hunts, wishlist, lists, dataStamp, replaceData } = store;
+  const store = useStoreApi();
+  const stamp = useAppState(s => s.stamp);
   const [config, setConfigState] = useState(() => getCloudConfig());
   const [client, setClient] = useState(null);
   const [user, setUser] = useState(null);
@@ -19,11 +19,6 @@ export function CloudProvider({ children }) {
   const [conflict, setConflict] = useState(null);
 
   const meta = useRef(loadMeta());
-  const local = useRef();
-  local.current = { catches, hunts, wishlist, lists };
-  const stampRef = useRef(dataStamp);
-  stampRef.current = dataStamp;
-  const suppress = useRef(false);
   const busy = useRef(false);
   const again = useRef(false);
 
@@ -55,20 +50,18 @@ export function CloudProvider({ children }) {
     setStatus('syncing');
     setError(null);
     try {
-      const startStamp = stampRef.current;
+      const { catches, hunts, wishlist, lists, stamp: startStamp, actions } = store.getState();
       const dirty = startStamp > (meta.current.pushedStamp || 0);
-      const res = await syncCycle({ client, userId: user.id, local: local.current, dirty, meta: meta.current, force });
+      const res = await syncCycle({ client, userId: user.id, local: { catches, hunts, wishlist, lists }, dirty, meta: meta.current, force });
       if (res.action === 'conflict') {
         setConflict({ remote: res.remote });
         setStatus('idle');
         return;
       }
-      if (res.doc && (res.action === 'apply' || res.action === 'merge')) {
-        suppress.current = true;
-        replaceData(res.doc);
-      }
+      // Données distantes appliquées : la modification locale qui en résulte n'est pas renvoyée.
+      const applied = res.doc && (res.action === 'apply' || res.action === 'merge') ? actions.replaceData(res.doc) : null;
       const now = Date.now();
-      writeMeta({ userId: user.id, remoteStamp: res.stamp, pushedStamp: res.doc ? meta.current.pushedStamp : startStamp, lastSync: now });
+      writeMeta({ userId: user.id, remoteStamp: res.stamp, pushedStamp: applied ?? startStamp, lastSync: now });
       setLastSync(now);
       setConflict(null);
       setStatus('idle');
@@ -79,19 +72,14 @@ export function CloudProvider({ children }) {
       busy.current = false;
       if (again.current) { again.current = false; setTimeout(() => run(), 300); }
     }
-  }, [client, user, replaceData, writeMeta]);
+  }, [client, user, store, writeMeta]);
 
-  // Après application des données distantes, la modification locale qui en résulte n'est pas renvoyée.
+  // Modification locale : envoi automatique après un court délai.
   useEffect(() => {
-    if (suppress.current) {
-      suppress.current = false;
-      writeMeta({ pushedStamp: dataStamp });
-      return;
-    }
-    if (!user || !client || dataStamp <= (meta.current.pushedStamp || 0)) return;
+    if (!user || !client || stamp <= (meta.current.pushedStamp || 0)) return;
     const t = setTimeout(() => run(), AUTO_DELAY);
     return () => clearTimeout(t);
-  }, [dataStamp, user, client, run, writeMeta]);
+  }, [stamp, user, client, run]);
 
   // Synchronisation à la connexion, au retour dans l'app et au retour du réseau.
   useEffect(() => {

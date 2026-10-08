@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { ListPlus, Trash2, Check } from 'lucide-react';
-import { useStore } from '../../state/store.jsx';
-import { Sheet } from '../../ui/ui.jsx';
+import { useActions, useAppState } from '../../state/StoreProvider.jsx';
+import { Sheet } from '../../ui/index.js';
 
 export const LIST_EMOJIS = ['📌', '⭐', '❤️', '🔥', '💎', '🎯', '🏆', '🌙', '🌊', '🌿', '⚡', '👻', '🐉', '🍇', '🗼', '🎮'];
 
 export function NewListForm({ onCreated, autoFocus = false }) {
-  const { createList } = useStore();
+  const { createList } = useActions();
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('📌');
   const submit = e => {
@@ -33,7 +33,8 @@ export function NewListForm({ onCreated, autoFocus = false }) {
 }
 
 export default function ListsSheet({ open, onClose }) {
-  const { lists, wishlist, updateList, deleteList } = useStore();
+  const { lists, wishCount } = useAppState(s => ({ lists: s.lists, wishCount: Object.keys(s.wishlist).length }));
+  const { updateList, deleteList } = useActions();
   const [editing, setEditing] = useState(null);
   return (
     <Sheet open={open} onClose={onClose} title="Mes listes" subtitle="Regroupe tes Pokémon comme tu veux" icon={<ListPlus className="w-5 h-5" />}>
@@ -43,7 +44,7 @@ export default function ListsSheet({ open, onClose }) {
           <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-950 border border-slate-800">
             <span className="text-xl">⭐</span>
             <span className="flex-1 text-sm font-bold text-slate-100">Objectifs</span>
-            <span className="text-xs font-mono text-slate-500">{Object.keys(wishlist).length}</span>
+            <span className="text-xs font-mono text-slate-500">{wishCount}</span>
           </div>
           {lists.map(l => (
             <div key={l.id} className="flex items-center gap-2 p-2 pl-3 rounded-2xl bg-slate-950 border border-slate-800">

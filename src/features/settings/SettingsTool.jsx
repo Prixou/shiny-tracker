@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { Vibrate, Volume2, Sun, PauseCircle, Palette, ShieldAlert, AlertTriangle, Sparkles, Trash2, Info, Layers, Film, ListPlus, Gamepad2, ChevronRight } from 'lucide-react';
-import { useStore } from '../../state/store.jsx';
+import { useActions, useAppState } from '../../state/StoreProvider.jsx';
 import { MAIN_DEX, POKEDEX } from '../../data/pokedex.js';
 import ListsSheet from '../lists/ListsSheet.jsx';
 import MyGamesSheet from './MyGamesSheet.jsx';
-import { Toggle, Field, useConfirm } from '../../ui/ui.jsx';
-import { feedback } from '../../lib/hooks.js';
-import GameOptions from '../../ui/GameOptions.jsx';
+import { feedback } from '../../lib/feedback.js';
+import { Toggle, Field, useConfirm, GameOptions } from '../../ui/index.js';
 
 export default function SettingsTool() {
-  const { settings, setSettings, resetAll } = useStore();
+  const settings = useAppState(s => s.settings);
+  const { setSettings, resetAll } = useActions();
   const confirm = useConfirm();
   const [showLists, setShowLists] = useState(false);
   const [showGames, setShowGames] = useState(false);

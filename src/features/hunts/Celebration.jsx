@@ -1,8 +1,9 @@
 import { useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { artworkUrl } from '../../data/pokedex.js';
-import { fmtNumber, getLuckTier } from '../../lib/utils.js';
-import { Sprite } from '../../ui/ui.jsx';
+import { fmtNumber } from '../../lib/format.js';
+import { getLuckTier } from '../../domain/luck.js';
+import { Sprite } from '../../ui/index.js';
 
 const COLORS = ['#fbbf24', '#fde68a', '#f59e0b', '#ffffff', '#38bdf8', '#f472b6'];
 

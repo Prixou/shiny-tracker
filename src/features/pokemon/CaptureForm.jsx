@@ -1,13 +1,10 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { POKE_BALLS, BALL_BY_ID, POKEMON_TYPES } from '../../data/constants.js';
+import { POKE_BALLS, BALL_BY_ID, POKEMON_TYPES, NATURES } from '../../data/constants.js';
 import { gameMethods, METHOD_BY_ID } from '../../data/methods.js';
-import { Field, BallIcon, Toggle } from '../../ui/ui.jsx';
-import GameOptions from '../../ui/GameOptions.jsx';
-import { viaBank } from '../../domain/bank.js';
-
-export const NATURES = ['Assuré', 'Bizarre', 'Brave', 'Calme', 'Discret', 'Docile', 'Doux', 'Foufou', 'Gentil', 'Hardi', 'Jovial',
-  'Lâche', 'Malin', 'Malpoli', 'Mauvais', 'Modeste', 'Naïf', 'Pressé', 'Prudent', 'Pudique', 'Relax', 'Rigide', 'Sérieux', 'Solo', 'Timide'];
+import { BANK_DEADLINE_SHORT, viaBank } from '../../domain/bank.js';
+import { timestampFromIso } from '../../lib/format.js';
+import { Field, BallIcon, Toggle, GameOptions } from '../../ui/index.js';
 
 export default function CaptureForm({ value, onChange, showCounts = true }) {
   const [more, setMore] = useState(() => !!(value.nature || value.ability || value.level || value.alpha || value.mark || value.teraType));
@@ -34,7 +31,7 @@ export default function CaptureForm({ value, onChange, showCounts = true }) {
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Date de capture">
-          <input type="date" className="input" value={value.date || ''} onChange={e => onChange({ date: e.target.value, timestamp: e.target.value ? new Date(`${e.target.value}T12:00:00`).getTime() : Date.now() })} />
+          <input type="date" className="input" value={value.date || ''} onChange={e => onChange({ date: e.target.value, timestamp: e.target.value ? timestampFromIso(e.target.value) : Date.now() })} />
         </Field>
         <Field label="Sexe">
           <div className="flex gap-1.5">
@@ -61,7 +58,7 @@ export default function CaptureForm({ value, onChange, showCounts = true }) {
 
       {viaBank(value.game) && (
         <div className="card px-4">
-          <Toggle checked={!!value.inHome} onChange={inHome => onChange({ inHome })} label="Transféré dans Pokémon HOME" desc="Via Pokémon Banque (possible jusqu'au 25 février 2027)" />
+          <Toggle checked={!!value.inHome} onChange={inHome => onChange({ inHome })} label="Transféré dans Pokémon HOME" desc={`Via Pokémon Banque (possible jusqu'au ${BANK_DEADLINE_SHORT})`} />
         </div>
       )}
 

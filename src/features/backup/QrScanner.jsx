@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ScanLine, CameraOff } from 'lucide-react';
-import { Sheet } from '../../ui/ui.jsx';
+import { Sheet } from '../../ui/index.js';
 
 // Scanner de QR code intégré (BarcodeDetector : Chrome Android, Edge…).
 export default function QrScanner({ open, onClose, onResult }) {

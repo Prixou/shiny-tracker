@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Info, Search } from 'lucide-react';
 import { TYPE_BY_ID } from '../../data/constants.js';
-import { normalize } from '../../lib/utils.js';
-import { Segmented, TypeBadge } from '../../ui/ui.jsx';
+import { normalize } from '../../lib/text.js';
+import { Segmented, TypeBadge } from '../../ui/index.js';
 
 // Sandwich « Brillance + Rencontre + Titre Nv. 3 » : 1 ingrédient + 2 Herba Mystica.
 const SANDWICHES = [

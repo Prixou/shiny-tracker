@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import { Download, AlertTriangle } from 'lucide-react';
-import { useStore } from '../../state/store.jsx';
+import { useActions, useAppState } from '../../state/StoreProvider.jsx';
 import { parseImport } from '../../domain/backup.js';
-import { Sheet } from '../../ui/ui.jsx';
+import { Sheet } from '../../ui/index.js';
 
 // `code` : lien/QR (#import=…), JSON collé ou objet déjà lu depuis un fichier.
 export default function ImportSheet({ code, onClose }) {
-  const { importData, catches, hunts } = useStore();
+  const { importData } = useActions();
+  const { catchCount, huntCount } = useAppState(s => ({ catchCount: s.catches.length, huntCount: s.hunts.length }));
   const parsed = useMemo(() => {
     if (!code) return null;
     try {
@@ -50,7 +51,7 @@ export default function ImportSheet({ code, onClose }) {
             ))}
           </div>
           <p className="text-sm text-slate-300 leading-relaxed">
-            Actuellement sur cet appareil : <strong>{catches.length}</strong> shiny et <strong>{hunts.length}</strong> chasses.
+            Actuellement sur cet appareil : <strong>{catchCount}</strong> shiny et <strong>{huntCount}</strong> chasses.
             La <strong>fusion</strong> garde la version la plus récente de chaque entrée ; le <strong>remplacement</strong> efface les données actuelles.
           </p>
         </div>

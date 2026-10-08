@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { Dices, Star, Timer, Info } from 'lucide-react';
-import { useStore } from '../../state/store.jsx';
+import { useActions, useAppState, useShinies } from '../../state/StoreProvider.jsx';
 import { useNav } from '../../app/nav.jsx';
 import { MAIN_DEX, artworkUrl, isAvailableIn } from '../../data/pokedex.js';
-import { REGIONS, POKEMON_TYPES, isLockedIn } from '../../data/constants.js';
-import { padId } from '../../lib/utils.js';
-import { feedback } from '../../lib/hooks.js';
-import { Segmented, Sprite, TypeBadge, Toggle } from '../../ui/ui.jsx';
-import GameOptions from '../../ui/GameOptions.jsx';
+import { REGIONS, POKEMON_TYPES } from '../../data/constants.js';
+import { isLockedIn } from '../../data/games.js';
+import { padId } from '../../lib/format.js';
+import { feedback } from '../../lib/feedback.js';
+import { Segmented, Sprite, TypeBadge, Toggle, GameOptions } from '../../ui/index.js';
 
 export default function RandomTool() {
-  const { shinies, wishlist, toggleWish, ui, setUiValue } = useStore();
+  const shinies = useShinies();
+  const { wishlist, randomOpts } = useAppState(s => ({ wishlist: s.wishlist, randomOpts: s.ui.randomOpts }));
+  const { toggleWish, setUiValue } = useActions();
   const { openNewHunt, openPokemon } = useNav();
-  const opts = { pool: 'missing', region: 'all', type: 'all', game: 'all', noLock: true, ...(ui.randomOpts || {}) };
+  const opts = { pool: 'missing', region: 'all', type: 'all', game: 'all', noLock: true, ...(randomOpts || {}) };
   const setOpts = patch => setUiValue('randomOpts', { ...opts, ...patch });
   const [result, setResult] = useState(null);
   const [rolling, setRolling] = useState(null);

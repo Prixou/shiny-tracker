@@ -1,18 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
-import QRCode from 'qrcode';
 import { Download, Upload, Share2, Copy, QrCode, ScanLine, ClipboardPaste, CloudOff, Smartphone, HardDrive, Link2 } from 'lucide-react';
-import { useStore } from '../../state/store.jsx';
+import { useAppState, useStoreApi } from '../../state/StoreProvider.jsx';
 import { MAIN_DEX, spriteUrl } from '../../data/pokedex.js';
 import { POKE_BALLS, ballSprite } from '../../data/constants.js';
-import { buildExport, backupFilename, downloadFile, shareFile, copyText, shareLink } from '../../domain/backup.js';
+import { buildExport, backupFilename, importLink } from '../../domain/backup.js';
+import { downloadFile, shareFile, copyText } from '../../lib/share.js';
 import { useInstallPrompt } from '../../lib/hooks.js';
-import { Sheet, useToast } from '../../ui/ui.jsx';
 import ImportSheet from './ImportSheet.jsx';
 import QrScanner from './QrScanner.jsx';
 import CloudSection from './CloudSection.jsx';
+import { Sheet, useToast } from '../../ui/index.js';
 
 export default function DataTool() {
-  const store = useStore();
+  const store = useStoreApi();
+  const { catchCount, huntCount } = useAppState(s => ({ catchCount: s.catches.length, huntCount: s.hunts.length }));
   const toast = useToast();
   const [importCode, setImportCode] = useState(null);
   const [showPaste, setShowPaste] = useState(false);
@@ -20,7 +21,7 @@ export default function DataTool() {
   const [showQr, setShowQr] = useState(false);
   const [showScan, setShowScan] = useState(false);
   const fileRef = useRef(null);
-  const json = () => JSON.stringify(buildExport(store), null, 1);
+  const json = () => JSON.stringify(buildExport(store.getState()), null, 1);
   const canShareFiles = typeof navigator.canShare === 'function';
 
   const onFile = async e => {
@@ -40,15 +41,13 @@ export default function DataTool() {
     }
   };
 
-  const counts = { shinies: store.catches.length, hunts: store.hunts.length };
-
   return (
     <div className="space-y-4">
       <CloudSection />
 
       <section className="card p-4 space-y-3">
         <h3 className="label-caps flex items-center gap-2"><Download className="w-4 h-4" /> Sauvegarder</h3>
-        <p className="text-sm text-slate-400">{counts.shinies} shiny et {counts.hunts} chasses stockés sur cet appareil. Pense à faire une sauvegarde de temps en temps.</p>
+        <p className="text-sm text-slate-400">{catchCount} shiny et {huntCount} chasses stockés sur cet appareil. Pense à faire une sauvegarde de temps en temps.</p>
         <div className="grid grid-cols-2 gap-2">
           <button className="btn-primary" onClick={() => { downloadFile(backupFilename(), json()); toast('Fichier de sauvegarde téléchargé'); }}>
             <Download className="w-4 h-4" /> Fichier
@@ -103,13 +102,15 @@ export default function DataTool() {
 }
 
 function QrSheet({ open, onClose }) {
-  const { catches, hunts, wishlist, lists } = useStore();
+  const { catches, hunts, wishlist, lists } = useAppState(s => ({ catches: s.catches, hunts: s.hunts, wishlist: s.wishlist, lists: s.lists }));
   const toast = useToast();
   const [state, setState] = useState(null);
   useEffect(() => {
     if (!open) return;
-    const link = shareLink({ catches, hunts, wishlist, lists });
-    QRCode.toDataURL(link, { errorCorrectionLevel: 'L', margin: 2, width: 720, color: { dark: '#020617', light: '#ffffff' } })
+    const link = importLink({ catches, hunts, wishlist, lists }, window.location.origin + window.location.pathname);
+    // Bibliothèque QR chargée seulement à l'ouverture du panneau.
+    import('qrcode')
+      .then(({ default: QRCode }) => QRCode.toDataURL(link, { errorCorrectionLevel: 'L', margin: 2, width: 720, color: { dark: '#020617', light: '#ffffff' } }))
       .then(url => setState({ url, link }))
       .catch(() => setState({ error: true, link }));
   }, [open, catches, hunts, wishlist, lists]);

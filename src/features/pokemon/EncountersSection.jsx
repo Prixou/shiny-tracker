@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { MapPin, ChevronDown } from 'lucide-react';
-import { GAME_BY_ID } from '../../data/constants.js';
-import { loadEncounters } from '../../services/encounters.js';
+import { GAME_BY_ID } from '../../data/games.js';
+import { useEncounters } from '../../state/encounters.js';
 
 const METHOD_NAMES = {
   walk: 'Herbes / grotte', surf: 'Surf', 'old-rod': 'Canne', 'good-rod': 'Super Canne', 'super-rod': 'Méga Canne',
@@ -30,13 +30,8 @@ const methodName = m => METHOD_NAMES[m] || m.replace(/-/g, ' ');
 
 // Lieux de capture issus de PokéAPI (données complètes surtout jusqu'à la Gen 7).
 export default function EncountersSection({ pokemon }) {
-  const [data, setData] = useState(null);
+  const data = useEncounters();
   const [openGame, setOpenGame] = useState(null);
-  useEffect(() => {
-    let alive = true;
-    loadEncounters().then(d => { if (alive) setData(d); }).catch(() => { if (alive) setData({ error: true }); });
-    return () => { alive = false; };
-  }, []);
 
   if (!data) return <div className="h-16 rounded-2xl bg-slate-950 border border-slate-800 animate-pulse" />;
   const rows = data.encounters?.[pokemon.baseId] || [];

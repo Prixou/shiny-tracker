@@ -1,16 +1,22 @@
 import { useState } from 'react';
-import { Star, Timer, ExternalLink, Sparkles, ShieldAlert, Crown, Trash2, Plus, ChevronDown, Film, Lock, ListPlus } from 'lucide-react';
-import { useStore, huntTotal } from '../../state/store.jsx';
+import { Star, Timer, ExternalLink, Sparkles, ShieldAlert, Crown, Trash2, Plus, Film, Lock, ListPlus } from 'lucide-react';
+import { useActions, useAppState } from '../../state/StoreProvider.jsx';
+import { selectCatchesByKey } from '../../state/store.js';
+import { huntTotal } from '../../domain/hunt.js';
 import { useNav } from '../../app/nav.jsx';
 import { getPokemon, artworkUrl, animatedUrl, POKEDEX, gamesFor, isPixelArtwork, VARIANT_LABELS } from '../../data/pokedex.js';
-import { REGION_BY_ID, GAME_BY_ID, METHOD_BY_ID, isLockedIn } from '../../data/constants.js';
-import { getHuntingTip, padId, formatDate, fmtNumber, fmtOdds, formatDuration, getLuckTier, catchRatio } from '../../lib/utils.js';
-import { feedback } from '../../lib/hooks.js';
-import { Sheet, TypeBadge, Sprite, BallIcon, useConfirm } from '../../ui/ui.jsx';
-import CaptureForm from './CaptureForm.jsx';
+import { REGION_BY_ID } from '../../data/constants.js';
+import { GAME_BY_ID, isLockedIn } from '../../data/games.js';
+import { getHuntingTip } from '../../domain/tips.js';
+import { padId, fmtNumber } from '../../lib/format.js';
+import { feedback } from '../../lib/feedback.js';
+import CopyCard from './CopyCard.jsx';
 import EncountersSection from './EncountersSection.jsx';
 import BestOptions from './BestOptions.jsx';
 import ListsSheet from '../lists/ListsSheet.jsx';
+import { Sheet, TypeBadge, Sprite, useConfirm } from '../../ui/index.js';
+
+const NONE = [];
 
 export default function PokemonSheet({ pokemonKey, onClose }) {
   const p = pokemonKey ? getPokemon(pokemonKey) : null;
@@ -22,17 +28,22 @@ export default function PokemonSheet({ pokemonKey, onClose }) {
 }
 
 function PokemonDetails({ p, onClose }) {
-  const { catchesByKey, wishlist, lists, hunts, settings, addCatch, removeCatchesOf, toggleWish, toggleInList, setUiValue } = useStore();
+  const { copies, wished, lists, animatedSprites } = useAppState(s => ({
+    copies: selectCatchesByKey(s)[p.key] || NONE,
+    wished: !!s.wishlist[p.key],
+    lists: s.lists,
+    animatedSprites: s.settings.animatedSprites
+  }));
+  // Tableau comparé élément par élément : pas de nouveau rendu tant que ces chasses ne changent pas.
+  const relatedHunts = useAppState(s => s.hunts.filter(h => h.targetId === p.key && h.status === 'active'));
+  const { addCatch, removeCatchesOf, toggleWish, toggleInList, setUiValue } = useActions();
   const { openNewHunt, goTo, openPokemon } = useNav();
   const confirm = useConfirm();
   const [shinyView, setShinyView] = useState(true);
-  const [animated, setAnimated] = useState(settings.animatedSprites);
+  const [animated, setAnimated] = useState(animatedSprites);
   const [showLists, setShowLists] = useState(false);
-  const copies = catchesByKey[p.key] || [];
-  const wished = !!wishlist[p.key];
   const tip = getHuntingTip(p);
   const region = REGION_BY_ID[p.region];
-  const relatedHunts = hunts.filter(h => h.targetId === p.key && h.status === 'active');
   const family = POKEDEX.filter(x => x.baseId === p.baseId && x.key !== p.key);
   const available = gamesFor(p);
   const pixel = isPixelArtwork(p);
@@ -175,49 +186,6 @@ function PokemonDetails({ p, onClose }) {
       </a>
 
       <ListsSheet open={showLists} onClose={() => setShowLists(false)} />
-    </div>
-  );
-}
-
-function CopyCard({ copy, defaultOpen }) {
-  const { updateCatch, removeCatch } = useStore();
-  const [open, setOpen] = useState(defaultOpen);
-  const ratio = catchRatio(copy);
-  const luck = getLuckTier(ratio);
-  const game = GAME_BY_ID[copy.game];
-  return (
-    <div className={`rounded-2xl border ${open ? 'border-amber-500/40 bg-slate-950' : 'border-slate-800 bg-slate-950'}`}>
-      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-3 p-3 text-left" aria-expanded={open}>
-        <BallIcon id={copy.ball} className="w-7 h-7" />
-        <span className="flex-1 min-w-0">
-          <span className="block text-sm font-bold text-slate-100 truncate">
-            {copy.nickname || formatDate(copy.date)}{copy.gender === 'm' ? ' ♂' : copy.gender === 'f' ? ' ♀' : ''}{copy.alpha ? ' · Baron' : ''}
-          </span>
-          <span className="block text-xs text-slate-500 truncate">
-            {copy.nickname ? `${formatDate(copy.date)} · ` : ''}{game ? `${game.icon} ${game.short} · ` : ''}{METHOD_BY_ID[copy.method]?.name}
-            {copy.count ? ` · ${fmtNumber(copy.count)} renc.` : ''}
-          </span>
-        </span>
-        <span className="text-lg" title={luck.name}>{luck.emoji}</span>
-        <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-      {open && (
-        <div className="px-3 pb-3 space-y-3">
-          {ratio != null && (
-            <div className={`flex items-center gap-3 p-3 rounded-2xl border ${luck.bg}`}>
-              <span className="text-2xl">{luck.emoji}</span>
-              <div className="min-w-0">
-                <div className={`text-sm font-black ${luck.color}`}>{luck.name}</div>
-                <div className="text-xs text-slate-300">
-                  {fmtNumber(copy.count)} rencontres · {fmtOdds(copy.odds)}{copy.elapsedMs ? ` · ${formatDuration(copy.elapsedMs, { short: true })}` : ''}
-                </div>
-              </div>
-            </div>
-          )}
-          <CaptureForm value={copy} onChange={patch => updateCatch(copy.id, patch)} />
-          <button onClick={() => removeCatch(copy.id)} className="btn-ghost w-full text-rose-300"><Trash2 className="w-4 h-4" /> Supprimer cet exemplaire</button>
-        </div>
-      )}
     </div>
   );
 }

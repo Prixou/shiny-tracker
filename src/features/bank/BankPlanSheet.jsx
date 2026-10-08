@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Hourglass, Timer, ChevronDown, Check, ListPlus, Star, Lightbulb, Send, Info } from 'lucide-react';
-import { useStore } from '../../state/store.jsx';
+import { useActions, useAppState, useShinies } from '../../state/StoreProvider.jsx';
+import { useEncounters } from '../../state/encounters.js';
 import { useNav } from '../../app/nav.jsx';
 import { getPokemon } from '../../data/pokedex.js';
-import { GAME_BY_ID } from '../../data/constants.js';
-import { BANK_DEADLINE, bankDaysLeft, bankPriorities, groupByMethod, viaBank } from '../../domain/bank.js';
-import { bestOptionsPrefs } from '../../domain/myGames.js';
-import { loadEncounters } from '../../services/encounters.js';
-import { fmtOdds, formatDate } from '../../lib/utils.js';
-import { Sheet, Sprite, Segmented, useToast } from '../../ui/ui.jsx';
-import { feedback } from '../../lib/hooks.js';
+import { GAME_BY_ID } from '../../data/games.js';
+import { BANK_DEADLINE, MIN_GAIN, bankDaysLeft, bankPriorities, groupByMethod, viaBank } from '../../domain/bank.js';
+import { bestOptionsPrefs } from '../../domain/settings.js';
+import { fmtOdds, formatDate } from '../../lib/format.js';
+import { feedback } from '../../lib/feedback.js';
+import { Sheet, Sprite, Segmented } from '../../ui/index.js';
+
+const NONE = {};
 
 const LIST_NAME = 'Avant la Banque';
 const deadlineFmt = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -81,20 +83,15 @@ function Group({ group, open, onToggle, wishlist, onAddToList }) {
 
 /** Plan « Avant la fermeture de la Banque » : compte à rebours, check-list, priorités et transferts. */
 export default function BankPlanSheet({ open, onClose }) {
-  const { shinies, wishlist, settings, catches, lists, ui, setUiValue, markInHome, createList, setInList } = useStore();
-  const toast = useToast();
-  const [data, setData] = useState(null);
+  const shinies = useShinies();
+  const { wishlist, settings, catches, lists, checklist } = useAppState(s => ({
+    wishlist: s.wishlist, settings: s.settings, catches: s.catches, lists: s.lists, checklist: s.ui.bankChecklist || NONE
+  }));
+  const { setUiValue, markInHome, createList, setInList } = useActions();
+  const data = useEncounters(open);
   const [view, setView] = useState('only');
   const [openGroups, setOpenGroups] = useState({});
   const [showAllTransfers, setShowAllTransfers] = useState(false);
-  const checklist = ui.bankChecklist || {};
-
-  useEffect(() => {
-    if (!open || data) return;
-    let alive = true;
-    loadEncounters().then(d => { if (alive) setData(d); }).catch(() => { if (alive) setData({}); });
-    return () => { alive = false; };
-  }, [open, data]);
 
   const priorities = useMemo(
     () => (data ? bankPriorities(data, { shinies, prefs: bestOptionsPrefs(settings) }) : null),
@@ -116,12 +113,12 @@ export default function BankPlanSheet({ open, onClose }) {
     setUiValue('bankChecklist', { ...checklist, [id]: !checklist[id] });
     feedback.tap();
   };
+  // Le toast d'annulation confirme l'ajout (« … dans « Avant la Banque » · Annuler »).
   const addToList = keys => {
     const list = lists.find(l => l.name === LIST_NAME);
-    if (list) setInList(list.id, keys, true);
+    if (list) setInList(list.id, keys, true, `${keys.length} Pokémon ajoutés à « ${LIST_NAME} »`);
     else createList({ name: LIST_NAME, emoji: '⏳', keys: Object.fromEntries(keys.map(k => [k, true])) });
     feedback.success();
-    toast(`${keys.length} Pokémon dans « ${LIST_NAME} »`);
   };
 
   return (
@@ -199,7 +196,7 @@ export default function BankPlanSheet({ open, onClose }) {
               <p className="text-xs text-slate-400 leading-relaxed">
                 {view === 'only'
                   ? 'Les shiny qui te manquent et que tu ne pourras chasser sur aucun jeu Switch : après la fermeture, ils ne pourront plus rejoindre HOME.'
-                  : 'Les shiny qui te manquent et qui sont au moins 3 fois plus faciles dans tes jeux DS/3DS que dans tes jeux Switch (ou absents de tes jeux Switch).'}
+                  : `Les shiny qui te manquent et qui sont au moins ${MIN_GAIN} fois plus faciles dans tes jeux DS/3DS que dans tes jeux Switch (ou absents de tes jeux Switch).`}
                 {settings.myGames?.length ? ' Selon tes jeux (Réglages → Mes jeux).' : ' Coche tes jeux dans Réglages → Mes jeux pour un plan sur mesure.'}
               </p>
               {groups.length === 0 ? (

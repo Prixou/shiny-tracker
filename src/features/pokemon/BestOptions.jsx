@@ -1,27 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Trophy, MapPin, Timer, Info, ShieldAlert } from 'lucide-react';
-import { GAME_BY_ID } from '../../data/constants.js';
+import { GAME_BY_ID } from '../../data/games.js';
 import { bestOptions } from '../../domain/bestOptions.js';
-import { bestOptionsPrefs, myGamesSet } from '../../domain/myGames.js';
-import { useStore } from '../../state/store.jsx';
-import { loadEncounters } from '../../services/encounters.js';
-import { fmtOdds } from '../../lib/utils.js';
+import { bestOptionsPrefs, myGamesSet } from '../../domain/settings.js';
+import { useAppState } from '../../state/StoreProvider.jsx';
+import { useEncounters } from '../../state/encounters.js';
+import { fmtOdds } from '../../lib/format.js';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 const SHOWN = 3;
 
 /** Carte « Meilleures options shiny » de la fiche Pokémon. */
 export default function BestOptions({ pokemon, onHunt, fallbackTip }) {
-  const [data, setData] = useState(null);
+  const data = useEncounters();
   const [expanded, setExpanded] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [showOthers, setShowOthers] = useState(false);
-  const { settings } = useStore();
-  useEffect(() => {
-    let alive = true;
-    loadEncounters().then(d => { if (alive) setData(d); }).catch(() => { if (alive) setData({}); });
-    return () => { alive = false; };
-  }, []);
+  const settings = useAppState(s => s.settings);
 
   if (!data) return <div className="h-40 rounded-3xl bg-slate-950 border border-slate-800 animate-pulse" />;
   const { main, extra, others } = bestOptions(pokemon, data, bestOptionsPrefs(settings));

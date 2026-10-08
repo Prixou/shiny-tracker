@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
 import { PlusCircle, Sparkles, RefreshCw, ShieldAlert } from 'lucide-react';
-import { useStore, defaultMethodFor } from '../../state/store.jsx';
+import { useActions, useAppState } from '../../state/StoreProvider.jsx';
+import { defaultMethodFor } from '../../domain/hunt.js';
 import { useNav } from '../../app/nav.jsx';
 import { getPokemon, isAvailableIn } from '../../data/pokedex.js';
-import { isLockedIn, GAME_BY_ID } from '../../data/constants.js';
+import { isLockedIn, GAME_BY_ID } from '../../data/games.js';
 import { encountersFor, METHOD_BY_ID } from '../../data/methods.js';
-import { fmtNumber } from '../../lib/utils.js';
-import { hasCharm } from '../../domain/myGames.js';
-import { Sheet, Field, Sprite, TypeBadge } from '../../ui/ui.jsx';
+import { fmtNumber } from '../../lib/format.js';
+import { hasCharm } from '../../domain/settings.js';
 import PokemonPicker from '../pokemon/PokemonPicker.jsx';
 import OddsConfig from './OddsConfig.jsx';
+import { Sheet, Field, Sprite, TypeBadge } from '../../ui/index.js';
 
 export default function NewHuntSheet({ open, initialTarget, preset, onClose }) {
-  const { settings, createHunt } = useStore();
+  const settings = useAppState(s => s.settings);
+  const { createHunt } = useActions();
   const { goTo } = useNav();
   const [target, setTarget] = useState(null);
   const [picking, setPicking] = useState(true);

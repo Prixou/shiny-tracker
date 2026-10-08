@@ -1,15 +1,16 @@
 import { useRef, useState } from 'react';
-import { useStore, defaultMethodFor } from '../../state/store.jsx';
+import { useAppState } from '../../state/StoreProvider.jsx';
+import { defaultMethodFor } from '../../domain/hunt.js';
 import { cumulativeChance, encountersFor, oddsAt, METHOD_BY_ID } from '../../data/methods.js';
-import { fmtNumber, fmtOdds, fmtPercent, fmtRatio, clamp } from '../../lib/utils.js';
-import { Field } from '../../ui/ui.jsx';
+import { fmtNumber, fmtOdds, fmtPercent, fmtRatio } from '../../lib/format.js';
 import OddsConfig from '../hunts/OddsConfig.jsx';
-import { hasCharm } from '../../domain/myGames.js';
+import { hasCharm } from '../../domain/settings.js';
+import { Field } from '../../ui/index.js';
 
 const TARGETS = [0.5, 0.75, 0.9, 0.95, 0.99];
 
 export default function OddsTool() {
-  const { settings } = useStore();
+  const settings = useAppState(s => s.settings);
   const [cfg, setCfg] = useState(() => {
     const game = settings.defaultGame || 'sv';
     return { game, method: defaultMethodFor(game), opts: {}, charm: hasCharm(settings, game), customOdds: null };
@@ -72,7 +73,7 @@ function Curve({ cfg, n, maxN, onPick }) {
   const valueAt = e => {
     const r = ref.current.getBoundingClientRect();
     const px = ((e.clientX - r.left) / r.width) * W;
-    return Math.round(clamp((px - pad.l) / (W - pad.l - pad.r), 0, 1) * maxN);
+    return Math.round(Math.min(1, Math.max(0, (px - pad.l) / (W - pad.l - pad.r))) * maxN);
   };
   const shown = hover ?? n;
   const pr = cumulativeChance(cfg, [shown]);

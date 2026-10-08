@@ -1,12 +1,16 @@
 import { useMemo, useState } from 'react';
 import { BookOpen, Search, FileDown, Sparkles } from 'lucide-react';
-import { useStore } from '../../state/store.jsx';
+import { useAppState } from '../../state/StoreProvider.jsx';
 import { useNav } from '../../app/nav.jsx';
 import { getPokemon } from '../../data/pokedex.js';
-import { GAME_BY_ID, METHOD_BY_ID, BALL_BY_ID } from '../../data/constants.js';
-import { normalize, formatDate, fmtNumber, formatDuration, getLuckTier, monthLabel, catchRatio } from '../../lib/utils.js';
-import { downloadFile } from '../../domain/backup.js';
-import { Sprite, BallIcon, EmptyState } from '../../ui/ui.jsx';
+import { GAME_BY_ID } from '../../data/games.js';
+import { METHOD_BY_ID } from '../../data/methods.js';
+import { normalize } from '../../lib/text.js';
+import { formatDate, fmtNumber, formatDuration, monthLabel, todayIso } from '../../lib/format.js';
+import { getLuckTier, catchRatio } from '../../domain/luck.js';
+import { downloadFile } from '../../lib/share.js';
+import { journalCsv } from '../../domain/journal.js';
+import { Sprite, BallIcon, EmptyState } from '../../ui/index.js';
 
 const SORTS = [
   { id: 'recent', label: 'Plus récents' },
@@ -17,7 +21,7 @@ const SORTS = [
 ];
 
 export default function JournalView() {
-  const { catches } = useStore();
+  const catches = useAppState(s => s.catches);
   const { openPokemon, goTo } = useNav();
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('recent');
@@ -57,16 +61,7 @@ export default function JournalView() {
     return [...map.entries()].map(([k, items]) => ({ key: k, label: k === 'unknown' ? 'Date inconnue' : monthLabel(k), items }));
   }, [list, sort]);
 
-  const exportCsv = () => {
-    const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const rows = [['N°', 'Pokémon', 'Surnom', 'Date', 'Jeu', 'Méthode', 'Ball', 'Rencontres', 'Taux', 'Durée', 'Sexe', 'Nature', 'Talent', 'Niveau', 'Baron', 'Marque', 'Notes']];
-    for (const { p, rec } of list) {
-      rows.push([p.id, p.name, rec.nickname, rec.date, GAME_BY_ID[rec.game]?.name, METHOD_BY_ID[rec.method]?.name, BALL_BY_ID[rec.ball]?.name,
-        rec.count, rec.odds ? `1/${rec.odds}` : '', rec.elapsedMs ? formatDuration(rec.elapsedMs) : '', rec.gender === 'm' ? '♂' : rec.gender === 'f' ? '♀' : '',
-        rec.nature, rec.ability, rec.level, rec.alpha ? 'Oui' : '', rec.mark, rec.notes]);
-    }
-    downloadFile(`journal-shiny-${new Date().toISOString().slice(0, 10)}.csv`, '﻿' + rows.map(r => r.map(esc).join(';')).join('\n'), 'text/csv;charset=utf-8');
-  };
+  const exportCsv = () => downloadFile(`journal-shiny-${todayIso()}.csv`, journalCsv(list), 'text/csv;charset=utf-8');
 
   if (!entries.length) {
     return (

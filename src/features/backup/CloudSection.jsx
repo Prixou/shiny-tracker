@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Cloud, CloudOff, RefreshCw, LogOut, Mail, KeyRound, AlertTriangle, Settings2, Check } from 'lucide-react';
 import { useCloud } from '../../state/cloud.jsx';
-import { Sheet, Field, useToast } from '../../ui/ui.jsx';
+import { Sheet, Field, useToast } from '../../ui/index.js';
 
 const STATUS = {
   idle: { label: 'Synchronisé', cls: 'text-emerald-300' },

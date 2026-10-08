@@ -1,5 +1,23 @@
-// « Mes jeux » : jeux possédés et Charme Chroma jeu par jeu (réglages myGames / charmGames).
+// Réglages de l'utilisateur, dont « Mes jeux » : jeux possédés et Charme Chroma jeu par jeu.
 import { GAME_BY_ID } from '../data/games.js';
+
+export const DEFAULT_SETTINGS = {
+  haptics: true,
+  keepAwake: true,
+  autoPause: true,
+  charm: false,
+  defaultGame: 'sv',
+  density: 4,
+  colorUncaught: false,
+  hideLocked: false,
+  showVariants: false,
+  animatedSprites: false,
+  confirmUncatch: true,
+  sound: false,
+  // Jeux possédés (vide = non renseigné) et Charme Chroma jeu par jeu.
+  myGames: [],
+  charmGames: {}
+};
 
 /** Vrai si l'utilisateur a indiqué au moins un jeu possédé. */
 export const myGamesSet = settings => (settings?.myGames?.length ? new Set(settings.myGames) : null);

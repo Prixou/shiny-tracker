@@ -1,13 +1,14 @@
 import { Gamepad2, Sparkles, Check } from 'lucide-react';
-import { useStore } from '../../state/store.jsx';
+import { useActions, useAppState } from '../../state/StoreProvider.jsx';
 import { GAMES, PLATFORMS } from '../../data/games.js';
-import { hasCharm } from '../../domain/myGames.js';
-import { Sheet } from '../../ui/ui.jsx';
-import { feedback } from '../../lib/hooks.js';
+import { hasCharm } from '../../domain/settings.js';
+import { feedback } from '../../lib/feedback.js';
+import { Sheet } from '../../ui/index.js';
 
 /** Jeux possédés et Charme Chroma jeu par jeu. */
 export default function MyGamesSheet({ open, onClose }) {
-  const { settings, setSettings } = useStore();
+  const settings = useAppState(s => s.settings);
+  const { setSettings } = useActions();
   const mine = new Set(settings.myGames || []);
 
   const toggleGame = id => {

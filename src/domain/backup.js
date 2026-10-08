@@ -1,6 +1,10 @@
+// Sauvegardes : export JSON, import (toutes versions), fusion et format compact des QR codes et liens.
 import LZString from 'lz-string';
-import { normalizeHunts, normalizeCatches, normalizeLists, normalizeHunt } from '../state/persistence.js';
-import { uid } from '../lib/utils.js';
+import { normalizeCatches } from './catch.js';
+import { normalizeHunt, normalizeHunts } from './hunt.js';
+import { normalizeLists } from './lists.js';
+import { todayIso } from '../lib/format.js';
+import { uid } from '../lib/id.js';
 
 export const APP_ID = 'shiny-hunter-pro';
 
@@ -96,44 +100,7 @@ function expandCompact(c) {
   return { catches, hunts, wishlist, lists };
 }
 
-export const shareLink = data => `${window.location.origin}${window.location.pathname}#import=${encodeCompact(data)}`;
+/** Lien d'import à ouvrir sur un autre appareil (`base` : adresse de l'app). */
+export const importLink = (data, base) => `${base}#import=${encodeCompact(data)}`;
 
-export function downloadFile(filename, text, type = 'application/json') {
-  const blob = new Blob([text], { type });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-export async function shareFile(filename, text) {
-  const file = new File([text], filename, { type: 'application/json' });
-  if (navigator.canShare?.({ files: [file] })) {
-    await navigator.share({ files: [file], title: 'Sauvegarde Shiny Hunter Pro' });
-    return true;
-  }
-  return false;
-}
-
-export async function copyText(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    const ok = document.execCommand('copy');
-    ta.remove();
-    return ok;
-  }
-}
-
-export const backupFilename = () => `shiny-hunter-${new Date().toISOString().slice(0, 10)}.json`;
+export const backupFilename = () => `shiny-hunter-${todayIso()}.json`;

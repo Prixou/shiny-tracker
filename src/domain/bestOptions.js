@@ -1,4 +1,4 @@
-import { GAME_BY_ID, isLockedIn } from '../data/constants.js';
+import { GAME_BY_ID, isLockedIn } from '../data/games.js';
 import { oddsAt, METHOD_BY_ID } from '../data/methods.js';
 import { isAvailableIn } from '../data/pokedex.js';
 import { REGIONAL_FORMS } from '../data/forms.js';

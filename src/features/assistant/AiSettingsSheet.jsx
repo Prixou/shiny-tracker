@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { KeyRound, Eye, EyeOff, ExternalLink, CheckCircle2, Trash2, ShieldCheck, Loader2, Globe } from 'lucide-react';
 import { PROVIDERS, CLAUDE_MODELS, activeModel } from '../../services/ai/config.js';
-import { Sheet, Segmented, Field, Toggle, useToast } from '../../ui/ui.jsx';
-import { feedback } from '../../lib/hooks.js';
+import { loadProvider } from '../../services/ai/index.js';
+import { feedback } from '../../lib/feedback.js';
+import { Sheet, Segmented, Field, Toggle, useToast } from '../../ui/index.js';
 
 const STEPS = {
   gemini: ['Ouvre Google AI Studio avec ton compte Google.', 'Appuie sur « Create API key » (« Créer une clé API »).', 'Copie la clé et colle-la ci-dessous.'],
@@ -33,20 +34,20 @@ export default function AiSettingsSheet({ open, onClose, cfg, onChange }) {
     setChecking(true);
     try {
       if (cfg.provider === 'gemini') {
-        const { listModels } = await import('../../services/ai/gemini.js');
+        const { listModels } = await loadProvider('gemini');
         const models = await listModels(key);
         const current = cfg.models.gemini;
         const pick = models.some(m => m.id === current) ? current : models[0]?.id || PROVIDERS.gemini.defaultModel;
         onChange({ ...cfg, keys: { ...cfg.keys, gemini: key }, geminiModels: models, models: { ...cfg.models, gemini: pick } });
       } else {
-        const { checkKey } = await import('../../services/ai/claude.js');
+        const { checkKey } = await loadProvider('claude');
         await checkKey(key, model);
         onChange({ ...cfg, keys: { ...cfg.keys, claude: key } });
       }
       feedback.success();
       toast('Clé vérifiée : l\'assistant est prêt ✨');
     } catch (err) {
-      const mod = await import(cfg.provider === 'gemini' ? '../../services/ai/gemini.js' : '../../services/ai/claude.js');
+      const mod = await loadProvider(cfg.provider);
       toast(mod.describeError(err) || 'Vérification annulée.', { type: 'error', duration: 6000 });
     } finally {
       setChecking(false);
