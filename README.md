@@ -18,7 +18,7 @@ Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex sh
 - Recherche instantanée tolérante aux accents (« electhor » trouve « Électhor »), par nom FR/EN ou numéro.
 - Filtres dans un panneau glissant : régions, types (double type possible), catégories (légendaires, fabuleux, starters, bébés, formes, Shiny Lock), jeu, méthode, Poké Ball.
 - Onglets Tous / Capturés / Manquants / **Objectifs** (liste de souhaits ⭐), tri par numéro, nom, date ou rencontres, grille à 3 tailles.
-- Fiche détaillée : artwork shiny/normal, types, conseils de chasse, édition complète de la capture (date, jeu, méthode, Ball parmi 27, rencontres, taux, surnom, sexe, notes), lien Poképédia.
+- Fiche détaillée : artwork shiny/normal, types, conseils de chasse, édition complète de la capture (date, ou **date inconnue** pour un vieux shiny, jeu, méthode, Ball parmi 27, rencontres, taux, surnom, sexe, notes), lien Poképédia.
 
 ### ⏱️ Compteur de chasse
 - **Énorme bouton tactile** (+1 ou pas personnalisé : hordes, œufs…), −1, vibration et son optionnels.
@@ -34,6 +34,7 @@ Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex sh
 
 ### 📚 Journal & 📊 Statistiques
 - Journal groupé par mois, recherche (nom, surnom, notes), tris (chance, rencontres…), **export CSV**.
+- **Historique saisi d'un coup** : le journal repère les jours où beaucoup de shiny ont été ajoutés à la main (sans chasse) et propose de les passer en **date inconnue** en un geste (annulable, aussi dans Outils → Données). Les shiny sans date ne faussent ni le journal, ni la courbe des 12 mois, ni la date de fin estimée.
 - Stats : progression globale (et hors Shiny Lock), **date de fin estimée** du living dex (au total et par région, selon ton rythme récent), par région, type, méthode, jeu, Ball, répartition de la chance, podiums, captures sur 12 mois.
 
 ### 🧰 Outils
@@ -45,7 +46,7 @@ Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex sh
 - **Synchronisation cloud** (optionnelle) : compte par e-mail, données à jour en direct entre téléphone et PC.
 - **Annuler** n'importe quelle action (toast « Annuler », bouton dans l'en-tête, Ctrl+Z).
 - **Données** : sauvegarde en fichier ou partage natif, restauration (fusion ou remplacement), **transfert PC ⇄ mobile par QR code** généré localement, scanner intégré (Chrome Android), pré-téléchargement des sprites pour le hors-ligne, installation de l'app.
-- **Réglages** : vibrations, sons, écran allumé, pause auto, affichage, jeu/méthode/charme par défaut, effacement.
+- **Réglages** : vibrations, sons, écran allumé, pause auto, affichage, jeu/méthode/charme par défaut, date des shiny cochés d'un geste (**« Sans date »** pour saisir son historique), effacement.
 
 ### ⏳ Plan « Pokémon Banque »
 - Compte à rebours jusqu'à la fin des transferts Banque → HOME (25 février 2027, 19 h heure du Pacifique), rappel dans le Pokédex et dans l'Agenda.
@@ -104,8 +105,8 @@ Chaque couche n'importe que les couches inférieures (vérifié par ESLint). Les
 
 ### Tests automatiques
 
-- **Unitaires** (`tests/unit`, Vitest, quelques secondes) : store (annulation, chasses, synchro, sauvegarde automatique), taux shiny publiés de chaque méthode (Charme, chaînes, Masuda, sandwichs, apparitions massives…), meilleures options par Pokémon (formes régionales, Shiny Lock, « Mes jeux », Charme par jeu), priorités avant la fermeture de la Banque, migrations et stockage local, export / import / QR / fusion de la synchro, date de fin estimée, agenda, outils de l'assistant (validation des arguments, actions proposées) et dialogue avec Gemini et Claude (réseau simulé).
-- **De bout en bout** (`tests/e2e`, Playwright) : l'app de production tourne dans Chromium en **412 × 915, tactile, en français**, sans réseau extérieur. Parcours testés : Pokédex (recherche, capture, annulation, filtres et bouton retour), fiche et chasse pré-réglée, compteur de chasse conservé après rechargement, shiny trouvé puis annulé, évènement shiny boosté, Mes jeux, date de fin estimée, Agenda, plan Pokémon Banque et assistant (Gemini simulé). Chaque test vérifie aussi l'absence d'erreur JavaScript et de défilement horizontal.
+- **Unitaires** (`tests/unit`, Vitest, quelques secondes) : store (annulation, chasses, synchro, sauvegarde automatique), taux shiny publiés de chaque méthode (Charme, chaînes, Masuda, sandwichs, apparitions massives…), meilleures options par Pokémon (formes régionales, Shiny Lock, « Mes jeux », Charme par jeu), priorités avant la fermeture de la Banque, migrations et stockage local, dates inconnues et jours d'historique saisi d'un coup, export / import / QR / fusion de la synchro, date de fin estimée, agenda, outils de l'assistant (validation des arguments, actions proposées) et dialogue avec Gemini et Claude (réseau simulé).
+- **De bout en bout** (`tests/e2e`, Playwright) : l'app de production tourne dans Chromium en **412 × 915, tactile, en français**, sans réseau extérieur. Parcours testés : Pokédex (recherche, capture, annulation, filtres et bouton retour), fiche et chasse pré-réglée, compteur de chasse conservé après rechargement, shiny trouvé puis annulé, évènement shiny boosté, Mes jeux, date de fin estimée, Agenda, plan Pokémon Banque, correction des dates d'un historique saisi d'un coup, réglage « Sans date » et assistant (Gemini simulé). Chaque test vérifie aussi l'absence d'erreur JavaScript et de défilement horizontal.
 - Première fois : `npx playwright install chromium` (ou `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/chemin/vers/chrome` pour utiliser un navigateur déjà installé).
 - Le workflow `.github/workflows/ci.yml` lance le lint, la vérification des types et tous les tests sur chaque pull request et sur `main` ; le déploiement ne part que si les tests unitaires passent.
 

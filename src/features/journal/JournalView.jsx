@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { BookOpen, Search, FileDown, Sparkles } from 'lucide-react';
+import { BookOpen, Search, FileDown, Sparkles, CalendarX, ChevronRight } from 'lucide-react';
 import { useAppState } from '../../state/StoreProvider.jsx';
 import { useNav } from '../../state/nav.jsx';
 import { getPokemon } from '../../data/pokedex.js';
@@ -11,6 +11,7 @@ import { getLuckTier, catchRatio } from '../../domain/luck.js';
 import { downloadFile } from '../../lib/share.js';
 import { journalCsv } from '../../domain/journal.js';
 import { Sprite, BallIcon, EmptyState } from '../../ui/index.js';
+import DateFixSheet, { useSuspiciousDays } from './DateFixSheet.jsx';
 
 const SORTS = [
   { id: 'recent', label: 'Plus récents' },
@@ -25,6 +26,8 @@ export default function JournalView() {
   const { openPokemon, goTo } = useNav();
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('recent');
+  const [showDateFix, setShowDateFix] = useState(false);
+  const suspicious = useSuspiciousDays();
 
   const entries = useMemo(() => catches
     .map(rec => ({ key: rec.key, id: rec.id, rec, p: getPokemon(rec.key) }))
@@ -42,7 +45,8 @@ export default function JournalView() {
     const ratio = e => catchRatio(e.rec);
     const cmp = {
       recent: (a, b) => (b.rec.timestamp || 0) - (a.rec.timestamp || 0),
-      oldest: (a, b) => (a.rec.timestamp || 0) - (b.rec.timestamp || 0),
+      // Les shiny sans date restent en dernier, quel que soit le sens.
+      oldest: (a, b) => (a.rec.timestamp || Number.MAX_SAFE_INTEGER) - (b.rec.timestamp || Number.MAX_SAFE_INTEGER),
       most: (a, b) => (b.rec.count || 0) - (a.rec.count || 0),
       luckiest: (a, b) => (ratio(a) ?? Infinity) - (ratio(b) ?? Infinity),
       unluckiest: (a, b) => (ratio(b) ?? -1) - (ratio(a) ?? -1)
@@ -86,6 +90,17 @@ export default function JournalView() {
           </div>
         ))}
       </div>
+
+      {suspicious.length > 0 && (
+        <button onClick={() => setShowDateFix(true)} className="w-full flex items-center gap-3 min-h-14 px-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-left">
+          <CalendarX className="w-5 h-5 shrink-0 text-amber-400" />
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-bold text-slate-100 truncate">{suspicious[0].ids.length} shiny ajoutés le {formatDate(suspicious[0].date)}</span>
+            <span className="block text-xs text-slate-400 truncate">Ton historique saisi d'un coup ? Corrige les dates</span>
+          </span>
+          <ChevronRight className="w-4 h-4 shrink-0 text-amber-400" />
+        </button>
+      )}
 
       <div className="flex gap-2">
         <div className="relative flex-1">
@@ -135,6 +150,7 @@ export default function JournalView() {
         </section>
       ))}
       {list.length === 0 && <p className="text-center text-sm text-slate-500 py-10">Aucun résultat pour « {query} ».</p>}
+      <DateFixSheet open={showDateFix} onClose={() => setShowDateFix(false)} />
     </div>
   );
 }

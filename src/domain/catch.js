@@ -12,6 +12,47 @@ import { hasCharm } from './settings.js';
 // Détails facultatifs, conservés seulement s'ils sont renseignés.
 export const CATCH_FIELDS = ['nature', 'ability', 'level', 'alpha', 'mark', 'teraType', 'language', 'inHome', 'provisional'];
 
+// Date inconnue : date vide et horodatage 0 (classée en dernier, ignorée par la courbe des 12 mois et la date de fin estimée).
+export const UNKNOWN_DATE = Object.freeze({ date: '', timestamp: 0 });
+
+/**
+ * La date de capture est-elle connue ?
+ * @param {Partial<Catch>} c
+ */
+export const hasKnownDate = c => !!c.date;
+
+/**
+ * Champs d'une capture ajoutée d'un geste (✓ du Pokédex, bouton de la fiche) selon le réglage « Date des shiny cochés d'un geste ».
+ * @param {Partial<Settings>} [settings]
+ * @returns {Partial<Catch>}
+ */
+export const quickAddFields = settings => (settings?.quickAddDate === 'unknown' ? { ...UNKNOWN_DATE } : {});
+
+// Seuil à partir duquel un jour d'ajouts à la main ressemble à un historique saisi d'un coup.
+export const BULK_MIN = 10;
+
+/**
+ * Jours où beaucoup de shiny ont été ajoutés à la main (hors chasses terminées) : sans doute un historique
+ * saisi d'un coup, dont les dates sont fausses. Du jour le plus chargé au moins chargé.
+ * @param {Catch[]} catches
+ * @param {number} [min]
+ * @returns {Array<{ date: string, ids: string[], fromHunts: number }>}
+ */
+export function bulkAddedDays(catches, min = BULK_MIN) {
+  /** @type {Map<string, { manual: string[], fromHunts: number }>} */
+  const days = new Map();
+  for (const c of catches) {
+    if (!c.date) continue;
+    const day = days.get(c.date) || { manual: [], fromHunts: 0 };
+    if (c.huntId) day.fromHunts++; else day.manual.push(c.id);
+    days.set(c.date, day);
+  }
+  return [...days]
+    .filter(([, d]) => d.manual.length >= min)
+    .map(([date, d]) => ({ date, ids: d.manual, fromHunts: d.fromHunts }))
+    .sort((a, b) => b.ids.length - a.ids.length || b.date.localeCompare(a.date));
+}
+
 /**
  * Nouvelle capture : jeu par défaut, méthode du jeu et taux calculé (Charme selon « Mes jeux »).
  * @param {string | number} key Clé du Pokémon.
@@ -52,7 +93,8 @@ export function normalizeCatch(rec, key) {
   if (!k) return null;
   const { method, opts } = migrateMethod(rec.method);
   const date = parseDate(rec.date, rec.timestamp);
-  const timestamp = Number(rec.timestamp) || (date ? timestampFromIso(date) : Date.now());
+  // Sans date ni horodatage : date inconnue (horodatage 0), plutôt que la date du jour.
+  const timestamp = Number(rec.timestamp) || (date ? timestampFromIso(date) : 0);
   const out = {
     id: rec.id || uid(),
     key: k,

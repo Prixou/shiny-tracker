@@ -6,6 +6,7 @@ import { TYPE_BY_ID, REGION_BY_ID, BALL_BY_ID } from '../../data/constants.js';
 import { GAME_BY_ID, PLATFORMS, isLockedIn } from '../../data/games.js';
 import { METHOD_BY_ID } from '../../data/methods.js';
 import { CATEGORIES, DEFAULT_FILTERS, countActive, filterPokedex, singleGame } from '../../domain/dexFilter.js';
+import { quickAddFields } from '../../domain/catch.js';
 import { useDebouncedValue, useProgressiveList } from '../../lib/hooks.js';
 import { feedback } from '../../lib/feedback.js';
 import { Segmented, RegionIcon, EmptyState, useConfirm } from '../../ui/index.js';
@@ -69,7 +70,7 @@ export default function DexView() {
       removeCatchesOf(p.key, `${p.name} retiré`);
       feedback.undo();
     } else {
-      addCatch(p.key, {}, `${p.name} shiny capturé ✨`);
+      addCatch(p.key, quickAddFields(store.getState().settings), `${p.name} shiny capturé ✨`);
       feedback.success();
     }
   }, [store, confirm, removeCatchesOf, addCatch]);
