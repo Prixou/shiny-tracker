@@ -20,6 +20,8 @@ function homeTransfer(gameId) {
   if (g.platform === '3ds' || g.platform === 'ds' || g.vc3ds) {
     return bankOpen() ? `oui, via Pokémon Banque jusqu'au 27/02/2027 seulement` : 'non (Pokémon Banque fermée le 27/02/2027)';
   }
+  // Rouge Feu / Vert Feuille sur Switch : compatibles avec HOME depuis la version 4.1.0 (7 octobre 2026).
+  if (g.id === 'frlg') return `oui depuis la version Switch (HOME 4.1.0, octobre 2026) ; depuis la cartouche GBA, seulement via une DS puis la Banque${bankOpen() ? ' jusqu\'au 27/02/2027' : ' (plus possible)'}`;
   if (g.platform === 'gba') return bankOpen() ? 'seulement via une DS (Pal Park) puis la Banque, jusqu\'au 27/02/2027' : 'non';
   return 'inconnu';
 }
