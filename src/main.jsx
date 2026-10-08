@@ -1,10 +1,10 @@
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
-import { StoreProvider } from './state/store.jsx';
+import { StoreProvider } from './state/StoreProvider.jsx';
 import { CloudProvider } from './state/cloud.jsx';
-import { ToastProvider, ConfirmProvider } from './components/ui.jsx';
-import App from './App.jsx';
+import App from './app/App.jsx';
 import './index.css';
+import { ToastProvider, ConfirmProvider } from './ui/index.js';
 
 // Demande au navigateur de ne pas effacer les données locales (important sur mobile).
 navigator.storage?.persist?.().catch(() => {});

@@ -2,7 +2,7 @@ import raw from './pokedex.json';
 import { REGIONAL_FORMS } from './forms.js';
 import { SPRITES, STARTER_IDS, SHINY_LOCKED_IDS, regionForId, genForId } from './constants.js';
 import { GAMES, GAME_BY_ID, MEGA_GAMES, GMAX_GAMES } from './games.js';
-import { normalize } from '../lib/utils.js';
+import { normalize } from '../lib/text.js';
 
 const speciesById = new Map(raw.species.map(s => [s.id, s]));
 

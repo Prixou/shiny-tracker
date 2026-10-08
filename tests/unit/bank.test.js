@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { BANK_DEADLINE, bankOpen, bankDaysLeft, viaBank, bankPriorities, groupByMethod, MIN_GAIN } from '../../src/lib/bank.js';
-import { loadEncounters } from '../../src/lib/encountersData.js';
-import { bestOptions } from '../../src/lib/bestOptions.js';
+import { BANK_DEADLINE, bankOpen, bankDaysLeft, viaBank, bankPriorities, groupByMethod, MIN_GAIN } from '../../src/domain/bank.js';
+import { loadEncounters } from '../../src/services/encounters.js';
+import { bestOptions } from '../../src/domain/bestOptions.js';
 import { GAME_BY_ID } from '../../src/data/games.js';
 
 let data;

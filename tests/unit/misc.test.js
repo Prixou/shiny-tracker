@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { forecast } from '../../src/lib/forecast.js';
+import { forecast } from '../../src/domain/forecast.js';
 import { EVENTS, eventStatus } from '../../src/data/events.js';
-import { formatDuration, fmtOdds, getLuckTier, normalize, catchRatio } from '../../src/lib/utils.js';
+import { formatDuration, fmtOdds } from '../../src/lib/format.js';
+import { getLuckTier, catchRatio } from '../../src/domain/luck.js';
+import { normalize } from '../../src/lib/text.js';
 import { MAIN_DEX } from '../../src/data/pokedex.js';
 import { GAME_BY_ID } from '../../src/data/games.js';
 

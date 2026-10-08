@@ -22,8 +22,6 @@ export const POKEMON_TYPES = [
 ];
 export const TYPE_BY_ID = Object.fromEntries(POKEMON_TYPES.map(t => [t.id, t]));
 
-export { GAMES, GAME_BY_ID, isLockedIn } from './games.js';
-export { METHODS as SHINY_METHODS, METHOD_BY_ID, gameMethods } from './methods.js';
 
 // `id` = clé de sauvegarde (compatibilité v1), `item` = sprite PokéAPI.
 export const POKE_BALLS = [
@@ -96,4 +94,6 @@ export const SHINY_LOCKED_IDS = new Set([
   1020, 1021, 1022, 1023, 1024, 1025
 ]);
 
-export const TABS = ['dex', 'hunts', 'journal', 'stats', 'tools'];
+// Natures (noms français), pour les détails d'une capture.
+export const NATURES = ['Assuré', 'Bizarre', 'Brave', 'Calme', 'Discret', 'Docile', 'Doux', 'Foufou', 'Gentil', 'Hardi', 'Jovial',
+  'Lâche', 'Malin', 'Malpoli', 'Mauvais', 'Modeste', 'Naïf', 'Pressé', 'Prudent', 'Pudique', 'Relax', 'Rigide', 'Sérieux', 'Solo', 'Timide'];

@@ -72,6 +72,8 @@ export const GAMES = [
 ];
 
 export const GAME_BY_ID = Object.fromEntries(GAMES.map(g => [g.id, g]));
+/** Identifiant de jeu à partir d'un identifiant ou d'un nom complet (anciennes sauvegardes) ; '' si inconnu. */
+export const gameIdFrom = g => (GAME_BY_ID[g] ? g : (GAMES.find(x => x.name === g)?.id || ''));
 
 // Consoles, dans l'ordre d'affichage des menus. Les jeux GB sont aussi sur 3DS (Console virtuelle).
 export const PLATFORMS = [

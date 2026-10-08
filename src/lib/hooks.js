@@ -134,30 +134,22 @@ export function useDebouncedValue(value, delay = 150) {
   return v;
 }
 
-let audioCtx = null;
-export const feedback = {
-  enabledHaptics: true,
-  enabledSound: false,
-  vibrate(pattern = 12) {
-    if (this.enabledHaptics && navigator.vibrate) {
-      try { navigator.vibrate(pattern); } catch { /* ignoré */ }
-    }
-  },
-  beep(freq = 880, duration = 0.05) {
-    if (!this.enabledSound) return;
-    try {
-      audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-      osc.connect(gain).connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + duration);
-    } catch { /* ignoré */ }
-  },
-  tap() { this.vibrate(10); this.beep(880, 0.04); },
-  undo() { this.vibrate([6, 40, 6]); this.beep(440, 0.05); },
-  success() { this.vibrate([30, 60, 30, 60, 120]); this.beep(1320, 0.25); }
-};
+/**
+ * Affichage progressif d'une longue liste (rendu par paquets de `page` éléments au défilement).
+ * Renvoie [limite, ref à poser sur un élément sentinelle en bas de liste]. La limite repart à `page` quand `resetKey` change.
+ */
+export function useProgressiveList({ page = 72, resetKey } = {}) {
+  const [limit, setLimit] = useState(page);
+  const sentinel = useRef(null);
+  useEffect(() => { setLimit(page); }, [resetKey, page]);
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el) return;
+    const io = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) setLimit(l => l + page);
+    }, { rootMargin: '1200px 0px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [limit, page]);
+  return [limit, sentinel];
+}
