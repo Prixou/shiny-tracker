@@ -110,6 +110,10 @@ export function bestOptions(p, data, prefs = {}) {
   if (has('bdsp', 'walk')) add('bdsp', { method: 'radar' }, { label: 'Poké Radar (chaîne 40)', locations: locs('bdsp', 'walk'), note: 'Uniquement dans les hautes herbes.' });
   if (has('dpp', 'walk')) add('dpp', { method: 'radar' }, { label: 'Poké Radar (chaîne 40)', locations: locs('dpp', 'walk') });
 
+  // Diamant Étincelant / Perle Scintillante : fossiles des Grands Souterrains, ranimés au musée de Charbourg (Soft Reset possible).
+  if (BDSP_FOSSILS.has(p.baseId) && !p.isForm) {
+    add('bdsp', { method: 'reset' }, { label: 'Fossile des Grands Souterrains', note: 'Ranimé au musée de Charbourg : sauvegarde avant et Soft Reset. Les évolutions s\'obtiennent en faisant évoluer le shiny.' });
+  }
 
   // Épée / Bouclier
   if (DYNAMAX_LEGENDS.has(p.baseId) && !p.isForm) add('swsh', { method: 'dynamax' }, { label: 'Expédition Dynamax', locations: ['Grand Antre (Terres Enneigées)'] });
