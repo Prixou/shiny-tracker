@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Vibrate, Volume2, Sun, PauseCircle, Palette, ShieldAlert, AlertTriangle, Sparkles, Trash2, Info, Layers, Film, ListPlus } from 'lucide-react';
+import { Vibrate, Volume2, Sun, PauseCircle, Palette, ShieldAlert, AlertTriangle, Sparkles, Trash2, Info, Layers, Film, ListPlus, Gamepad2, ChevronRight } from 'lucide-react';
 import { useStore } from '../state/store.jsx';
 import { MAIN_DEX, POKEDEX } from '../data/pokedex.js';
 import ListsSheet from '../components/ListsSheet.jsx';
+import MyGamesSheet from '../components/MyGamesSheet.jsx';
 import { Toggle, Field, useConfirm } from '../components/ui.jsx';
 import { feedback } from '../lib/hooks.js';
 import GameOptions from '../components/GameOptions.jsx';
@@ -11,6 +12,9 @@ export default function SettingsTool() {
   const { settings, setSettings, resetAll } = useStore();
   const confirm = useConfirm();
   const [showLists, setShowLists] = useState(false);
+  const [showGames, setShowGames] = useState(false);
+  const myCount = settings.myGames?.length || 0;
+  const charmCount = Object.values(settings.charmGames || {}).filter(Boolean).length;
   const wakeLockSupported = 'wakeLock' in navigator;
   const vibrateSupported = 'vibrate' in navigator;
 
@@ -52,7 +56,15 @@ export default function SettingsTool() {
             <GameOptions />
           </select>
         </Field>
-        <Toggle checked={settings.charm} onChange={charm => setSettings({ charm })} label="J'ai le Charme Chroma" desc="Utilisé pour pré-remplir les taux des nouvelles chasses" />
+        <button onClick={() => setShowGames(true)} className="w-full flex items-center gap-3 min-h-14 px-4 rounded-2xl bg-slate-950 border border-slate-800 text-left active:bg-slate-800">
+          <Gamepad2 className="w-5 h-5 text-amber-400 shrink-0" />
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-bold text-slate-100">Mes jeux et Charmes Chroma</span>
+            <span className="block text-xs text-slate-400">{myCount ? `${myCount} jeu${myCount > 1 ? 'x' : ''} · Charme dans ${charmCount}` : 'Non renseigné : tous les jeux sont proposés'}</span>
+          </span>
+          <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+        </button>
+        <Toggle checked={settings.charm} onChange={charm => setSettings({ charm })} label="Charme Chroma par défaut" desc="Pour les jeux non précisés dans « Mes jeux »" />
       </section>
 
       <section className="card p-4 space-y-3">
@@ -66,6 +78,7 @@ export default function SettingsTool() {
         <button className="btn-secondary w-full text-rose-300" onClick={reset}><Trash2 className="w-4 h-4" /> Effacer toutes les données</button>
       </section>
       <ListsSheet open={showLists} onClose={() => setShowLists(false)} />
+      <MyGamesSheet open={showGames} onClose={() => setShowGames(false)} />
     </div>
   );
 }

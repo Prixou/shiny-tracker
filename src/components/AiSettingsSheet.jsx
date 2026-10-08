@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { KeyRound, Eye, EyeOff, ExternalLink, CheckCircle2, Trash2, ShieldCheck, Loader2 } from 'lucide-react';
+import { KeyRound, Eye, EyeOff, ExternalLink, CheckCircle2, Trash2, ShieldCheck, Loader2, Globe } from 'lucide-react';
 import { PROVIDERS, CLAUDE_MODELS, activeModel } from '../lib/ai/config.js';
-import { Sheet, Segmented, Field, useToast } from './ui.jsx';
+import { Sheet, Segmented, Field, Toggle, useToast } from './ui.jsx';
 import { feedback } from '../lib/hooks.js';
 
 const STEPS = {
@@ -120,6 +120,10 @@ export default function AiSettingsSheet({ open, onClose, cfg, onChange }) {
                 <div className="text-xs text-slate-400">{m.desc}</div>
               </button>
             ))}
+            <div className="card px-4 mt-3">
+              <Toggle icon={<Globe className="w-5 h-5" />} checked={cfg.webSearch !== false} onChange={webSearch => onChange({ ...cfg, webSearch })}
+                label="Recherche web" desc="Pour l'actualité (raids, évènements, codes). Environ 1 centime par recherche, 3 au plus par question." />
+            </div>
           </div>
         )}
 

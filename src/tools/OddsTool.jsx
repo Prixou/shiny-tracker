@@ -4,6 +4,7 @@ import { cumulativeChance, encountersFor, oddsAt, METHOD_BY_ID } from '../data/m
 import { fmtNumber, fmtOdds, fmtPercent, fmtRatio, clamp } from '../lib/utils.js';
 import { Field } from '../components/ui.jsx';
 import OddsConfig from '../components/OddsConfig.jsx';
+import { hasCharm } from '../lib/myGames.js';
 
 const TARGETS = [0.5, 0.75, 0.9, 0.95, 0.99];
 
@@ -11,7 +12,7 @@ export default function OddsTool() {
   const { settings } = useStore();
   const [cfg, setCfg] = useState(() => {
     const game = settings.defaultGame || 'sv';
-    return { game, method: defaultMethodFor(game), opts: {}, charm: settings.charm, customOdds: null };
+    return { game, method: defaultMethodFor(game), opts: {}, charm: hasCharm(settings, game), customOdds: null };
   });
   const [n, setN] = useState(1000);
   const update = patch => setCfg(c => ({ ...c, ...patch }));
@@ -24,7 +25,7 @@ export default function OddsTool() {
   return (
     <div className="space-y-4">
       <div className="card p-4 space-y-4">
-        <OddsConfig value={cfg} onChange={update} />
+        <OddsConfig value={cfg} onChange={update} charmFor={id => hasCharm(settings, id)} />
         <Field label={`Nombre de ${unit}`}>
           <input type="number" inputMode="numeric" min="0" className="input font-mono" value={n} onChange={e => setN(Math.max(0, parseInt(e.target.value, 10) || 0))} />
         </Field>

@@ -26,7 +26,10 @@ export const DEFAULT_SETTINGS = {
   showVariants: false,
   animatedSprites: false,
   confirmUncatch: true,
-  sound: false
+  sound: false,
+  // Jeux possédés (vide = non renseigné) et Charme Chroma jeu par jeu.
+  myGames: [],
+  charmGames: {}
 };
 
 const read = key => {

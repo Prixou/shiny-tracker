@@ -6,6 +6,7 @@ import { getPokemon, isAvailableIn } from '../data/pokedex.js';
 import { isLockedIn, GAME_BY_ID } from '../data/constants.js';
 import { encountersFor, METHOD_BY_ID } from '../data/methods.js';
 import { fmtNumber } from '../lib/utils.js';
+import { hasCharm } from '../lib/myGames.js';
 import { Sheet, Field, Sprite, TypeBadge } from './ui.jsx';
 import PokemonPicker from './PokemonPicker.jsx';
 import OddsConfig from './OddsConfig.jsx';
@@ -24,11 +25,11 @@ export default function NewHuntSheet({ open, initialTarget, preset, onClose }) {
     setPicking(!t);
     const game = settings.defaultGame || 'sv';
     const method = defaultMethodFor(game);
-    const base = { game, method, opts: {}, charm: settings.charm, customOdds: null, count: 0 };
+    const base = { game, method, opts: {}, charm: hasCharm(settings, game), customOdds: null, count: 0 };
     // Préréglage venant des « Meilleures options shiny » de la fiche.
     const cfg = preset ? { ...base, ...preset, opts: { ...(preset.opts || {}) } } : base;
     setForm({ ...cfg, step: METHOD_BY_ID[cfg.method]?.step || 1 });
-  }, [open, initialTarget, preset, settings.defaultGame, settings.charm]);
+  }, [open, initialTarget, preset, settings]);
 
   if (!form) return null;
   const update = patch => setForm(f => ({ ...f, ...patch }));
@@ -78,7 +79,7 @@ export default function NewHuntSheet({ open, initialTarget, preset, onClose }) {
             </p>
           ))}
 
-          <OddsConfig value={form} onChange={update} />
+          <OddsConfig charmFor={id => hasCharm(settings, id)} value={form} onChange={update} />
 
           <div className="grid grid-cols-2 gap-3">
             <Field label={`Pas (+x ${unit})`}>

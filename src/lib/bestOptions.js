@@ -26,14 +26,18 @@ const uniqueNames = list => [...new Set((list || []).map(l => l.name))];
 /**
  * Meilleures façons d'obtenir un Pokémon shiny, classées par taux (le meilleur d'abord).
  * Chaque option contient une configuration de chasse prête à l'emploi (`cfg`).
+ * `prefs.owns(jeu)` limite `main` aux jeux possédés (les autres vont dans `others`) ;
+ * `prefs.charmFor(jeu)` indique si le Charme Chroma est compté.
  */
-export function bestOptions(p, data) {
-  if (!p || p.variantKind === 'mega' || p.variantKind === 'gmax') return { main: [], extra: [] };
+export function bestOptions(p, data, prefs = {}) {
+  const owns = prefs.owns || (() => true);
+  const charmFor = prefs.charmFor || (() => true);
+  if (!p || p.variantKind === 'mega' || p.variantKind === 'gmax') return { main: [], extra: [], others: [] };
   const enc = indexEncounters(data, p.baseId);
   const options = [];
   const add = (game, cfg, { label, locations = [], estimate = null, note = null, chain = null }) => {
     if (isLockedIn(p, game)) return;
-    const full = { game, charm: true, opts: {}, ...cfg };
+    const full = { game, opts: {}, ...cfg, charm: cfg.charm ?? charmFor(game) };
     const odds = oddsAt(full, chain ?? METHOD_BY_ID[full.method]?.chain ?? 0);
     options.push({ game, cfg: full, odds, label, locations, estimate, note });
   };
@@ -102,16 +106,31 @@ export function bestOptions(p, data) {
   // Épée / Bouclier
   if (DYNAMAX_LEGENDS.has(p.baseId) && !p.isForm) add('swsh', { method: 'dynamax' }, { label: 'Expédition Dynamax', locations: ['Grand Antre (Terres Enneigées)'] });
 
+  // Ailleurs, rencontres simples à pleine chance : sauvage, ou Soft Reset pour une rencontre unique.
+  const RESET_TYPES = new Set(['static', 'only-one', 'pokeflute', 'roaming-grass', 'roaming-water']);
+  const SKIP_TYPES = /^(gift|gift-egg|npc-trade|max-raid|colosseum|pokemon-|pla-|za-|sv-wild)/;
+  for (const [game, byMethod] of Object.entries(enc)) {
+    const g = GAME_BY_ID[game];
+    if (!g || game === 'pogo' || options.some(o => o.game === game)) continue;
+    const types = Object.keys(byMethod).filter(m => !SKIP_TYPES.test(m));
+    const wildTypes = types.filter(m => !RESET_TYPES.has(m));
+    const resetTypes = types.filter(m => RESET_TYPES.has(m));
+    if (wildTypes.length && g.methods?.includes('wild')) add(game, { method: 'wild' }, { label: 'Rencontre sauvage (pleine chance)', locations: locs(game, ...wildTypes) });
+    else if (resetTypes.length && g.methods?.includes('reset')) add(game, { method: 'reset' }, { label: 'Soft Reset (rencontre unique)', locations: locs(game, ...resetTypes) });
+  }
+
   // Meilleure option par jeu, puis classement par taux.
   const bestByGame = new Map();
   for (const o of options) if (!bestByGame.has(o.game) || o.odds < bestByGame.get(o.game).odds) bestByGame.set(o.game, o);
-  const main = [...bestByGame.values()].sort((a, b) => a.odds - b.odds || (GAME_BY_ID[b.game]?.gen || 0) - (GAME_BY_ID[a.game]?.gen || 0));
+  const ranked = [...bestByGame.values()].sort((a, b) => a.odds - b.odds || (GAME_BY_ID[b.game]?.gen || 0) - (GAME_BY_ID[a.game]?.gen || 0));
+  const main = ranked.filter(o => owns(o.game));
+  const others = ranked.filter(o => !owns(o.game));
 
   // Pokémon GO en complément (taux différents, jeu à part).
   const extra = [];
-  if (!p.isMythical && !p.isShinyLocked) {
+  if (!p.isMythical && !p.isShinyLocked && owns('pogo')) {
     if (p.isLegendary) extra.push({ game: 'pogo', cfg: { game: 'pogo', method: 'go_raid', opts: {}, charm: false }, odds: 20, label: 'Raids légendaires', locations: [] });
     else extra.push({ game: 'pogo', cfg: { game: 'pogo', method: 'go_standard', opts: {}, charm: false }, odds: 512, label: 'Sauvage (1/64 en œuf ou raid, ~1/25 en Community Day)', locations: [] });
   }
-  return { main, extra };
+  return { main, extra, others };
 }
