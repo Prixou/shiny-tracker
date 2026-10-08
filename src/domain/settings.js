@@ -18,6 +18,7 @@ import { GAME_BY_ID } from '../data/games.js';
  * @property {boolean} sound
  * @property {string[]} myGames Jeux possédés (vide : non renseigné, tous les jeux comptent).
  * @property {Record<string, boolean>} charmGames Charme Chroma jeu par jeu.
+ * @property {'today' | 'unknown'} quickAddDate Date des shiny cochés d'un geste (✓ du Pokédex, bouton de la fiche).
  */
 
 /** @type {Settings} */
@@ -36,7 +37,9 @@ export const DEFAULT_SETTINGS = {
   sound: false,
   // Jeux possédés (vide = non renseigné) et Charme Chroma jeu par jeu.
   myGames: [],
-  charmGames: {}
+  charmGames: {},
+  // « unknown » pour saisir son historique sans fausser les dates.
+  quickAddDate: 'today'
 };
 
 /**

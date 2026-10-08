@@ -5,7 +5,7 @@ import { MAIN_DEX, POKEDEX } from '../../data/pokedex.js';
 import ListsSheet from '../lists/ListsSheet.jsx';
 import MyGamesSheet from './MyGamesSheet.jsx';
 import { feedback } from '../../lib/feedback.js';
-import { Toggle, Field, useConfirm, GameOptions } from '../../ui/index.js';
+import { Toggle, Field, Segmented, useConfirm, GameOptions } from '../../ui/index.js';
 
 export default function SettingsTool() {
   const settings = useAppState(s => s.settings);
@@ -65,6 +65,10 @@ export default function SettingsTool() {
           <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
         </button>
         <Toggle checked={settings.charm} onChange={charm => setSettings({ charm })} label="Charme Chroma par défaut" desc="Pour les jeux non précisés dans « Mes jeux »" />
+        <Field group label="Date des shiny cochés d'un geste" hint="« Sans date » pour saisir ton historique : les shiny cochés dans le Pokédex ou ajoutés depuis la fiche n'auront pas de date et ne fausseront ni le journal ni les stats.">
+          <Segmented value={settings.quickAddDate || 'today'} onChange={quickAddDate => setSettings({ quickAddDate })}
+            options={[{ id: 'today', label: 'Date du jour' }, { id: 'unknown', label: 'Sans date' }]} />
+        </Field>
       </section>
 
       <section className="card p-4 space-y-3">

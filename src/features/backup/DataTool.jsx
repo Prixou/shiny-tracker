@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Download, Upload, Share2, Copy, QrCode, ScanLine, ClipboardPaste, CloudOff, Smartphone, HardDrive, Link2 } from 'lucide-react';
+import { Download, Upload, Share2, Copy, QrCode, ScanLine, ClipboardPaste, CloudOff, Smartphone, HardDrive, Link2, CalendarX } from 'lucide-react';
 import { useAppState, useStoreApi } from '../../state/StoreProvider.jsx';
 import { MAIN_DEX, spriteUrl } from '../../data/pokedex.js';
 import { POKE_BALLS, ballSprite } from '../../data/constants.js';
@@ -9,6 +9,7 @@ import { useInstallPrompt } from '../../lib/hooks.js';
 import ImportSheet from './ImportSheet.jsx';
 import QrScanner from './QrScanner.jsx';
 import CloudSection from './CloudSection.jsx';
+import DateFixSheet from '../journal/DateFixSheet.jsx';
 import { Sheet, useToast } from '../../ui/index.js';
 
 export default function DataTool() {
@@ -20,6 +21,7 @@ export default function DataTool() {
   const [pasted, setPasted] = useState('');
   const [showQr, setShowQr] = useState(false);
   const [showScan, setShowScan] = useState(false);
+  const [showDateFix, setShowDateFix] = useState(false);
   const fileRef = useRef(null);
   const json = () => JSON.stringify(buildExport(store.getState()), null, 1);
   const canShareFiles = typeof navigator.canShare === 'function';
@@ -71,6 +73,12 @@ export default function DataTool() {
       </section>
 
       <section className="card p-4 space-y-3">
+        <h3 className="label-caps flex items-center gap-2"><CalendarX className="w-4 h-4" /> Dates des captures</h3>
+        <p className="text-sm text-slate-400">Historique saisi d'un coup ? Passe ces shiny en « date inconnue » pour qu'ils ne faussent pas le journal ni les stats.</p>
+        <button className="btn-secondary w-full" onClick={() => setShowDateFix(true)}><CalendarX className="w-4 h-4" /> Corriger les dates</button>
+      </section>
+
+      <section className="card p-4 space-y-3">
         <h3 className="label-caps flex items-center gap-2"><Smartphone className="w-4 h-4" /> Transfert PC ⇄ mobile</h3>
         <p className="text-sm text-slate-400">Affiche un QR code sur un appareil, scanne-le avec l'autre : l'app s'ouvre et propose d'importer tes données.</p>
         <div className="grid grid-cols-2 gap-2">
@@ -97,6 +105,7 @@ export default function DataTool() {
       </Sheet>
 
       <ImportSheet code={importCode} onClose={() => setImportCode(null)} />
+      <DateFixSheet open={showDateFix} onClose={() => setShowDateFix(false)} />
     </div>
   );
 }

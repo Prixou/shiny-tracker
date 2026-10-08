@@ -12,6 +12,7 @@ import { mergeData } from '../domain/backup.js';
 import { luckRatio } from '../data/methods.js';
 import { MAIN_DEX } from '../data/pokedex.js';
 import { uid } from '../lib/id.js';
+import { timestampFromIso } from '../lib/format.js';
 
 // Tranches de données synchronisées (horodatées à chaque modification) et annulables.
 export const DATA_SLICES = ['catches', 'hunts', 'wishlist', 'lists'];
@@ -182,6 +183,20 @@ function createActions(set, get, { now, onReset }) {
     removeCatchesOf(key, label = 'Captures retirées') {
       const ids = get().catches.filter(c => c.key === key).map(c => c.id);
       commit(label, { catches: ids }, s => ({ catches: s.catches.filter(c => c.key !== key) }));
+    },
+    /**
+     * Change la date de plusieurs captures d'un coup (une seule entrée d'annulation).
+     * @param {string[]} ids
+     * @param {string} date « AAAA-MM-JJ », ou '' pour une date inconnue.
+     * @param {string} [label]
+     */
+    setCatchDates(ids, date, label) {
+      if (!ids.length) return;
+      const selected = new Set(ids);
+      const timestamp = date ? timestampFromIso(date) : 0;
+      commit(label || (date ? `Date changée (${ids.length} shiny)` : `Date inconnue pour ${ids.length} shiny`), { catches: ids }, s => ({
+        catches: s.catches.map(c => (selected.has(c.id) ? { ...c, date, timestamp, updatedAt: now() } : c))
+      }));
     },
     /**
      * Marque des captures comme transférées dans Pokémon HOME (une seule entrée d'annulation).

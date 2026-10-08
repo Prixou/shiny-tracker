@@ -45,13 +45,20 @@ export function Toggle({ checked, onChange, label, desc, icon }) {
   );
 }
 
-export const Field = ({ label, children, hint, className = '' }) => (
-  <label className={`block ${className}`}>
-    <span className="block text-xs font-bold text-slate-400 mb-1.5">{label}</span>
-    {children}
-    {hint && <span className="block text-[11px] text-slate-500 mt-1">{hint}</span>}
-  </label>
-);
+/**
+ * Libellé d'un champ. `group` pour une rangée de boutons : un <label> les engloberait (un toucher
+ * sur le texte activerait le premier bouton, qui prendrait aussi le libellé pour nom).
+ */
+export const Field = ({ label, children, hint, className = '', group = false }) => {
+  const Tag = group ? 'div' : 'label';
+  return (
+    <Tag className={`block ${className}`} {...(group ? { role: 'group', 'aria-label': label } : {})}>
+      <span className="block text-xs font-bold text-slate-400 mb-1.5">{label}</span>
+      {children}
+      {hint && <span className="block text-[11px] text-slate-500 mt-1">{hint}</span>}
+    </Tag>
+  );
+};
 
 export const EmptyState = ({ icon, title, children, action }) => (
   <div className="flex flex-col items-center text-center py-14 px-6 gap-3">

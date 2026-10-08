@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Star, Timer, ExternalLink, Sparkles, ShieldAlert, Crown, Trash2, Plus, Film, Lock, ListPlus } from 'lucide-react';
-import { useActions, useAppState } from '../../state/StoreProvider.jsx';
+import { useActions, useAppState, useStoreApi } from '../../state/StoreProvider.jsx';
+import { quickAddFields } from '../../domain/catch.js';
 import { selectCatchesByKey } from '../../state/store.js';
 import { huntTotal } from '../../domain/hunt.js';
 import { useNav } from '../../state/nav.jsx';
@@ -36,6 +37,7 @@ function PokemonDetails({ p, onClose }) {
   }));
   // Tableau comparé élément par élément : pas de nouveau rendu tant que ces chasses ne changent pas.
   const relatedHunts = useAppState(s => s.hunts.filter(h => h.targetId === p.key && h.status === 'active'));
+  const store = useStoreApi();
   const { addCatch, removeCatchesOf, toggleWish, toggleInList, setUiValue } = useActions();
   const { openNewHunt, goTo, openPokemon } = useNav();
   const confirm = useConfirm();
@@ -53,7 +55,7 @@ function PokemonDetails({ p, onClose }) {
     if (ok) removeCatchesOf(p.key, `${p.name} retiré`);
   };
   const onAdd = () => {
-    addCatch(p.key, {}, copies.length ? `Exemplaire de ${p.name} ajouté` : `${p.name} shiny capturé ✨`);
+    addCatch(p.key, quickAddFields(store.getState().settings), copies.length ? `Exemplaire de ${p.name} ajouté` : `${p.name} shiny capturé ✨`);
     feedback.success();
   };
 

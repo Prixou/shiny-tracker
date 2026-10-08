@@ -3,7 +3,8 @@ import { ChevronDown } from 'lucide-react';
 import { POKE_BALLS, BALL_BY_ID, POKEMON_TYPES, NATURES } from '../../data/constants.js';
 import { gameMethods, METHOD_BY_ID } from '../../data/methods.js';
 import { BANK_DEADLINE_SHORT, viaBank } from '../../domain/bank.js';
-import { timestampFromIso } from '../../lib/format.js';
+import { timestampFromIso, todayIso } from '../../lib/format.js';
+import { UNKNOWN_DATE } from '../../domain/catch.js';
 import { Field, BallIcon, Toggle, GameOptions } from '../../ui/index.js';
 
 export default function CaptureForm({ value, onChange, showCounts = true, showProvisional = true }) {
@@ -30,10 +31,21 @@ export default function CaptureForm({ value, onChange, showCounts = true, showPr
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Date de capture">
-          <input type="date" className="input" value={value.date || ''} onChange={e => onChange({ date: e.target.value, timestamp: e.target.value ? timestampFromIso(e.target.value) : Date.now() })} />
-        </Field>
-        <Field label="Sexe">
+        {/* Date inconnue possible (historique saisi après coup) : la capture ne fausse alors ni le journal ni les stats. */}
+        <div>
+          <span className="block text-xs font-bold text-slate-400 mb-1.5">Date de capture</span>
+          {value.date ? (
+            <input type="date" className="input" aria-label="Date de capture" value={value.date}
+              onChange={e => onChange(e.target.value ? { date: e.target.value, timestamp: timestampFromIso(e.target.value) } : { ...UNKNOWN_DATE })} />
+          ) : (
+            <div className="input flex items-center text-slate-400">Inconnue</div>
+          )}
+          <button type="button" onClick={() => onChange(value.date ? { ...UNKNOWN_DATE } : { date: todayIso(), timestamp: Date.now() })}
+            className="min-h-11 text-xs font-bold text-amber-400">
+            {value.date ? 'Date inconnue' : 'Indiquer une date'}
+          </button>
+        </div>
+        <Field group label="Sexe">
           <div className="flex gap-1.5">
             {[{ id: 'm', label: '♂', cls: 'text-sky-400' }, { id: 'f', label: '♀', cls: 'text-pink-400' }, { id: '', label: '—', cls: 'text-slate-400' }].map(g => (
               <button key={g.id || 'none'} type="button" onClick={() => onChange({ gender: g.id })} aria-pressed={value.gender === g.id}
