@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Sparkles, Layers, Timer, BookOpen, BarChart3, Wrench, WifiOff, Undo2 } from 'lucide-react';
+import { Sparkles, Layers, Timer, BookOpen, BarChart3, Wrench, WifiOff, Undo2, MessageCircle } from 'lucide-react';
 import { useStore } from './state/store.jsx';
 import { NavContext } from './state/nav.jsx';
 import { MAIN_DEX } from './data/pokedex.js';
@@ -15,6 +15,7 @@ import { useToast } from './components/ui.jsx';
 const JournalView = lazy(() => import('./views/JournalView.jsx'));
 const StatsView = lazy(() => import('./views/StatsView.jsx'));
 const ToolsView = lazy(() => import('./views/ToolsView.jsx'));
+const AssistantSheet = lazy(() => import('./components/AssistantSheet.jsx'));
 
 const NAV = [
   { id: 'dex', label: 'Pokédex', icon: Layers },
@@ -36,6 +37,8 @@ export default function App() {
   const [tab, setTab] = useState(() => initialTab(ui));
   const [pokemonKey, setPokemonKey] = useState(null);
   const [newHunt, setNewHunt] = useState(null);
+  const [assistant, setAssistant] = useState(false);
+  const [assistantMounted, setAssistantMounted] = useState(false);
   const [importCode, setImportCode] = useState(() => {
     const m = window.location.hash.match(/#import=(.+)$/);
     return m ? m[1] : null;
@@ -56,7 +59,8 @@ export default function App() {
     tab,
     goTo,
     openPokemon: key => setPokemonKey(String(key)),
-    openNewHunt: (targetKey = null, preset = null) => setNewHunt({ targetKey, preset })
+    openNewHunt: (targetKey = null, preset = null) => setNewHunt({ targetKey, preset }),
+    openAssistant: () => { setAssistantMounted(true); setAssistant(true); }
   }), [tab, goTo]);
 
   const caughtCount = useMemo(() => MAIN_DEX.reduce((n, p) => n + (shinies[p.key] ? 1 : 0), 0), [shinies]);
@@ -175,6 +179,19 @@ export default function App() {
             })}
           </div>
         </nav>
+
+        {tab !== 'hunts' && (
+          <button onClick={nav.openAssistant} aria-label="Assistant de chasse"
+            className="fixed z-30 right-4 bottom-[calc(var(--nav-h)+var(--safe-bottom)+16px)] md:bottom-6 w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 shadow-xl shadow-amber-500/30 flex items-center justify-center active:scale-95 transition">
+            <MessageCircle className="w-6 h-6" />
+            <Sparkles className="w-3.5 h-3.5 absolute top-2.5 right-2.5" />
+          </button>
+        )}
+        {assistantMounted && (
+          <Suspense fallback={null}>
+            <AssistantSheet open={assistant} onClose={() => setAssistant(false)} />
+          </Suspense>
+        )}
 
         <PokemonSheet pokemonKey={pokemonKey} onClose={() => setPokemonKey(null)} />
         <NewHuntSheet open={!!newHunt} initialTarget={newHunt?.targetKey} preset={newHunt?.preset} onClose={() => setNewHunt(null)} />

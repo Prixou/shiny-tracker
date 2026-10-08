@@ -9,7 +9,7 @@ import { spriteUrl } from '../data/pokedex.js';
 const sheetStack = [];
 
 // Panneau glissant depuis le bas sur mobile, fenêtre centrée sur grand écran.
-export function Sheet({ open, onClose, title, subtitle, icon, children, footer, wide = false, full = false }) {
+export function Sheet({ open, onClose, title, subtitle, icon, actions, children, footer, wide = false, full = false, bodyRef }) {
   useBackClose(open, onClose);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -49,12 +49,13 @@ export function Sheet({ open, onClose, title, subtitle, icon, children, footer, 
               <h2 className="text-base font-black text-white truncate">{title}</h2>
               {subtitle && <p className="text-xs text-slate-400 truncate">{subtitle}</p>}
             </div>
+            {actions}
             <button onClick={onClose} className="icon-btn -mr-2" aria-label="Fermer">
               <X className="w-5 h-5" />
             </button>
           </div>
         )}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
+        <div ref={bodyRef} className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
         {footer && <div className="px-5 pt-3 pb-safe-4 border-t border-slate-800/80 bg-slate-900 sm:rounded-b-3xl">{footer}</div>}
         {!footer && <div className="pb-safe" />}
       </div>
