@@ -3,7 +3,8 @@ import { useStoreApi } from '../../state/StoreProvider.jsx';
 import { selectSnapshot } from '../../state/store.js';
 import { loadChat, saveChat, activeModel, webSearchOn, PROVIDERS } from '../../services/ai/config.js';
 import { loadProvider } from '../../services/ai/index.js';
-import { buildContext, runTool } from '../../services/ai/tools.js';
+import { runTool } from '../../services/ai/tools/index.js';
+import { buildContext } from '../../services/ai/context.js';
 import { feedback } from '../../lib/feedback.js';
 
 const REFUSAL = 'Je ne peux pas répondre à cette demande. Reformule-la ou pose une autre question sur ta chasse.';

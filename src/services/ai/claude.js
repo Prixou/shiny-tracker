@@ -1,6 +1,6 @@
 // Connexion à Claude (API Anthropic) depuis le navigateur, avec la clé de l'utilisateur.
 import Anthropic from '@anthropic-ai/sdk';
-import { TOOL_DEFS } from './tools.js';
+import { TOOL_DEFS } from './tools/index.js';
 
 const MAX_ROUNDS = 8;
 

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { runTool, buildContext, TOOL_DEFS, findPokemon } from '../../src/services/ai/tools.js';
+import { runTool, TOOL_DEFS, TOOLS, findPokemon } from '../../src/services/ai/tools/index.js';
+import { buildContext } from '../../src/services/ai/context.js';
 
 const NOW = Date.now();
 const store = (patch = {}) => ({
@@ -19,6 +20,14 @@ const call = async (name, args, s = store()) => {
 };
 
 describe('outils de l\'assistant', () => {
+  it('registre : noms uniques, une fonction par outil, définitions dans le même ordre', () => {
+    const names = TOOLS.map(t => t.name);
+    expect(new Set(names).size).toBe(names.length);
+    for (const t of TOOLS) expect(typeof t.run).toBe('function');
+    expect(TOOL_DEFS.map(t => t.name)).toEqual(names);
+    expect(Object.keys(TOOL_DEFS[0])).toEqual(['name', 'description', 'schema']);
+  });
+
   it('toutes les définitions ont un schéma objet', () => {
     for (const t of TOOL_DEFS) {
       expect(t.schema.type).toBe('object');
