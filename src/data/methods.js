@@ -19,6 +19,7 @@ export const METHODS = [
   { id: 'reset', name: 'Soft Reset', icon: '🔄', unit: 'resets', p: x => roll(x.base, 1 + x.charm) },
   { id: 'egg', name: 'Œufs (sans Masuda)', icon: '🐣', unit: 'œufs', eggs: true, p: x => roll(x.base, 1 + x.charm) },
   { id: 'masuda', name: 'Méthode Masuda', icon: '🥚', unit: 'œufs', eggs: true, p: x => roll(x.base, (x.gen === 4 ? 5 : 6) + x.charm) },
+  // Plus proposé dans aucun jeu ; conservé pour les chasses et captures déjà enregistrées.
   { id: 'gsc_breed', name: 'Parent shiny (Gen 2)', icon: '🥚', unit: 'œufs', eggs: true, charm: false, p: () => 1 / 64 },
   { id: 'horde', name: 'Hordes', icon: '🐝', unit: 'rencontres', step: 5, p: x => roll(x.base, 1 + x.charm), note: 'Chaque horde compte 5 rencontres.' },
   {

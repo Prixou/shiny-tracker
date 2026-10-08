@@ -110,18 +110,6 @@ export function bestOptions(p, data, prefs = {}) {
   if (has('bdsp', 'walk')) add('bdsp', { method: 'radar' }, { label: 'Poké Radar (chaîne 40)', locations: locs('bdsp', 'walk'), note: 'Uniquement dans les hautes herbes.' });
   if (has('dpp', 'walk')) add('dpp', { method: 'radar' }, { label: 'Poké Radar (chaîne 40)', locations: locs('dpp', 'walk') });
 
-  // Or / Argent / Cristal (Console virtuelle 3DS) : un parent shiny donne 1/64 à la reproduction.
-  if (p.canBreed && !p.isForm && p.baseId <= 251 && isAvailableIn(p, 'gsc')) {
-    add('gsc', { method: 'gsc_breed', charm: false }, {
-      label: 'Reproduction avec un parent shiny (Console virtuelle 3DS)',
-      note: 'Il faut un parent shiny compatible : un Métamorph shiny marche avec tout (le Léviator rouge du Lac Colère convient aux groupes Eau 2 et Dragon). L\'œuf donne la première forme de l\'évolution. Transfert ensuite via Pokémon Banque et Poké Transporter.'
-    });
-  }
-
-  // Diamant Étincelant / Perle Scintillante : fossiles des Grands Souterrains, ranimés au musée de Charbourg (Soft Reset possible).
-  if (BDSP_FOSSILS.has(p.baseId) && !p.isForm) {
-    add('bdsp', { method: 'reset' }, { label: 'Fossile des Grands Souterrains', note: 'Ranimé au musée de Charbourg : sauvegarde avant et Soft Reset. Les évolutions s\'obtiennent en faisant évoluer le shiny.' });
-  }
 
   // Épée / Bouclier
   if (DYNAMAX_LEGENDS.has(p.baseId) && !p.isForm) add('swsh', { method: 'dynamax' }, { label: 'Expédition Dynamax', locations: ['Grand Antre (Terres Enneigées)'] });
