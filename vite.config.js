@@ -42,9 +42,16 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        // Les bibliothèques de l'assistant IA (≈ 600 Ko) ne sont téléchargées qu'à la première utilisation.
+        globIgnores: ['**/assets/claude-*.js', '**/assets/gemini-*.js'],
         navigateFallback: `${base}index.html`,
         cleanupOutdatedCaches: true,
         runtimeCaching: [
+          {
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && /\/assets\/(claude|gemini)-[\w-]+\.js$/.test(url.pathname),
+            handler: 'CacheFirst',
+            options: { cacheName: 'assistant', expiration: { maxEntries: 10 } }
+          },
           {
             urlPattern: ({ url }) => url.hostname === 'raw.githubusercontent.com',
             handler: 'CacheFirst',

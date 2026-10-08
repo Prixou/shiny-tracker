@@ -5,7 +5,8 @@ export const NavContext = createContext({
   tab: 'dex',
   goTo: () => {},
   openPokemon: () => {},
-  openNewHunt: () => {}
+  openNewHunt: () => {},
+  openAssistant: () => {}
 });
 
 export const useNav = () => useContext(NavContext);

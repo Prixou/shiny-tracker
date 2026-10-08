@@ -165,4 +165,6 @@ export function loadState() {
 export const clearAll = () => {
   Object.values(KEYS).forEach(k => localStorage.removeItem(k));
   Object.values(LEGACY).forEach(k => localStorage.removeItem(k));
+  // Conversation de l'assistant (la clé API, elle, est conservée).
+  localStorage.removeItem('shp:ai-chat');
 };

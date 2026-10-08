@@ -42,6 +42,13 @@ Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex sh
 - **Données** : sauvegarde en fichier ou partage natif, restauration (fusion ou remplacement), **transfert PC ⇄ mobile par QR code** généré localement, scanner intégré (Chrome Android), pré-téléchargement des sprites pour le hors-ligne, installation de l'app.
 - **Réglages** : vibrations, sons, écran allumé, pause auto, affichage, jeu/méthode/charme par défaut, effacement.
 
+### 🤖 Assistant de chasse (IA)
+- **Bouton flottant** ✨ : une discussion en panneau glissant, qui connaît ta collection, tes chasses, tes objectifs et les meilleures options de l'app.
+- **Cartes « Chasser »** : quand l'assistant recommande une chasse, un bouton la lance pré-réglée (jeu, méthode, bonus).
+- **Deux fournisseurs au choix** : **Gemini** avec une clé gratuite Google AI Studio (quota quotidien), ou **Claude** avec une clé API Anthropic payante à l'usage (Opus 5.5, Sonnet 5.5 ou Haiku 5.5).
+- **Clé gardée sur l'appareil** : jamais incluse dans les sauvegardes, QR codes ni la synchro cloud. Les bibliothèques IA ne sont téléchargées qu'à la première utilisation.
+- Champ « Ce que l'assistant doit savoir sur toi » (préférences, consoles, règles de ton living dex) et rappel de la fermeture de Pokémon Banque (27/02/2027).
+
 ### 📱 Optimisations mobile
 - Navigation par barre du bas, panneaux glissants (bottom sheets), cibles tactiles ≥ 44 px.
 - Le **bouton retour d'Android** ferme les panneaux au lieu de quitter l'app.
