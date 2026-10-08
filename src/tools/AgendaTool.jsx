@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CalendarDays, ExternalLink, Copy, Timer, Sparkles, Info } from 'lucide-react';
+import { CalendarDays, ExternalLink, Copy, Timer, Sparkles, Info, Hourglass } from 'lucide-react';
 import { useNav } from '../state/nav.jsx';
 import { EVENTS, EVENTS_UPDATED, EVENT_TYPES, eventStatus } from '../data/events.js';
 import { GAME_BY_ID } from '../data/constants.js';
@@ -12,10 +12,11 @@ import { feedback } from '../lib/hooks.js';
 const DAY = 86400000;
 const dateFmt = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 const shortFmt = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
+const deadlineFmt = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 function period(e) {
   const start = new Date(e.start);
-  if (e.type === 'deadline' && e.end) return `Avant le ${dateFmt.format(new Date(e.end))}`;
+  if (e.type === 'deadline' && e.end) return `Jusqu'au ${deadlineFmt.format(new Date(e.end))}`;
   if (!e.end) return `Depuis le ${dateFmt.format(start)}`;
   const end = new Date(e.end);
   if (end - start < DAY) return dateFmt.format(start);
@@ -35,7 +36,7 @@ function countdown(e, status, now) {
 }
 
 function EventCard({ e, status, now }) {
-  const { openNewHunt } = useNav();
+  const { openNewHunt, openBankPlan } = useNav();
   const toast = useToast();
   const type = EVENT_TYPES[e.type];
   const game = GAME_BY_ID[e.game];
@@ -88,6 +89,9 @@ function EventCard({ e, status, now }) {
             );
           })}
         </div>
+      )}
+      {e.plan && status !== 'past' && (
+        <button onClick={openBankPlan} className="btn-primary w-full"><Hourglass className="w-4 h-4" /> Mon plan avant la fermeture</button>
       )}
       {e.url && (
         <a href={e.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 min-h-10 text-xs font-bold text-amber-400">

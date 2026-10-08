@@ -9,12 +9,10 @@ import { loadEncounters } from '../encountersData.js';
 import { normalize, formatDuration } from '../utils.js';
 import { bestOptionsPrefs, hasCharm, myGamesSet } from '../myGames.js';
 import { EVENTS, EVENTS_UPDATED, eventStatus } from '../../data/events.js';
+import { bankOpen, bankDaysLeft, bankPriorities } from '../bank.js';
 
 // Fermeture de Pokémon Banque (et donc de Poké Transporter) : plus de transfert 3DS/DS → HOME.
-// Fin février 2027 : le 25 aux États-Unis, le 26 ou 27 selon les sources ; on retient la date la plus prudente.
-export const BANK_CLOSING = '2027-02-25';
-const BANK_TEXT = 'fin février 2027 (avant le 25 pour être sûr)';
-const bankOpen = () => new Date() < new Date(`${BANK_CLOSING}T00:00:00`);
+const BANK_TEXT = 'le 25 février 2027 à 19 h heure du Pacifique (26 février, 4 h en France)';
 
 /** Le jeu permet-il d'envoyer un Pokémon dans Pokémon HOME ? */
 function homeTransfer(gameId) {
@@ -22,7 +20,7 @@ function homeTransfer(gameId) {
   if (!g) return 'inconnu';
   if (g.platform === 'switch' || g.platform === 'mobile') return g.id === 'champions' ? 'à vérifier' : 'oui';
   if (g.platform === '3ds' || g.platform === 'ds' || g.vc3ds) {
-    return bankOpen() ? `oui, via Pokémon Banque jusqu'à ${BANK_TEXT} seulement` : 'non (Pokémon Banque fermée fin février 2027)';
+    return bankOpen() ? `oui, via Pokémon Banque jusqu'à ${BANK_TEXT} seulement` : 'non (Pokémon Banque fermée depuis février 2027)';
   }
   // Rouge Feu / Vert Feuille sur Switch : compatibles avec HOME depuis la version 4.1.0 (7 octobre 2026).
   if (g.id === 'frlg') return `oui depuis la version Switch (HOME 4.1.0, octobre 2026) ; depuis la cartouche GBA, seulement via une DS puis la Banque${bankOpen() ? ` jusqu'à ${BANK_TEXT}` : ' (plus possible)'}`;
@@ -160,6 +158,14 @@ export const TOOL_DEFS = [
         resume: { type: 'string', description: 'Une phrase courte affichée sur la carte' }
       },
       required: ['pokemon', 'jeu']
+    }
+  },
+  {
+    name: 'priorites_banque',
+    description: 'Shiny manquants à chasser en priorité sur DS/3DS avant la fermeture de Pokémon Banque : ceux qu\'on ne peut avoir que sur DS/3DS, puis ceux qui y sont bien plus faciles que sur Switch (selon les jeux de l\'utilisateur).',
+    schema: {
+      type: 'object',
+      properties: { limite: { type: 'integer', description: 'Nombre maximum par catégorie (15 par défaut, 50 au plus)' } }
     }
   },
   {
@@ -328,6 +334,30 @@ export async function runTool(name, args, ctx) {
       return { ok: true, carte: `Carte « Chasser ${p.name} en ${g.short} » affichée.`, taux: `1/${Math.round(oddsAt(cfg, METHOD_BY_ID[cfg.method]?.chain || 0))}` };
     }
 
+    case 'priorites_banque': {
+      const limite = clampInt(args.limite, 15, 50);
+      const data = await loadEncounters();
+      const { only, easier } = bankPriorities(data, { shinies: s.shinies, prefs: bestOptionsPrefs(s.settings) });
+      const fmt = e => ({
+        pokemon: e.p.name,
+        cle: e.p.key,
+        objectif: !!s.wishlist[e.p.key] || undefined,
+        meilleur_ds_3ds: `${GAME_BY_ID[e.best.game]?.short} · ${e.best.label} · 1/${Math.round(e.best.odds)}`,
+        jeu_id: e.best.game,
+        methode_id: e.best.cfg.method,
+        jeu_non_possede: e.notOwned || undefined,
+        meilleur_switch: e.switchBest ? `${GAME_BY_ID[e.switchBest.game]?.short} · 1/${Math.round(e.switchBest.odds)}`
+          : e.switchElsewhere ? `aucun dans ses jeux (possible dans ${GAME_BY_ID[e.switchElsewhere.game]?.short} · 1/${Math.round(e.switchElsewhere.odds)})` : 'aucun jeu Switch',
+        gain: Number.isFinite(e.gain) ? `×${Math.round(e.gain * 10) / 10}` : 'seul moyen'
+      });
+      return {
+        jours_restants: bankDaysLeft(),
+        seulement_ds_3ds: { total: only.length, pokemon: only.slice(0, limite).map(fmt) },
+        bien_plus_faciles: { total: easier.length, pokemon: easier.slice(0, limite).map(fmt) },
+        a_savoir: 'Calcul fait avec les données de lieux de l\'app : certains Pokémon peuvent aussi s\'obtenir sur Switch par d\'autres moyens (fossiles, raids, dons).'
+      };
+    }
+
     case 'proposer_action': {
       const keys = [...new Set((args.pokemon || []).slice(0, 30).map(q => resolveOne(String(q)).key))];
       const listName = (args.liste || '').trim();
@@ -389,7 +419,7 @@ Règles :
 - Quand tu recommandes une chasse précise, appelle proposer_chasse pour que l'utilisateur puisse la lancer d'un geste.
 - Pour modifier ses objectifs ou ses listes, ou mettre en pause le chrono d'une chasse, appelle proposer_action : l'utilisateur valide lui-même.
 - Si l'utilisateur a renseigné ses jeux, privilégie-les ; ne propose un autre jeu que s'il le demande ou si c'est nettement plus simple, en le signalant.
-- Pokémon Banque ferme fin février 2027 (le 25 aux États-Unis) : après, les Pokémon des jeux 3DS, DS et Console virtuelle ne peuvent plus aller dans Pokémon HOME. Signale-le quand c'est utile.
+- Pokémon Banque ferme le 25 février 2027 à 19 h heure du Pacifique (le 26 à 4 h en France) : après, les Pokémon des jeux 3DS, DS et Console virtuelle ne peuvent plus aller dans Pokémon HOME. Pour savoir quoi chasser avant, appelle priorites_banque. L'écran « Avant la fermeture de la Banque » de l'app (bouton dans le Pokédex et l'Agenda) donne le plan complet.
 - Pour l'actualité (raids, évènements, codes), sers-toi de l'agenda ci-dessous ; s'il est daté et que tu as la recherche web, vérifie en ligne. Sans recherche web, renvoie vers Outils → Agenda.
 - Les taux s'écrivent « 1/512 ». Le Charme Chroma, les sandwichs (Écarlate/Violet), les apparitions massives, les chaînes et la recherche du Pokédex (Légendes Arceus) changent les taux : précise les conditions.
 - Reste dans le sujet Pokémon et chasse aux shiny.`;
