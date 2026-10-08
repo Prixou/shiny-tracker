@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { BookOpen, Search, FileDown, Sparkles } from 'lucide-react';
 import { useAppState } from '../../state/StoreProvider.jsx';
-import { useNav } from '../../app/nav.jsx';
+import { useNav } from '../../state/nav.jsx';
 import { getPokemon } from '../../data/pokedex.js';
 import { GAME_BY_ID } from '../../data/games.js';
 import { METHOD_BY_ID } from '../../data/methods.js';

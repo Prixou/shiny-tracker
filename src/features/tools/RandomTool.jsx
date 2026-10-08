@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Dices, Star, Timer, Info } from 'lucide-react';
 import { useActions, useAppState, useShinies } from '../../state/StoreProvider.jsx';
-import { useNav } from '../../app/nav.jsx';
+import { useNav } from '../../state/nav.jsx';
 import { MAIN_DEX, artworkUrl, isAvailableIn } from '../../data/pokedex.js';
 import { REGIONS, POKEMON_TYPES } from '../../data/constants.js';
 import { isLockedIn } from '../../data/games.js';

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Timer, Plus, History, ChevronRight } from 'lucide-react';
 import { useActions, useAppState } from '../../state/StoreProvider.jsx';
-import { useNav } from '../../app/nav.jsx';
+import { useNav } from '../../state/nav.jsx';
 import { getPokemon } from '../../data/pokedex.js';
 import { huntTotal } from '../../domain/hunt.js';
 import { useNow, useWakeLock } from '../../lib/hooks.js';

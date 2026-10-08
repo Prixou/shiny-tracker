@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Sparkles, MessageCircle } from 'lucide-react';
 import { useActions, useStoreApi } from '../state/StoreProvider.jsx';
-import { NavContext } from './nav.jsx';
+import { NavContext } from '../state/nav.jsx';
 import { initialTab } from './navigation.js';
 import { useUndo } from './useUndo.js';
 import Header from './Header.jsx';

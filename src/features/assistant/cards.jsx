@@ -1,7 +1,7 @@
 // Cartes affichées sous une réponse : chasse à lancer, modification à appliquer.
 import { Timer, Info, Check, Star, ListPlus, PauseCircle } from 'lucide-react';
 import { useActions, useStoreApi } from '../../state/StoreProvider.jsx';
-import { useNav } from '../../app/nav.jsx';
+import { useNav } from '../../state/nav.jsx';
 import { getPokemon } from '../../data/pokedex.js';
 import { GAME_BY_ID } from '../../data/games.js';
 import { METHOD_BY_ID, oddsAt } from '../../data/methods.js';

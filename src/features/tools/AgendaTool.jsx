@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { CalendarDays, ExternalLink, Copy, Timer, Sparkles, Info, Hourglass } from 'lucide-react';
-import { useNav } from '../../app/nav.jsx';
+import { useNav } from '../../state/nav.jsx';
 import { EVENTS, EVENTS_UPDATED, EVENT_TYPES, eventStatus } from '../../data/events.js';
 import { GAME_BY_ID } from '../../data/games.js';
 import { getPokemon } from '../../data/pokedex.js';

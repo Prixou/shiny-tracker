@@ -35,8 +35,35 @@ npm run test:e2e # tests Playwright sur écran de téléphone 412 × 915 (doiven
 - Navigateur déjà installé (environnement sans téléchargement) : `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm run test:e2e`.
 - Ne jamais affaiblir ou supprimer un test pour le faire passer : corriger le code ou, si le comportement attendu a changé, mettre à jour l'attente.
 
+## Architecture
+
+Couches, de la plus basse à la plus haute. Une couche n'importe que des couches inférieures ; ESLint le vérifie (`no-restricted-imports` dans `eslint.config.js`).
+
+| Dossier | Rôle | Peut importer |
+| --- | --- | --- |
+| `src/data/` | Tables statiques : jeux, méthodes et moteur de taux, Pokédex, formes, évènements, constantes | `lib/` |
+| `src/lib/` | Utilitaires génériques : `format.js`, `text.js`, `id.js`, `share.js`, `feedback.js`, `hooks.js` | — |
+| `src/domain/` | Logique métier **pure, sans React** : chasses, captures, listes, réglages, chance, meilleures options, Banque, stats, filtres du Pokédex, sauvegardes | `data/`, `lib/` |
+| `src/services/` | Accès extérieurs : IA (`services/ai/`), cloud Supabase, données de lieux | `data/`, `lib/`, `domain/` |
+| `src/state/` | État global (`store.js`, zustand, sans React), branchement React (`StoreProvider.jsx`), sauvegarde locale, synchro cloud, navigation, `useEncounters` | couches ci-dessus |
+| `src/ui/` | Composants d'interface génériques (`Sheet`, contrôles, sprites, toast, confirmation), importés via `ui/index.js` | `data/`, `lib/` |
+| `src/features/<fonctionnalité>/` | Écrans et panneaux : `dex`, `pokemon`, `hunts`, `journal`, `stats`, `tools`, `settings`, `lists`, `backup`, `assistant`, `bank` | tout sauf `app/` |
+| `src/app/` | Coquille : `App.jsx`, en-tête, barre du bas, annulation | tout |
+
+Règles :
+
+- Calcul, règle de jeu, format de données → `domain/` (avec un test unitaire), jamais dans un composant.
+- Lire l'état : `useAppState(s => …)` (rendu seulement si la valeur change). Le sélecteur doit renvoyer des valeurs stables : tranches du store, primitives, ou sélecteurs mémorisés (`selectShinies`, `selectCatchesByKey`, `selectCaughtCount`). Jamais d'objet ou de tableau recalculé à l'intérieur d'un objet (boucle de rendus) ; un tableau filtré seul est accepté (comparé élément par élément).
+- Modifier l'état : `useActions()` (référence stable). Toute action de données passe par `commit` dans `state/store.js` : horodatage pour la synchro et, avec un libellé, entrée d'annulation (le toast « Annuler » s'affiche tout seul).
+- Lecture ponctuelle sans abonnement (dans un gestionnaire d'évènement) : `useStoreApi().getState()`.
+- Panneaux et onglets secondaires chargés à la demande (`lazy`) dans `app/App.jsx`.
+- Un fichier = un rôle ; au-delà d'environ 200 lignes, découper (sous-composants, hook `useXxx.js`, logique vers `domain/`).
+- Grilles : toujours une colonne explicite (`grid-cols-1 sm:grid-cols-2`), sinon un texte tronqué élargit la page sur mobile.
+
 ## Repères
 
 - Taux shiny : `src/data/methods.js` (moteur par « tirages ») et `src/data/games.js` (jeux, Charme, méthodes, Pokédex régionaux).
-- État global et annulation : `src/state/store.jsx` ; synchro cloud : `src/state/cloud.jsx` + `src/lib/cloud.js`.
-- Composants d'interface communs : `src/components/ui.jsx`.
+- Meilleures options : `src/domain/bestOptions.js` ; Banque : `src/domain/bank.js` (date limite et libellés uniques).
+- État global, actions et annulation : `src/state/store.js` ; sauvegarde locale : `src/state/persistence.js` ; synchro cloud : `src/state/cloud.jsx` + `src/services/cloud.js`.
+- Assistant : `src/services/ai/` (outils, Claude, Gemini) et `src/features/assistant/` (`useChat.js`).
+- Composants d'interface communs : `src/ui/index.js`.

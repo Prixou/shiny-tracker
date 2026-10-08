@@ -3,7 +3,7 @@ import { Star, Timer, ExternalLink, Sparkles, ShieldAlert, Crown, Trash2, Plus, 
 import { useActions, useAppState } from '../../state/StoreProvider.jsx';
 import { selectCatchesByKey } from '../../state/store.js';
 import { huntTotal } from '../../domain/hunt.js';
-import { useNav } from '../../app/nav.jsx';
+import { useNav } from '../../state/nav.jsx';
 import { getPokemon, artworkUrl, animatedUrl, POKEDEX, gamesFor, isPixelArtwork, VARIANT_LABELS } from '../../data/pokedex.js';
 import { REGION_BY_ID } from '../../data/constants.js';
 import { GAME_BY_ID, isLockedIn } from '../../data/games.js';

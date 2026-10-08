@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Search, SlidersHorizontal, X, Star, ArrowUpDown, Sparkles } from 'lucide-react';
 import { useActions, useAppState, useCatchesByKey, useShinies, useStoreApi } from '../../state/StoreProvider.jsx';
-import { useNav } from '../../app/nav.jsx';
+import { useNav } from '../../state/nav.jsx';
 import { TYPE_BY_ID, REGION_BY_ID, BALL_BY_ID } from '../../data/constants.js';
 import { GAME_BY_ID, PLATFORMS, isLockedIn } from '../../data/games.js';
 import { METHOD_BY_ID } from '../../data/methods.js';

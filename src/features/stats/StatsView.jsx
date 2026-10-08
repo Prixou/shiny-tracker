@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { BarChart3, Timer, Clock, Target, Sparkles, Trophy, Frown } from 'lucide-react';
 import { useAppState, useShinies } from '../../state/StoreProvider.jsx';
-import { useNav } from '../../app/nav.jsx';
+import { useNav } from '../../state/nav.jsx';
 import { computeStats } from '../../domain/stats.js';
 import { fmtNumber, fmtRatio, formatDuration } from '../../lib/format.js';
 import { BallIcon, TypeIcon, EmptyState, RegionIcon } from '../../ui/index.js';

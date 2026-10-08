@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Minus, Play, Pause, Sparkles, Settings2, GitBranch, Sun, Zap, Clock, TrendingUp, Target, Egg, Link2 } from 'lucide-react';
 import { useActions } from '../../state/StoreProvider.jsx';
-import { useNav } from '../../app/nav.jsx';
+import { useNav } from '../../state/nav.jsx';
 import { getPokemon } from '../../data/pokedex.js';
 import { GAME_BY_ID } from '../../data/games.js';
 import { METHOD_BY_ID, encountersFor, oddsContext, isDynamic, luckRatio, oddsAt } from '../../data/methods.js';

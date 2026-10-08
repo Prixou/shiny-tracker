@@ -1,6 +1,6 @@
 import { Hourglass, ChevronRight, X } from 'lucide-react';
 import { useActions, useAppState } from '../../state/StoreProvider.jsx';
-import { useNav } from '../../app/nav.jsx';
+import { useNav } from '../../state/nav.jsx';
 import { bankDaysLeft, bankOpen } from '../../domain/bank.js';
 
 /** Rappel « Banque : J-n » au-dessus de la grille, jusqu'à la fermeture (masquable). */

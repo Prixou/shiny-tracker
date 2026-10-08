@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Hourglass, Timer, ChevronDown, Check, ListPlus, Star, Lightbulb, Send, Info } from 'lucide-react';
 import { useActions, useAppState, useShinies } from '../../state/StoreProvider.jsx';
 import { useEncounters } from '../../state/encounters.js';
-import { useNav } from '../../app/nav.jsx';
+import { useNav } from '../../state/nav.jsx';
 import { getPokemon } from '../../data/pokedex.js';
 import { GAME_BY_ID } from '../../data/games.js';
 import { BANK_DEADLINE, MIN_GAIN, bankDaysLeft, bankPriorities, groupByMethod, viaBank } from '../../domain/bank.js';
