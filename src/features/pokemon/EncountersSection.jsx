@@ -1,37 +1,15 @@
 import { useState } from 'react';
-import { MapPin, ChevronDown } from 'lucide-react';
+import { MapPin, ChevronDown, ChevronRight } from 'lucide-react';
 import { GAME_BY_ID } from '../../data/games.js';
 import { useEncounters } from '../../state/encounters.js';
-
-const METHOD_NAMES = {
-  walk: 'Herbes / grotte', surf: 'Surf', 'old-rod': 'Canne', 'good-rod': 'Super Canne', 'super-rod': 'Méga Canne',
-  'rock-smash': 'Éclate-Roc', headbutt: 'Coup d\'Boule', gift: 'Cadeau', 'gift-egg': 'Œuf offert', 'only-one': 'Rencontre unique',
-  'dark-grass': 'Herbes sombres', 'grass-spots': 'Herbes qui bougent', 'cave-spots': 'Nuage de poussière', 'bridge-spots': 'Ombre sur un pont',
-  'surf-spots': 'Remous (surf)', 'super-rod-spots': 'Remous (pêche)', 'yellow-flowers': 'Fleurs jaunes', 'purple-flowers': 'Fleurs violettes',
-  'red-flowers': 'Fleurs rouges', 'rough-terrain': 'Terrain accidenté', pokeflute: 'Poké Flûte', 'sos-encounter': 'Appel à l\'aide',
-  'island-scan': 'Scan des îles', 'npc-trade': 'Échange', seaweed: 'Algues', 'roaming-grass': 'Errant (herbes)', 'roaming-water': 'Errant (eau)',
-  'devon-scope': 'Devon Scope', 'squirt-bottle': 'Carapuce à O', 'wailmer-pail': 'Wailmerrosoir', 'berry-piles': 'Tas de baies',
-  'bubbling-spots': 'Bulles', ambush: 'Embuscade', 'sweet-scent': 'Doux Parfum', 'horde': 'Horde', 'poke-radar': 'Poké Radar',
-  'sv-wild': 'Sauvage', 'pla-wild': 'Sauvage', 'pla-distortion': 'Distorsion spatiale', 'pla-landmark': 'Arbre / minerai',
-  'pla-mo': 'Apparition massive', 'pla-mmo': 'Mégapparition', 'honey-tree': 'Arbre à Miel', underground: 'Grands Souterrains',
-  'za-wild': 'Sauvage', 'za-hyperspace': 'Hyperespace',
-  static: 'Rencontre fixe', overworld: 'Visible sur la carte', 'overworld-special': 'Apparition rare', 'overworld-flying': 'En vol',
-  'overworld-flying-special': 'En vol (rare)', 'overworld-water': 'Sur l\'eau', 'overworld-water-special': 'Sur l\'eau (rare)',
-  'overworld-dirt': 'Terrain (dans le sol)', sos: 'Appel à l\'aide', 'sos-from-bubbling-spot': 'Appel à l\'aide (remous)',
-  'max-raid': 'Raid Dynamax', wanderer: 'Errant', 'wanderer-water': 'Errant (eau)', 'hidden-grotto': 'Trouée Cachée',
-  'headbutt-low': 'Coup d\'Boule', 'headbutt-normal': 'Coup d\'Boule', 'headbutt-high': 'Coup d\'Boule (rare)',
-  'sky-ambush': 'Embuscade (ciel)', 'ground-ambush': 'Embuscade (sol)', 'ceiling-ambush': 'Embuscade (plafond)',
-  'trash-can-ambush': 'Poubelle', 'rustling-bush-ambush': 'Buisson qui bouge', 'berry-trees': 'Arbre à baies',
-  'feebas-tile-fishing': 'Pêche (Barpau)', 'pokemon-ranger': 'Pokémon Ranger', 'pokemon-channel-pal': 'Pokémon Channel',
-  'colosseum-bonus-disc-jpn': 'Disque bonus', 'colosseum-bonus-disc-us': 'Disque bonus'
-};
-const methodName = m => METHOD_NAMES[m] || m.replace(/-/g, ' ');
-
+import { encounterMethodName } from '../../data/encounterMethods.js';
+import ZoneSheet from '../map/ZoneSheet.jsx';
 
 // Lieux de capture issus de PokéAPI (données complètes surtout jusqu'à la Gen 7).
 export default function EncountersSection({ pokemon }) {
   const data = useEncounters();
   const [openGame, setOpenGame] = useState(null);
+  const [zone, setZone] = useState(null);
 
   if (!data) return <div className="h-16 rounded-2xl bg-slate-950 border border-slate-800 animate-pulse" />;
   const rows = data.encounters?.[pokemon.baseId] || [];
@@ -39,7 +17,7 @@ export default function EncountersSection({ pokemon }) {
   for (const [g, loc, m, min, max, chance] of rows) {
     const game = data.games[g];
     if (!byGame.has(game)) byGame.set(game, []);
-    byGame.get(game).push({ loc: data.locations[loc], method: methodName(data.methods[m]), min, max, chance });
+    byGame.get(game).push({ loc: data.locations[loc], method: encounterMethodName(data.methods[m]), min, max, chance });
   }
   const games = [...byGame.keys()].sort((a, b) => (GAME_BY_ID[b]?.gen || 0) - (GAME_BY_ID[a]?.gen || 0));
 
@@ -62,12 +40,17 @@ export default function EncountersSection({ pokemon }) {
             {open && (
               <ul className="border-t border-slate-800 divide-y divide-slate-800/70">
                 {list.map((r, i) => (
-                  <li key={i} className="px-3 py-2 text-xs flex items-center justify-between gap-3">
-                    <span className="min-w-0">
-                      <span className="block font-semibold text-slate-200 truncate">{r.loc}</span>
-                      <span className="text-slate-500">{r.method} · Nv. {r.min === r.max ? r.min : `${r.min}–${r.max}`}</span>
-                    </span>
-                    {r.chance > 0 && <span className="shrink-0 font-mono text-slate-400">{r.chance} %</span>}
+                  <li key={i}>
+                    {/* Touche un lieu : tous les Pokémon de cette zone. */}
+                    <button onClick={() => setZone({ game: g, name: r.loc })} className="w-full min-h-12 px-3 py-2 text-xs flex items-center justify-between gap-3 text-left active:bg-slate-800/60">
+                      <span className="min-w-0">
+                        <span className="block font-semibold text-slate-200 truncate">{r.loc}</span>
+                        <span className="text-slate-500">{r.method} · Nv. {r.min === r.max ? r.min : `${r.min}–${r.max}`}</span>
+                      </span>
+                      <span className="shrink-0 flex items-center gap-1 font-mono text-slate-400">
+                        {r.chance > 0 && `${r.chance} %`}<ChevronRight className="w-4 h-4 text-slate-600" />
+                      </span>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -75,6 +58,7 @@ export default function EncountersSection({ pokemon }) {
           </div>
         );
       })}
+      {zone && <ZoneSheet gameId={zone.game} zoneName={zone.name} onClose={() => setZone(null)} />}
     </section>
   );
 }

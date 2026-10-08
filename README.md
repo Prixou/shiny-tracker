@@ -13,7 +13,8 @@ Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex sh
 - **Listes perso** (« À faire en Z-A », « Préférés »…) en plus des Objectifs.
 - **Meilleures options shiny** sur chaque fiche : les jeux classés par meilleur taux atteignable (méthode, bonus, lieux, et à défaut pleine chance ou Soft Reset) avec un bouton « Chasser » pré-réglé.
 - **Mes jeux** : jeux possédés et Charme Chroma jeu par jeu ; meilleures options, nouvelles chasses, filtre « Dans mes jeux » et assistant en tiennent compte.
-- **Où le trouver** : lieux de capture de tous les jeux, en français (Gen 1 à 9, Légendes Arceus avec apparitions massives et Mégapparitions, Z-A et Hyperespace).
+- **Où le trouver** : lieux de capture de tous les jeux, en français (Gen 1 à 9, Légendes Arceus avec apparitions massives et Mégapparitions, Z-A et Hyperespace) ; touche un lieu pour voir tous les Pokémon de la zone.
+- **Exemplaires provisoires** : un shiny Shiny Lock reçu par distribution peut être marqué « Provisoire » ; l'app prévient dès qu'il devient chassable dans tes jeux, pour le remplacer par un shiny à ton ID.
 - Recherche instantanée tolérante aux accents (« electhor » trouve « Électhor »), par nom FR/EN ou numéro.
 - Filtres dans un panneau glissant : régions, types (double type possible), catégories (légendaires, fabuleux, starters, bébés, formes, Shiny Lock), jeu, méthode, Poké Ball.
 - Onglets Tous / Capturés / Manquants / **Objectifs** (liste de souhaits ⭐), tri par numéro, nom, date ou rencontres, grille à 3 tailles.
@@ -36,6 +37,7 @@ Tracker de Pokémon chromatiques pensé **d'abord pour le mobile** : Pokédex sh
 - Stats : progression globale (et hors Shiny Lock), **date de fin estimée** du living dex (au total et par région, selon ton rythme récent), par région, type, méthode, jeu, Ball, répartition de la chance, podiums, captures sur 12 mois.
 
 ### 🧰 Outils
+- **Carte des zones** : pour chaque jeu, ses lieux (routes, villes, grottes…) avec le nombre de shiny qui te manquent ; une zone montre ses Pokémon (mode, niveaux, %) avec un bouton « Chasser » pré-réglé. Hors ligne, sans Rouge / Bleu / Jaune (pas de shiny).
 - **Tirage aléatoire** de la prochaine cible (manquants / objectifs / tous, par région, type et jeu).
 - **Agenda des jeux** : raids 7★, apparitions massives, distributions, codes Cadeau Mystère (copie en un geste) et échéances (fermeture de Pokémon Banque), mis à jour à la main (`src/data/events.js`).
 - **Recettes** : sandwichs Brillance Nv.3 par type (ÉV) et donuts Brillance (Z-A Mega Dimension).

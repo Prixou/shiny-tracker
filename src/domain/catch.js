@@ -10,7 +10,7 @@ import { defaultMethodFor } from './hunt.js';
 import { hasCharm } from './settings.js';
 
 // Détails facultatifs, conservés seulement s'ils sont renseignés.
-export const CATCH_FIELDS = ['nature', 'ability', 'level', 'alpha', 'mark', 'teraType', 'language', 'inHome'];
+export const CATCH_FIELDS = ['nature', 'ability', 'level', 'alpha', 'mark', 'teraType', 'language', 'inHome', 'provisional'];
 
 /**
  * Nouvelle capture : jeu par défaut, méthode du jeu et taux calculé (Charme selon « Mes jeux »).

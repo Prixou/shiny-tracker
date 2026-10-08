@@ -41,6 +41,7 @@
  * @property {string} [teraType]
  * @property {string} [language]
  * @property {boolean} [inHome] Transféré dans Pokémon HOME.
+ * @property {boolean} [provisional] Exemplaire provisoire (distribution), à remplacer par un shiny chassé soi-même.
  */
 
 /**

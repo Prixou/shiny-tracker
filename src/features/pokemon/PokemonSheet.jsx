@@ -141,7 +141,7 @@ function PokemonDetails({ p, onClose }) {
             <h3 className="label-caps">Mes exemplaires ({copies.length})</h3>
             <button onClick={onRemoveAll} className="text-xs font-bold text-rose-300 px-2 py-1 rounded-lg active:bg-slate-800 flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Tout retirer</button>
           </div>
-          {copies.map((c, i) => <CopyCard key={c.id} copy={c} defaultOpen={copies.length === 1 && i === 0} />)}
+          {copies.map((c, i) => <CopyCard key={c.id} copy={c} defaultOpen={copies.length === 1 && i === 0} replaced={copies.some(x => !x.provisional)} />)}
         </section>
       )}
 
@@ -176,7 +176,8 @@ function PokemonDetails({ p, onClose }) {
         </section>
       )}
 
-      <BestOptions pokemon={p} fallbackTip={tip?.tip} onHunt={cfg => { onClose(); openNewHunt(p.key, cfg); }} />
+      <BestOptions pokemon={p} fallbackTip={tip?.tip} onHunt={cfg => { onClose(); openNewHunt(p.key, cfg); }}
+        provisional={copies.length > 0 && copies.every(c => c.provisional)} />
 
       <EncountersSection pokemon={p} />
 

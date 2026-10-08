@@ -4,10 +4,7 @@
 import { GAME_BY_ID, isLockedIn } from '../data/games.js';
 import { oddsAt, METHOD_BY_ID } from '../data/methods.js';
 import { isAvailableIn } from '../data/pokedex.js';
-import { REGIONAL_FORMS } from '../data/forms.js';
-
-// Jeux dont les rencontres sauvages sont dans la forme régionale (les données de lieux ne distinguent pas les formes).
-const NATIVE_FORM = { sm: 'alola', usum: 'alola', swsh: 'galar', pla: 'hisui', sv: 'paldea' };
+import { REGIONAL_FORMS, NATIVE_FORM_REGION as NATIVE_FORM } from '../data/forms.js';
 
 // Légendaires disponibles dans les Expéditions Dynamax (Épée / Bouclier, Terres Enneigées).
 const DYNAMAX_LEGENDS = new Set([144, 145, 146, 150, 243, 244, 245, 249, 250, 380, 381, 382, 383, 384, 480, 481, 482, 483, 484, 485, 487, 488,
