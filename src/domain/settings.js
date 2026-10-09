@@ -19,6 +19,8 @@ import { GAME_BY_ID } from '../data/games.js';
  * @property {string[]} myGames Jeux possédés (vide : non renseigné, tous les jeux comptent).
  * @property {Record<string, boolean>} charmGames Charme Chroma jeu par jeu.
  * @property {'today' | 'unknown'} quickAddDate Date des shiny cochés d'un geste (✓ du Pokédex, bouton de la fiche).
+ * @property {number} boxFirst Numéro de la première boîte HOME du living dex.
+ * @property {'after' | 'end'} boxForms Formes régionales rangées juste après l'espèce, ou à la fin.
  */
 
 /** @type {Settings} */
@@ -39,7 +41,10 @@ export const DEFAULT_SETTINGS = {
   myGames: [],
   charmGames: {},
   // « unknown » pour saisir son historique sans fausser les dates.
-  quickAddDate: 'today'
+  quickAddDate: 'today',
+  // Boîtes HOME du living dex.
+  boxFirst: 1,
+  boxForms: 'after'
 };
 
 /**

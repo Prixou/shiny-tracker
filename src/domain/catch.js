@@ -10,7 +10,7 @@ import { defaultMethodFor } from './hunt.js';
 import { hasCharm } from './settings.js';
 
 // Détails facultatifs, conservés seulement s'ils sont renseignés.
-export const CATCH_FIELDS = ['nature', 'ability', 'level', 'alpha', 'mark', 'teraType', 'language', 'inHome', 'provisional', 'verified'];
+export const CATCH_FIELDS = ['nature', 'ability', 'level', 'alpha', 'mark', 'teraType', 'language', 'inHome', 'provisional', 'verified', 'boxed'];
 
 // Date inconnue : date vide et horodatage 0 (classée en dernier, ignorée par la courbe des 12 mois et la date de fin estimée).
 export const UNKNOWN_DATE = Object.freeze({ date: '', timestamp: 0 });

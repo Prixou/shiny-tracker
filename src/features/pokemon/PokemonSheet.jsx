@@ -12,6 +12,7 @@ import { getHuntingTip } from '../../domain/tips.js';
 import { padId, fmtNumber } from '../../lib/format.js';
 import { feedback } from '../../lib/feedback.js';
 import CopyCard from './CopyCard.jsx';
+import BoxPlace from '../boxes/BoxPlace.jsx';
 import EncountersSection from './EncountersSection.jsx';
 import BestOptions from './BestOptions.jsx';
 import ListsSheet from '../lists/ListsSheet.jsx';
@@ -128,6 +129,8 @@ function PokemonDetails({ p, onClose }) {
         })}
         <button onClick={() => setShowLists(true)} className="chip chip-off shrink-0 min-h-9 text-xs border-dashed"><ListPlus className="w-3.5 h-3.5" /> {lists.length ? 'Listes' : 'Créer une liste'}</button>
       </div>
+
+      <BoxPlace p={p} />
 
       {relatedHunts.map(h => (
         <button key={h.id} onClick={() => { setUiValue('activeHuntId', h.id); onClose(); goTo('hunts'); }}

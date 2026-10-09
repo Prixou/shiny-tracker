@@ -19,12 +19,13 @@ import { hasCharm } from './settings.js';
 
 /**
  * Shiny à vérifier : ajouté à la main (sans chasse), sans rencontres ni aucun détail saisi, et pas encore
- * confirmé. Typiquement un shiny coché d'un geste dans le Pokédex : jeu, méthode et Ball sont ceux par défaut.
+ * confirmé (le ranger dans HOME ne confirme pas ses détails). Typiquement un shiny coché d'un geste dans le
+ * Pokédex : jeu, méthode et Ball sont ceux par défaut.
  * @param {Catch} c
  * @returns {boolean}
  */
 export const needsReview = c => !c.verified && !c.huntId && !c.count && !c.elapsedMs && c.ball === 'pokeball'
-  && !c.nickname && !c.notes && !c.gender && !CATCH_FIELDS.some(f => c[f]);
+  && !c.nickname && !c.notes && !c.gender && !CATCH_FIELDS.some(f => f !== 'boxed' && c[f]);
 
 /**
  * Valeur commune d'un champ (undefined si les captures diffèrent ou s'il n'y en a aucune).

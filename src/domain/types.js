@@ -43,6 +43,7 @@
  * @property {boolean} [inHome] Transféré dans Pokémon HOME.
  * @property {boolean} [provisional] Exemplaire provisoire (distribution), à remplacer par un shiny chassé soi-même.
  * @property {boolean} [verified] Détails confirmés (édition en lot ou fiche) : n'est plus « à vérifier ».
+ * @property {boolean} [boxed] Exemplaire rangé à sa place dans les boîtes HOME du living dex.
  */
 
 /**

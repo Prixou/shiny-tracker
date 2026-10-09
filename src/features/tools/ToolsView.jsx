@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useActions, useStoreApi } from '../../state/StoreProvider.jsx';
 import MapTool from '../map/MapTool.jsx';
+import BoxesTool from '../boxes/BoxesTool.jsx';
 import RandomTool from './RandomTool.jsx';
 import OddsTool from './OddsTool.jsx';
 import RecipesTool from './RecipesTool.jsx';
@@ -10,6 +11,7 @@ import SettingsTool from '../settings/SettingsTool.jsx';
 
 const SECTIONS = [
   { id: 'map', label: 'Carte' },
+  { id: 'boxes', label: 'Boîtes' },
   { id: 'random', label: 'Tirage' },
   { id: 'odds', label: 'Probas' },
   { id: 'agenda', label: 'Agenda' },
@@ -42,6 +44,7 @@ export default function ToolsView() {
         ))}
       </div>
       {section === 'map' && <MapTool />}
+      {section === 'boxes' && <BoxesTool />}
       {section === 'random' && <RandomTool />}
       {section === 'odds' && <OddsTool />}
       {section === 'agenda' && <AgendaTool />}
