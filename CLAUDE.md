@@ -48,7 +48,7 @@ Couches, de la plus basse à la plus haute. Une couche n'importe que des couches
 | `src/services/` | Accès extérieurs : IA (`services/ai/`), cloud Supabase, données de lieux | `data/`, `lib/`, `domain/` |
 | `src/state/` | État global (`store.js`, zustand, sans React), branchement React (`StoreProvider.jsx`), sauvegarde locale, synchro cloud, navigation, `useEncounters` | couches ci-dessus |
 | `src/ui/` | Composants d'interface génériques (`Sheet`, contrôles, sprites, toast, confirmation), importés via `ui/index.js` | `data/`, `lib/` |
-| `src/features/<fonctionnalité>/` | Écrans et panneaux : `dex`, `pokemon`, `hunts`, `journal`, `stats`, `tools`, `settings`, `lists`, `backup`, `assistant`, `bank` | tout sauf `app/` |
+| `src/features/<fonctionnalité>/` | Écrans et panneaux : `dex`, `pokemon`, `hunts`, `journal`, `stats`, `tools`, `settings`, `lists`, `backup`, `assistant`, `bank`, `map`, `boxes` | tout sauf `app/` |
 | `src/app/` | Coquille : `App.jsx`, en-tête, barre du bas, annulation | tout |
 
 Règles :
@@ -69,5 +69,7 @@ Règles :
 - Meilleures options : `src/domain/bestOptions.js` ; Banque : `src/domain/bank.js` (date limite et libellés uniques).
 - État global, actions et annulation : `src/state/store.js` ; sauvegarde locale : `src/state/persistence.js` ; synchro cloud : `src/state/cloud.jsx` + `src/services/cloud.js`.
 - Assistant : `src/services/ai/` (`tools/` par thème, `context.js`, Claude, Gemini) et `src/features/assistant/` (`useChat.js`).
+- Boîtes HOME du living dex : `src/domain/boxes.js` (ordre, places) et `src/features/boxes/`.
+- Compteur aux écouteurs (Media Session) : `src/lib/mediaRemote.js` et `src/features/hunts/HeadsetRemote.jsx`.
 - Types des données : `src/domain/types.js`.
 - Composants d'interface communs : `src/ui/index.js`.

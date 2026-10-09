@@ -4,10 +4,12 @@ import { artworkUrl } from '../../data/pokedex.js';
 import { fmtNumber } from '../../lib/format.js';
 import { getLuckTier } from '../../domain/luck.js';
 import { Sprite } from '../../ui/index.js';
+import { useBoxPlace } from '../boxes/BoxPlace.jsx';
 
 const COLORS = ['#fbbf24', '#fde68a', '#f59e0b', '#ffffff', '#38bdf8', '#f472b6'];
 
 export default function Celebration({ data, onClose }) {
+  const place = useBoxPlace(data?.pokemon?.key);
   useEffect(() => {
     if (!data) return;
     const t = setTimeout(onClose, 4500);
@@ -43,6 +45,7 @@ export default function Celebration({ data, onClose }) {
       <div className="mt-4 text-3xl font-black bg-gradient-to-r from-yellow-200 to-amber-400 bg-clip-text text-transparent">Félicitations !</div>
       <div className="mt-1 text-lg font-bold text-white">{data.pokemon?.name} shiny ✨</div>
       {data.count > 0 && <div className="mt-2 text-sm text-slate-300">après {fmtNumber(data.count)} rencontres · {luck.emoji} {luck.name}</div>}
+      {place && <div className="mt-3 text-xs font-bold text-amber-200/80">📦 Sa place dans HOME : boîte {place.box}, ligne {place.row}, colonne {place.col}</div>}
       <div className="mt-8 text-xs text-slate-500">Touchez pour continuer</div>
     </button>,
     document.body

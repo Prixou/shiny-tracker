@@ -216,6 +216,28 @@ function createActions(set, get, { now, onReset }) {
       }));
     },
     /**
+     * Range (ou retire des boîtes HOME) des espèces : rangé = le dernier exemplaire est marqué ; retiré = plus
+     * aucun exemplaire marqué. Une seule entrée d'annulation.
+     * @param {string[]} keys
+     * @param {boolean} on
+     * @param {string} [label]
+     */
+    setBoxed(keys, on, label) {
+      const shinies = selectShinies(get());
+      const wanted = new Set(keys.filter(k => shinies[k]));
+      if (!wanted.size) return;
+      const ids = get().catches.filter(c => wanted.has(c.key)).map(c => c.id);
+      const latest = new Set([...wanted].map(k => shinies[k].id));
+      commit(label || (on ? `${wanted.size} shiny rangé${wanted.size > 1 ? 's' : ''}` : `${wanted.size} shiny retiré${wanted.size > 1 ? 's' : ''} des boîtes`), { catches: ids }, s => ({
+        catches: s.catches.map(c => {
+          if (!wanted.has(c.key)) return c;
+          const next = { ...c, updatedAt: now() };
+          if (on && latest.has(c.id)) next.boxed = true; else delete next.boxed;
+          return next;
+        })
+      }));
+    },
+    /**
      * Marque des captures comme transférées dans Pokémon HOME (une seule entrée d'annulation).
      * @param {string[]} ids
      * @param {boolean} on
