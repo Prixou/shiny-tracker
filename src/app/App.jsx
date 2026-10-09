@@ -7,6 +7,7 @@ import { useUndo } from './useUndo.js';
 import Header from './Header.jsx';
 import BottomNav from './BottomNav.jsx';
 import DexView from '../features/dex/DexView.jsx';
+import HeadsetRemote from '../features/hunts/HeadsetRemote.jsx';
 
 // Chargés à la demande (fichiers déjà en cache grâce au service worker) : démarrage plus léger.
 const HuntsView = lazy(() => import('../features/hunts/HuntsView.jsx'));
@@ -80,6 +81,7 @@ export default function App() {
         </main>
 
         <BottomNav tab={tab} goTo={goTo} />
+        <HeadsetRemote />
 
         {tab !== 'hunts' && (
           <button onClick={nav.openAssistant} aria-label="Assistant de chasse"
