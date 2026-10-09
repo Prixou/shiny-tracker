@@ -3,6 +3,8 @@
 import { GAME_BY_ID, gameIdFrom } from '../data/games.js';
 import { cumulativeChance, migrateMethod, oddsAt, oddsContext, probAt } from '../data/methods.js';
 import { uid } from '../lib/id.js';
+import { getPokemon, spriteUrl } from '../data/pokedex.js';
+import { fmtNumber, fmtOdds, fmtPercent } from '../lib/format.js';
 
 /**
  * Temps de chasse en ms, chrono en cours compris.
@@ -35,6 +37,21 @@ export const huntChance = h => cumulativeChance(h, huntSegments(h));
  * @returns {number}
  */
 export const huntOdds = h => 1 / probAt(oddsContext(h), h.count);
+/**
+ * Lecteur de l'écran verrouillé pendant le compteur aux écouteurs : Pokémon et compteur en titre,
+ * taux et chance cumulée en sous-titre.
+ * @param {Hunt} h
+ * @returns {{ title: string, artist: string, album: string, image: string | undefined }}
+ */
+export function remoteInfo(h) {
+  const p = getPokemon(h.targetId);
+  return {
+    title: `${p?.name || 'Chasse'} · ${fmtNumber(h.count)}`,
+    artist: `${fmtOdds(huntOdds(h))} · ${fmtPercent(huntChance(h))} de chance cumulée`,
+    album: 'Shiny Hunter · 1 appui : +1 · 3 appuis : −1',
+    image: p ? spriteUrl(p) : undefined
+  };
+}
 /**
  * Arrête le chrono en cumulant le temps écoulé.
  * @param {Hunt} h

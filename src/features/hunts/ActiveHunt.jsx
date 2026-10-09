@@ -14,6 +14,7 @@ import PhaseList from './PhaseList.jsx';
 import FoundSheet from './FoundSheet.jsx';
 import PhaseSheet from './PhaseSheet.jsx';
 import EditHuntSheet from './EditHuntSheet.jsx';
+import HeadsetToggle from './HeadsetToggle.jsx';
 
 export const EGGS_PER_BOX = 30;
 
@@ -134,6 +135,8 @@ export default function ActiveHunt({ hunt, now, wakeLocked, onFound }) {
           </button>
         ))}
       </div>
+
+      <HeadsetToggle hunt={hunt} />
 
       <div className={`flex items-center gap-3 p-3.5 rounded-2xl border ${luck.bg}`}>
         <span className="text-2xl">{luck.emoji}</span>

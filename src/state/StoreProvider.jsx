@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { createAppStore, selectCatchesByKey, selectShinies } from './store.js';
 import { attachPersistence, clearAll, loadState } from './persistence.js';
 import { feedback } from '../lib/feedback.js';
+import { getRemoteState } from '../lib/mediaRemote.js';
 
 const StoreContext = createContext(null);
 
@@ -20,11 +21,12 @@ export function StoreProvider({ children, store: provided = null }) {
     };
     applyFeedback(store.getState());
     const unsubscribe = store.subscribe((s, prev) => { if (s.settings !== prev.settings) applyFeedback(s); });
-    // Application en arrière-plan : pause des chronos (si réglé), puis écriture immédiate.
+    // Application en arrière-plan : pause des chronos (si réglé, et sauf compteur aux écouteurs, qui
+    // continue écran verrouillé), puis écriture immédiate.
     const onHidden = () => {
       if (document.visibilityState !== 'hidden') return;
       const { settings, actions } = store.getState();
-      if (settings.autoPause) actions.pauseAll();
+      if (settings.autoPause && !getRemoteState().active) actions.pauseAll();
       flush();
     };
     document.addEventListener('visibilitychange', onHidden);
