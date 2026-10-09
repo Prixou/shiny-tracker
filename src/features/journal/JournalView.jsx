@@ -1,69 +1,48 @@
-import { useMemo, useState } from 'react';
-import { BookOpen, Search, FileDown, Sparkles, CalendarX, ChevronRight } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { BookOpen, Search, FileDown, Sparkles, CalendarX, ChevronRight, ListChecks } from 'lucide-react';
 import { useAppState } from '../../state/StoreProvider.jsx';
 import { useNav } from '../../state/nav.jsx';
-import { getPokemon } from '../../data/pokedex.js';
-import { GAME_BY_ID } from '../../data/games.js';
-import { METHOD_BY_ID } from '../../data/methods.js';
-import { normalize } from '../../lib/text.js';
-import { formatDate, fmtNumber, formatDuration, monthLabel, todayIso } from '../../lib/format.js';
-import { getLuckTier, catchRatio } from '../../domain/luck.js';
+import { formatDate, fmtNumber, formatDuration, todayIso } from '../../lib/format.js';
 import { downloadFile } from '../../lib/share.js';
-import { journalCsv } from '../../domain/journal.js';
-import { Sprite, BallIcon, EmptyState } from '../../ui/index.js';
+import { JOURNAL_SORTS, journalCounts, journalCsv, journalEntries, journalGroups, journalList } from '../../domain/journal.js';
+import { EmptyState } from '../../ui/index.js';
 import DateFixSheet, { useSuspiciousDays } from './DateFixSheet.jsx';
+import JournalEntry from './JournalEntry.jsx';
+import SelectionBar from './SelectionBar.jsx';
+import BulkEditSheet from './BulkEditSheet.jsx';
+import { useSelection } from './useSelection.js';
 
-const SORTS = [
-  { id: 'recent', label: 'Plus récents' },
-  { id: 'oldest', label: 'Plus anciens' },
-  { id: 'most', label: 'Plus de rencontres' },
-  { id: 'luckiest', label: 'Les plus chanceux' },
-  { id: 'unluckiest', label: 'Les plus longs (vs taux)' }
+const FILTERS = [
+  { id: 'all', label: 'Tous' },
+  { id: 'review', label: 'À vérifier' },
+  { id: 'undated', label: 'Sans date' }
 ];
+
+const EMPTY_TEXT = { review: 'Plus rien à vérifier ✨', undated: 'Aucun shiny sans date.' };
 
 export default function JournalView() {
   const catches = useAppState(s => s.catches);
   const { openPokemon, goTo } = useNav();
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('recent');
+  const [filter, setFilter] = useState('all');
   const [showDateFix, setShowDateFix] = useState(false);
+  const [editing, setEditing] = useState(false);
   const suspicious = useSuspiciousDays();
+  const sel = useSelection();
 
-  const entries = useMemo(() => catches
-    .map(rec => ({ key: rec.key, id: rec.id, rec, p: getPokemon(rec.key) }))
-    .filter(e => e.p), [catches]);
-
+  const entries = useMemo(() => journalEntries(catches), [catches]);
+  const counts = useMemo(() => journalCounts(catches), [catches]);
+  const list = useMemo(() => journalList(entries, { query, filter, sort }), [entries, query, filter, sort]);
+  const groups = useMemo(() => journalGroups(list, sort), [list, sort]);
   const totals = useMemo(() => entries.reduce((acc, e) => {
     acc.count += e.rec.count || 0;
     acc.time += e.rec.elapsedMs || 0;
     return acc;
   }, { count: 0, time: 0 }), [entries]);
-
-  const list = useMemo(() => {
-    const q = normalize(query);
-    const out = entries.filter(e => !q || e.p.search.includes(q) || normalize(e.rec.nickname).includes(q) || normalize(e.rec.notes).includes(q));
-    const ratio = e => catchRatio(e.rec);
-    const cmp = {
-      recent: (a, b) => (b.rec.timestamp || 0) - (a.rec.timestamp || 0),
-      // Les shiny sans date restent en dernier, quel que soit le sens.
-      oldest: (a, b) => (a.rec.timestamp || Number.MAX_SAFE_INTEGER) - (b.rec.timestamp || Number.MAX_SAFE_INTEGER),
-      most: (a, b) => (b.rec.count || 0) - (a.rec.count || 0),
-      luckiest: (a, b) => (ratio(a) ?? Infinity) - (ratio(b) ?? Infinity),
-      unluckiest: (a, b) => (ratio(b) ?? -1) - (ratio(a) ?? -1)
-    }[sort];
-    return out.sort(cmp);
-  }, [entries, query, sort]);
-
-  const groups = useMemo(() => {
-    if (sort !== 'recent' && sort !== 'oldest') return [{ key: 'all', label: null, items: list }];
-    const map = new Map();
-    for (const e of list) {
-      const k = e.rec.date ? e.rec.date.slice(0, 7) : 'unknown';
-      if (!map.has(k)) map.set(k, []);
-      map.get(k).push(e);
-    }
-    return [...map.entries()].map(([k, items]) => ({ key: k, label: k === 'unknown' ? 'Date inconnue' : monthLabel(k), items }));
-  }, [list, sort]);
+  // Sélection limitée aux shiny qui existent encore (une annulation peut en retirer).
+  const selectedIds = useMemo(() => catches.filter(c => sel.ids.has(c.id)).map(c => c.id), [catches, sel.ids]);
+  const open = useCallback(key => openPokemon(key), [openPokemon]);
 
   const exportCsv = () => downloadFile(`journal-shiny-${todayIso()}.csv`, journalCsv(list), 'text/csv;charset=utf-8');
 
@@ -77,7 +56,7 @@ export default function JournalView() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 ${sel.active ? 'pb-20' : ''}`}>
       <div className="grid grid-cols-3 gap-2">
         {[
           { label: 'Shiny', value: fmtNumber(entries.length) },
@@ -103,53 +82,75 @@ export default function JournalView() {
       )}
 
       <div className="flex gap-2">
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-0">
           <Search className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-          <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Nom, surnom, note…" className="input pl-11" />
+          <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Nom, surnom, note…" className="input pl-11" aria-label="Rechercher dans le journal" />
         </div>
-        <button onClick={exportCsv} className="icon-btn w-12 h-12 bg-slate-900 border border-slate-800" aria-label="Exporter en CSV" title="Exporter en CSV">
+        <button onClick={sel.active ? sel.stop : sel.start} aria-pressed={sel.active} aria-label="Sélectionner plusieurs shiny" title="Sélectionner"
+          className={`icon-btn w-12 h-12 shrink-0 border ${sel.active ? 'bg-amber-500/15 border-amber-500/50 text-amber-400' : 'bg-slate-900 border-slate-800'}`}>
+          <ListChecks className="w-5 h-5" />
+        </button>
+        <button onClick={exportCsv} className="icon-btn w-12 h-12 shrink-0 bg-slate-900 border border-slate-800" aria-label="Exporter en CSV" title="Exporter en CSV">
           <FileDown className="w-5 h-5" />
         </button>
       </div>
-      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4">
-        {SORTS.map(s => (
-          <button key={s.id} onClick={() => setSort(s.id)} className={`chip shrink-0 min-h-9 text-xs ${sort === s.id ? 'chip-on' : 'chip-off'}`}>{s.label}</button>
+
+      {(counts.review > 0 || counts.undated > 0 || filter !== 'all') && (
+        <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4" role="group" aria-label="Filtrer le journal">
+          {FILTERS.map(f => (
+            <button key={f.id} onClick={() => setFilter(f.id)} aria-pressed={filter === f.id}
+              className={`chip shrink-0 min-h-9 text-xs ${filter === f.id ? 'chip-on' : 'chip-off'}`}>
+              {f.label} · {counts[f.id]}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4" role="group" aria-label="Trier le journal">
+        {JOURNAL_SORTS.map(s => (
+          <button key={s.id} onClick={() => setSort(s.id)} aria-pressed={sort === s.id} className={`chip shrink-0 min-h-9 text-xs ${sort === s.id ? 'chip-on' : 'chip-off'}`}>{s.label}</button>
         ))}
       </div>
 
-      {groups.map(g => (
-        <section key={g.key} className="space-y-2">
-          {g.label && <h3 className="label-caps pt-2 flex items-center justify-between">{g.label}<span className="text-slate-600">{g.items.length}</span></h3>}
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            {g.items.map(({ key, id, rec, p }) => {
-              const luck = getLuckTier(catchRatio(rec));
-              const game = GAME_BY_ID[rec.game];
-              const method = METHOD_BY_ID[rec.method];
-              return (
-                <button key={id} onClick={() => openPokemon(key)} className="cv-auto w-full flex items-center gap-3 p-2.5 pr-3 rounded-2xl bg-slate-900/80 border border-slate-800 active:bg-slate-800 text-left">
-                  <div className="relative shrink-0">
-                    <Sprite pokemon={p} className="w-16 h-16 drop-shadow-[0_0_8px_rgba(245,158,11,0.35)]" />
-                    <BallIcon id={rec.ball} className="w-6 h-6 absolute -bottom-1 -right-1" />
-                  </div>
-                  <div className="flex-1 min-w-0 space-y-0.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-black text-amber-200 truncate">{rec.nickname || p.name}</span>
-                      {rec.gender === 'm' && <span className="text-sky-400 text-sm">♂</span>}
-                      {rec.gender === 'f' && <span className="text-pink-400 text-sm">♀</span>}
-                      {rec.provisional && <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-sky-500/15 text-sky-300 text-[10px] font-black">Provisoire</span>}
-                    </div>
-                    {rec.nickname && <div className="text-[11px] text-slate-500 -mt-0.5">{p.name}</div>}
-                    <div className="text-xs text-slate-400 truncate">{formatDate(rec.date)}{game ? ` · ${game.icon} ${game.short}` : ''}</div>
-                    <div className="text-xs text-slate-500 truncate">{method?.icon} {method?.name}{rec.count ? ` · ${fmtNumber(rec.count)} renc.` : ''}</div>
-                  </div>
-                  <span className={`shrink-0 text-xl w-10 h-10 rounded-xl border flex items-center justify-center ${luck.bg}`} title={luck.name}>{luck.emoji}</span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      ))}
-      {list.length === 0 && <p className="text-center text-sm text-slate-500 py-10">Aucun résultat pour « {query} ».</p>}
+      {filter === 'review' && list.length > 0 && (
+        <p className="text-xs text-slate-400 leading-relaxed">
+          Ajoutés d'un geste : jeu, méthode et Ball sont ceux par défaut. Sélectionne-les (le tri « N° du Pokédex » les range par région),
+          puis « Modifier » pour leur donner le bon jeu, la Ball… ou confirmer qu'ils sont justes.
+        </p>
+      )}
+
+      {groups.map(g => {
+        const ids = g.items.map(e => e.id);
+        const all = sel.active && ids.every(id => sel.ids.has(id));
+        const label = g.label || (sel.active ? 'Résultats' : null);
+        return (
+          <section key={g.key} className="space-y-2">
+            {label && (
+              <div className="flex items-center justify-between gap-2 pt-2">
+                <h3 className="label-caps flex-1 min-w-0 flex items-center justify-between gap-2">
+                  <span className="truncate">{label}</span><span className="text-slate-600">{g.items.length}</span>
+                </h3>
+                {sel.active && (
+                  <button onClick={() => sel.setMany(ids, !all)} className="shrink-0 min-h-11 -my-2 px-3 text-xs font-bold text-amber-400"
+                    aria-label={`${all ? 'Désélectionner' : 'Sélectionner'} : ${label}`}>
+                    {all ? 'Aucun' : 'Tout'}
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+              {g.items.map(e => (
+                <JournalEntry key={e.id} entry={e} selecting={sel.active} selected={sel.ids.has(e.id)} onOpen={open} onToggle={sel.toggle} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
+      {list.length === 0 && (
+        <p className="text-center text-sm text-slate-500 py-10">{query ? `Aucun résultat pour « ${query} ».` : EMPTY_TEXT[filter] || 'Aucun résultat.'}</p>
+      )}
+
+      {sel.active && <SelectionBar count={selectedIds.length} onEdit={() => setEditing(true)} onClose={sel.stop} />}
+      {editing && <BulkEditSheet ids={selectedIds} onClose={() => setEditing(false)} onDone={() => { setEditing(false); sel.clear(); }} />}
       <DateFixSheet open={showDateFix} onClose={() => setShowDateFix(false)} />
     </div>
   );

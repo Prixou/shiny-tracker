@@ -53,7 +53,8 @@ export default function CopyCard({ copy, defaultOpen, replaced = false }) {
               Tu as maintenant ton propre exemplaire : tu peux supprimer celui-ci.
             </p>
           )}
-          <CaptureForm value={copy} onChange={patch => updateCatch(copy.id, patch)} />
+          {/* Détails modifiés à la main : le shiny n'est plus « à vérifier ». */}
+          <CaptureForm value={copy} onChange={patch => updateCatch(copy.id, { ...patch, verified: true })} />
           <button onClick={() => removeCatch(copy.id)} className="btn-ghost w-full text-rose-300"><Trash2 className="w-4 h-4" /> Supprimer cet exemplaire</button>
         </div>
       )}

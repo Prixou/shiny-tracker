@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { POKE_BALLS, BALL_BY_ID, POKEMON_TYPES, NATURES } from '../../data/constants.js';
+import { POKEMON_TYPES, NATURES } from '../../data/constants.js';
 import { gameMethods, METHOD_BY_ID } from '../../data/methods.js';
 import { BANK_DEADLINE_SHORT, viaBank } from '../../domain/bank.js';
 import { timestampFromIso, todayIso } from '../../lib/format.js';
 import { UNKNOWN_DATE } from '../../domain/catch.js';
-import { Field, BallIcon, Toggle, GameOptions } from '../../ui/index.js';
+import { Field, BallPicker, Toggle, GameOptions } from '../../ui/index.js';
 
 export default function CaptureForm({ value, onChange, showCounts = true, showProvisional = true }) {
   const [more, setMore] = useState(() => !!(value.nature || value.ability || value.level || value.alpha || value.mark || value.teraType));
@@ -15,20 +15,7 @@ export default function CaptureForm({ value, onChange, showCounts = true, showPr
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-400">Poké Ball</span>
-          <span className="text-xs font-bold text-amber-300">{BALL_BY_ID[value.ball]?.name}</span>
-        </div>
-        <div className="grid grid-cols-7 sm:grid-cols-9 gap-1.5">
-          {POKE_BALLS.map(b => (
-            <button key={b.id} type="button" onClick={() => onChange({ ball: b.id })} aria-label={b.name} aria-pressed={value.ball === b.id}
-              className={`aspect-square rounded-xl flex items-center justify-center border transition active:scale-90 ${value.ball === b.id ? 'bg-amber-500/20 border-amber-500' : 'bg-slate-950 border-slate-800'}`}>
-              <BallIcon id={b.id} className="w-7 h-7" />
-            </button>
-          ))}
-        </div>
-      </div>
+      <BallPicker value={value.ball} onChange={ball => onChange({ ball })} />
 
       <div className="grid grid-cols-2 gap-3">
         {/* Date inconnue possible (historique saisi après coup) : la capture ne fausse alors ni le journal ni les stats. */}
