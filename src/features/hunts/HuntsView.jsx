@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Timer, Plus, History, ChevronRight } from 'lucide-react';
+import { lazy, Suspense, useMemo, useState } from 'react';
+import { Timer, Plus, History, ChevronRight, Moon } from 'lucide-react';
 import { useActions, useAppState } from '../../state/StoreProvider.jsx';
 import { useNav } from '../../state/nav.jsx';
 import { getPokemon } from '../../data/pokedex.js';
@@ -11,12 +11,15 @@ import Celebration from './Celebration.jsx';
 import ActiveHunt from './ActiveHunt.jsx';
 import HistorySheet from './HistorySheet.jsx';
 
+const TonightSheet = lazy(() => import('./TonightSheet.jsx'));
+
 export default function HuntsView() {
   const { hunts, activeHuntId, keepAwake } = useAppState(s => ({ hunts: s.hunts, activeHuntId: s.ui.activeHuntId, keepAwake: s.settings.keepAwake }));
   const { setUiValue } = useActions();
   const { openNewHunt } = useNav();
   const [showHistory, setShowHistory] = useState(false);
   const [celebrate, setCelebrate] = useState(null);
+  const [showTonight, setShowTonight] = useState(false);
 
   const active = useMemo(() => hunts.filter(h => h.status === 'active').sort((a, b) => b.updatedAt - a.updatedAt), [hunts]);
   const done = useMemo(() => hunts.filter(h => h.status === 'done').sort((a, b) => (b.finishedAt || 0) - (a.finishedAt || 0)), [hunts]);
@@ -54,9 +57,21 @@ export default function HuntsView() {
         <ActiveHunt key={current.id} hunt={current} now={now} wakeLocked={wakeLocked} onFound={setCelebrate} />
       ) : (
         <EmptyState icon={<Timer className="w-7 h-7" />} title="Aucune chasse en cours"
-          action={<button className="btn-primary" onClick={() => openNewHunt()}><Plus className="w-4 h-4" /> Lancer une chasse</button>}>
+          action={(
+            <div className="flex flex-col gap-2 w-full max-w-xs">
+              <button className="btn-primary" onClick={() => openNewHunt()}><Plus className="w-4 h-4" /> Lancer une chasse</button>
+              <button className="btn-secondary" onClick={() => setShowTonight(true)}><Moon className="w-4 h-4" /> Que chasser ce soir ?</button>
+            </div>
+          )}>
           Choisis un Pokémon, un jeu et une méthode : le taux est calculé automatiquement, même quand il évolue avec ta chaîne.
         </EmptyState>
+      )}
+
+      {current && (
+        <button onClick={() => setShowTonight(true)} className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-900/70 border border-slate-800 text-sm font-bold text-slate-300">
+          <span className="flex items-center gap-2"><Moon className="w-4 h-4 text-amber-400" /> Que chasser ce soir ?</span>
+          <ChevronRight className="w-4 h-4 text-slate-500" />
+        </button>
       )}
 
       {done.length > 0 && (
@@ -68,6 +83,7 @@ export default function HuntsView() {
 
       <HistorySheet open={showHistory} onClose={() => setShowHistory(false)} hunts={done} />
       <Celebration data={celebrate} onClose={() => setCelebrate(null)} />
+      <Suspense fallback={null}>{showTonight && <TonightSheet onClose={() => setShowTonight(false)} />}</Suspense>
     </div>
   );
 }
