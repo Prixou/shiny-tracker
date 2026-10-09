@@ -3,6 +3,7 @@
 // change sont rendus à nouveau.
 /** @import { AppData, Catch, Hunt, PokemonList, UndoEntry, Wishlist } from '../domain/types.js' */
 /** @import { Settings } from '../domain/settings.js' */
+/** @import { CatchPatch } from '../domain/bulkEdit.js' */
 import { createStore } from 'zustand/vanilla';
 import { createCatch, groupByKey, latestByKey } from '../domain/catch.js';
 import { createHunt, huntChance, huntElapsed, huntOdds, huntTotal, pauseHunt } from '../domain/hunt.js';
@@ -13,6 +14,7 @@ import { luckRatio } from '../data/methods.js';
 import { MAIN_DEX } from '../data/pokedex.js';
 import { uid } from '../lib/id.js';
 import { timestampFromIso } from '../lib/format.js';
+import { editCatch, isEmptyPatch } from '../domain/bulkEdit.js';
 
 // Tranches de données synchronisées (horodatées à chaque modification) et annulables.
 export const DATA_SLICES = ['catches', 'hunts', 'wishlist', 'lists'];
@@ -196,6 +198,21 @@ function createActions(set, get, { now, onReset }) {
       const timestamp = date ? timestampFromIso(date) : 0;
       commit(label || (date ? `Date changée (${ids.length} shiny)` : `Date inconnue pour ${ids.length} shiny`), { catches: ids }, s => ({
         catches: s.catches.map(c => (selected.has(c.id) ? { ...c, date, timestamp, updatedAt: now() } : c))
+      }));
+    },
+    /**
+     * Édition en lot : même jeu, méthode, Ball, date ou HOME pour plusieurs captures, qui deviennent
+     * « vérifiées » (une seule entrée d'annulation). Changement vide : confirme seulement les détails.
+     * @param {string[]} ids
+     * @param {CatchPatch} patch
+     * @param {string} [label]
+     */
+    editCatches(ids, patch, label) {
+      if (!ids.length) return;
+      const selected = new Set(ids);
+      const { settings } = get();
+      commit(label || `${ids.length} shiny ${isEmptyPatch(patch) ? 'vérifiés' : 'modifiés'}`, { catches: ids }, s => ({
+        catches: s.catches.map(c => (selected.has(c.id) ? { ...editCatch(c, patch, settings), updatedAt: now() } : c))
       }));
     },
     /**
