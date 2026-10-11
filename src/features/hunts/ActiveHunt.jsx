@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Minus, Play, Pause, Sparkles, Settings2, GitBranch, Sun, Zap, Clock, TrendingUp, Target, Egg, Link2 } from 'lucide-react';
+import { Minus, Play, Pause, Sparkles, Settings2, GitBranch, Sun, Zap, Clock, TrendingUp, Target, Egg, Link2, BookOpen } from 'lucide-react';
 import { useActions } from '../../state/StoreProvider.jsx';
 import { useNav } from '../../state/nav.jsx';
 import { getPokemon } from '../../data/pokedex.js';
+import { guideForMethod } from '../../data/guides.js';
 import { GAME_BY_ID } from '../../data/games.js';
 import { METHOD_BY_ID, encountersFor, oddsContext, isDynamic, luckRatio, oddsAt } from '../../data/methods.js';
 import { huntElapsed, huntTotal, huntChance, huntOdds } from '../../domain/hunt.js';
@@ -15,13 +16,15 @@ import FoundSheet from './FoundSheet.jsx';
 import PhaseSheet from './PhaseSheet.jsx';
 import EditHuntSheet from './EditHuntSheet.jsx';
 import HeadsetToggle from './HeadsetToggle.jsx';
+import GuideSheet from '../tools/GuideSheet.jsx';
 
 export const EGGS_PER_BOX = 30;
 
 /** Chasse affichée : gros bouton +1, chrono, chance cumulée et réglages. */
 export default function ActiveHunt({ hunt, now, wakeLocked, onFound }) {
-  const { increment, toggleTimer } = useActions();
-  const { openPokemon } = useNav();
+  const { increment, toggleTimer, setUiValue } = useActions();
+  const { openPokemon, goTo } = useNav();
+  const guide = guideForMethod(hunt.method);
   const [sheet, setSheet] = useState(null);
   const [bump, setBump] = useState(0);
   const p = getPokemon(hunt.targetId);
@@ -137,6 +140,11 @@ export default function ActiveHunt({ hunt, now, wakeLocked, onFound }) {
       </div>
 
       <HeadsetToggle hunt={hunt} />
+      {guide && (
+        <button onClick={() => setSheet('guide')} className="btn-secondary w-full min-h-11 text-sm">
+          <BookOpen className="w-4 h-4" /> Tuto : {guide.title}
+        </button>
+      )}
 
       <div className={`flex items-center gap-3 p-3.5 rounded-2xl border ${luck.bg}`}>
         <span className="text-2xl">{luck.emoji}</span>
@@ -173,6 +181,9 @@ export default function ActiveHunt({ hunt, now, wakeLocked, onFound }) {
       <FoundSheet open={sheet === 'found'} onClose={() => setSheet(null)} hunt={hunt} onFound={onFound} />
       <PhaseSheet open={sheet === 'phase'} onClose={() => setSheet(null)} hunt={hunt} dynamic={dynamic} />
       <EditHuntSheet open={sheet === 'edit'} onClose={() => setSheet(null)} hunt={hunt} elapsed={elapsed} />
+      {sheet === 'guide' && (
+        <GuideSheet guide={guide} onClose={() => setSheet(null)} onRecipes={() => { setSheet(null); setUiValue('toolsSection', 'recipes'); goTo('tools'); }} />
+      )}
     </div>
   );
 }
