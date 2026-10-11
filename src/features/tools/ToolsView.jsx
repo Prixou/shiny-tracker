@@ -5,6 +5,7 @@ import BoxesTool from '../boxes/BoxesTool.jsx';
 import RandomTool from './RandomTool.jsx';
 import OddsTool from './OddsTool.jsx';
 import RecipesTool from './RecipesTool.jsx';
+import GuidesTool from './GuidesTool.jsx';
 import AgendaTool from './AgendaTool.jsx';
 import DataTool from '../backup/DataTool.jsx';
 import SettingsTool from '../settings/SettingsTool.jsx';
@@ -15,6 +16,7 @@ const SECTIONS = [
   { id: 'random', label: 'Tirage' },
   { id: 'odds', label: 'Probas' },
   { id: 'agenda', label: 'Agenda' },
+  { id: 'guides', label: 'Tutos' },
   { id: 'recipes', label: 'Recettes' },
   { id: 'data', label: 'Données' },
   { id: 'settings', label: 'Réglages' }
@@ -48,6 +50,7 @@ export default function ToolsView() {
       {section === 'random' && <RandomTool />}
       {section === 'odds' && <OddsTool />}
       {section === 'agenda' && <AgendaTool />}
+      {section === 'guides' && <GuidesTool onRecipes={() => change('recipes')} />}
       {section === 'recipes' && <RecipesTool />}
       {section === 'data' && <DataTool />}
       {section === 'settings' && <SettingsTool />}

@@ -72,5 +72,6 @@ Règles :
 - Boîtes HOME du living dex : `src/domain/boxes.js` (ordre, places) et `src/features/boxes/`.
 - Compteur aux écouteurs (Media Session) : `src/lib/mediaRemote.js` et `src/features/hunts/HeadsetRemote.jsx`.
 - « Que chasser ce soir ? » : `src/domain/tonight.js` (candidats, classement, sessions), rythme par méthode `src/domain/pace.js` + `src/data/pace.js`.
+- Recettes de sandwichs : `src/data/sandwiches.js` est **généré** (ne pas le modifier à la main) ; chaque recette y est revérifiée avec la formule des sandwichs du jeu ou contre les recettes officielles. Tutos des méthodes : `src/data/guides.js` (taux jamais écrits à la main : calculés par `oddsAt`).
 - Types des données : `src/domain/types.js`.
 - Composants d'interface communs : `src/ui/index.js`.

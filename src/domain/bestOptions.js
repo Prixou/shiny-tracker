@@ -92,7 +92,7 @@ export function bestOptions(p, data, prefs = {}) {
     add('za', { method: 'za_fasttravel', opts: { sparkling: 3, spawns: 1 } }, {
       label: 'Téléportation en boucle + donut Brillance Nv. 3',
       locations: locs('za', 'za-wild', 'za-hyperspace'),
-      note: has('za', 'za-hyperspace') ? 'En Hyperespace, la quête « Attraper un shiny » en garantit un avec Brillance Nv. 3.' : null
+      note: has('za', 'za-hyperspace') ? 'En Hyperespace, avec Brillance Nv. 3 de son type, le premier Pokémon de ce type qui apparaît en arrivant dans la zone sauvage est forcément shiny.' : null
     });
   }
 

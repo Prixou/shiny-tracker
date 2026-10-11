@@ -99,7 +99,7 @@ export const METHODS = [
     p: x => addRolls(roll(x.base, 1 + x.charm + (x.o.sparkling || 0) + (x.o.outbreak ? tier(x.c, [[30, 1], [60, 2]]) : 0)), 200, x.o.eventBoost ? 1 : 0),
     note: 'En apparition massive : +1 tirage à 30 KO, +2 à 60 KO. Certaines apparitions massives évènementielles ajoutent 0,5 % de chance shiny.'
   },
-  { id: 'za_wild', name: 'Rencontre sauvage (Z-A)', icon: '🍩', unit: 'rencontres', options: [SPARKLING('Donut Brillance')], p: x => roll(x.base, 1 + x.charm + (x.o.sparkling || 0)), note: 'Avec un donut Brillance Nv. 3, la quête d\'Hyperespace « Attraper un shiny » garantit un shiny.' },
+  { id: 'za_wild', name: 'Rencontre sauvage (Z-A)', icon: '🍩', unit: 'rencontres', options: [SPARKLING('Donut Brillance')], p: x => roll(x.base, 1 + x.charm + (x.o.sparkling || 0)), note: 'Brillance ne compte que pour les Pokémon du type du donut. Avec Brillance Nv. 3, le premier Pokémon de ce type qui apparaît en arrivant dans une zone sauvage de l\'Hyperespace est forcément shiny.' },
   // Resets d'apparitions : chaque cycle relance toutes les apparitions proches (jusqu'à 50 m).
   { id: 'za_fasttravel', name: 'Téléportation en boucle (Z-A)', icon: '🧭', unit: 'téléportations', options: [SPARKLING('Donut Brillance'), SPAWNS], p: x => cycle(x), note: 'Téléporte-toi vers un point à moins de 50 m des apparitions : chaque voyage relance les Pokémon. La méthode la plus rapide.' },
   { id: 'za_bench', name: 'Banc jour / nuit (Z-A)', icon: '🪑', unit: 'bancs', options: [SPARKLING('Donut Brillance'), SPAWNS], p: x => cycle(x), note: 'S\'asseoir sur un banc fait passer du jour à la nuit et relance les apparitions dans un rayon de 50 m. Un peu plus lent (cinématique).' },

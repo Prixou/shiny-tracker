@@ -10,7 +10,7 @@ export const getHuntingTip = p => {
     return { game: 'Aucun', method: 'Shiny Lock', tip: 'Ce Pokémon est bloqué dans sa forme normale en jeu : seules des distributions officielles permettent de l\'obtenir chromatique.' };
   }
   if (p.region === 'hisui') {
-    return { game: 'Légendes Pokémon : Arceus', method: 'Mégapparitions', tip: 'Complète la recherche Pokédex (Nv. 10 puis « parfait ») et obtiens le Charme Chroma pour atteindre environ 1/128 en Mégapparition.' };
+    return { game: 'Légendes Pokémon : Arceus', method: 'Apparitions massives', tip: 'Complète la recherche Pokédex (Nv. 10 puis « parfaite ») et obtiens le Charme Chroma : environ 1/128 en apparition massive, 1/216 en Mégapparition.' };
   }
   if (p.isMythical) {
     return { game: 'Distribution / Pokémon GO', method: 'Évènement', tip: 'Les Fabuleux shiny s\'obtiennent surtout via distributions officielles, Pokémon HOME ou les études spéciales de Pokémon GO.' };
