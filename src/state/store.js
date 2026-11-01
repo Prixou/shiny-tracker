@@ -351,6 +351,15 @@ function createActions(set, get, { now, onReset }) {
       actions.updateHunt(id, h => ({ elapsedMs: Math.max(0, ms), startedAt: h.startedAt ? now() : null }));
     },
     /**
+     * Ajoute d'un coup des rencontres faites sans compter (estimées d'après le temps), et ce temps au chrono.
+     * @param {string} id
+     * @param {{ count: number, ms?: number }} added
+     * @param {string} label Libellé d'annulation.
+     */
+    addHuntTime(id, { count, ms = 0 }, label) {
+      actions.updateHunt(id, h => ({ count: h.count + Math.max(0, Math.round(count) || 0), elapsedMs: h.elapsedMs + Math.max(0, ms) }), label);
+    },
+    /**
      * @param {string} id
      * @param {{ key?: string, note?: string }} [phase]
      * @param {string} [label]

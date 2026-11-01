@@ -40,3 +40,27 @@ export function paceFor(method, personal = {}) {
   if (personal[method]?.pace > 0) return { pace: personal[method].pace, mine: true };
   return DEFAULT_PACE[method] ? { pace: DEFAULT_PACE[method], mine: false } : null;
 }
+
+/**
+ * Temps moyen par unité (reset, rencontre, œuf…), pour ajouter d'un coup ce qu'on a fait sans compter :
+ * celui de cette chasse si elle a au moins 10 minutes de chrono, sinon ton rythme sur la méthode, sinon l'estimation.
+ * @param {Hunt} hunt
+ * @param {Hunt[]} hunts Toutes les chasses (rythme personnel).
+ * @param {number} [now]
+ * @returns {{ seconds: number, source: 'hunt' | 'mine' | 'estimate' }}
+ */
+export function secondsPerUnit(hunt, hunts, now = Date.now()) {
+  const ms = huntElapsed(hunt, now);
+  const n = huntTotal(hunt);
+  if (ms >= MIN_HUNT_MS && n > 0) return { seconds: ms / 1000 / n, source: 'hunt' };
+  const pace = paceFor(hunt.method, personalPace(hunts, now)) || { pace: DEFAULT_PACE.other, mine: false };
+  return { seconds: 3600 / pace.pace, source: pace.mine ? 'mine' : 'estimate' };
+}
+
+/**
+ * Nombre d'unités faites en `ms` à raison de `seconds` par unité (arrondi ; 0 si une valeur manque).
+ * @param {number} ms
+ * @param {number} seconds
+ * @returns {number}
+ */
+export const countForDuration = (ms, seconds) => (ms > 0 && seconds > 0 ? Math.round(ms / 1000 / seconds) : 0);

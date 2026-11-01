@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Minus, Play, Pause, Sparkles, Settings2, GitBranch, Sun, Zap, Clock, TrendingUp, Target, Egg, Link2, BookOpen } from 'lucide-react';
+import { Minus, Play, Pause, Sparkles, Settings2, GitBranch, Sun, Clock, Egg, Link2, BookOpen } from 'lucide-react';
 import { useActions } from '../../state/StoreProvider.jsx';
 import { useNav } from '../../state/nav.jsx';
 import { getPokemon } from '../../data/pokedex.js';
 import { guideForMethod } from '../../data/guides.js';
 import { GAME_BY_ID } from '../../data/games.js';
-import { METHOD_BY_ID, encountersFor, oddsContext, isDynamic, luckRatio, oddsAt } from '../../data/methods.js';
-import { huntElapsed, huntTotal, huntChance, huntOdds } from '../../domain/hunt.js';
-import { getLuckTier } from '../../domain/luck.js';
-import { fmtNumber, fmtOdds, fmtRatio, fmtPercent, formatDuration } from '../../lib/format.js';
+import { METHOD_BY_ID, oddsContext, isDynamic } from '../../data/methods.js';
+import { huntElapsed, huntTotal, huntOdds } from '../../domain/hunt.js';
+import { fmtNumber, fmtOdds, formatDuration } from '../../lib/format.js';
 import { feedback } from '../../lib/feedback.js';
 import { Sprite } from '../../ui/index.js';
 import PhaseList from './PhaseList.jsx';
@@ -16,6 +15,8 @@ import FoundSheet from './FoundSheet.jsx';
 import PhaseSheet from './PhaseSheet.jsx';
 import EditHuntSheet from './EditHuntSheet.jsx';
 import HeadsetToggle from './HeadsetToggle.jsx';
+import HuntStats from './HuntStats.jsx';
+import AddTimeSheet from './AddTimeSheet.jsx';
 import GuideSheet from '../tools/GuideSheet.jsx';
 
 export const EGGS_PER_BOX = 30;
@@ -35,13 +36,7 @@ export default function ActiveHunt({ hunt, now, wakeLocked, onFound }) {
   const unit = method.unit || 'rencontres';
   const total = huntTotal(hunt);
   const elapsed = huntElapsed(hunt, now);
-  const chance = huntChance(hunt);
-  const ratio = luckRatio(chance);
-  const luck = getLuckTier(total > 0 ? ratio : null);
   const odds = huntOdds(hunt);
-  const hours = elapsed / 3600000;
-  const rate = hours > 0.01 ? total / hours : 0;
-  const need90 = encountersFor(hunt, 0.9);
   const quickSteps = method.eggs ? [5, EGGS_PER_BOX] : [5, 10];
 
   const add = useCallback(n => {
@@ -137,6 +132,11 @@ export default function ActiveHunt({ hunt, now, wakeLocked, onFound }) {
             {method.eggs && n === EGGS_PER_BOX ? <><Egg className="w-4 h-4" /> +1 boîte (30)</> : <>+{n}</>}
           </button>
         ))}
+        {!dynamic && (
+          <button onClick={() => setSheet('time')} className="col-span-2 btn-secondary min-h-11 text-sm">
+            <Clock className="w-4 h-4" /> Ajouter des {unit} par durée
+          </button>
+        )}
       </div>
 
       <HeadsetToggle hunt={hunt} />
@@ -146,51 +146,17 @@ export default function ActiveHunt({ hunt, now, wakeLocked, onFound }) {
         </button>
       )}
 
-      <div className={`flex items-center gap-3 p-3.5 rounded-2xl border ${luck.bg}`}>
-        <span className="text-2xl">{luck.emoji}</span>
-        <div className="min-w-0 flex-1">
-          <div className={`text-sm font-black ${luck.color}`}>{luck.name}</div>
-          <div className="text-xs text-slate-300">{luck.desc}</div>
-        </div>
-      </div>
-
-      <div className="card p-4 space-y-3">
-        <div className="flex items-center justify-between text-xs font-bold">
-          <span className="text-slate-400">Progression vers le taux</span>
-          <span className={ratio > 1 ? 'text-rose-400' : 'text-amber-400'}>{ratio > 1 ? `Over odds ${fmtRatio(ratio)}` : `${Math.round(ratio * 100)} %`}</span>
-        </div>
-        <div className="h-2.5 bg-slate-800 rounded-full overflow-hidden">
-          <div className={`h-full rounded-full transition-all ${ratio > 1 ? 'bg-rose-500' : 'bg-gradient-to-r from-amber-500 to-yellow-300'}`} style={{ width: `${Math.min(100, ratio * 100)}%` }} />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <MiniStat icon={<Target className="w-4 h-4" />} label="Chance cumulée" value={fmtPercent(chance)} />
-          <MiniStat icon={<TrendingUp className="w-4 h-4" />} label="Rythme" value={rate ? `${fmtNumber(rate)}/h` : '—'} />
-          <MiniStat icon={<Zap className="w-4 h-4" />} label="Pour 90 %" value={fmtNumber(Math.max(0, need90 - hunt.count))} sub="restantes" />
-          <MiniStat icon={<Clock className="w-4 h-4" />} label="Temps estimé (90 %)"
-            value={rate && hunt.count < need90 ? formatDuration(((need90 - hunt.count) / rate) * 3600000, { short: true }) : '—'} />
-        </div>
-        {dynamic && (
-          <p className="text-xs text-slate-400">
-            Taux dynamique : {fmtOdds(oddsAt(hunt, 0))} au départ, {fmtOdds(oddsAt(hunt, method.chain))} à partir de {method.chain}. {method.note}
-          </p>
-        )}
-      </div>
+      <HuntStats hunt={hunt} elapsed={elapsed} />
 
       {hunt.phases.length > 0 && <PhaseList hunt={hunt} dynamic={dynamic} />}
 
       <FoundSheet open={sheet === 'found'} onClose={() => setSheet(null)} hunt={hunt} onFound={onFound} />
       <PhaseSheet open={sheet === 'phase'} onClose={() => setSheet(null)} hunt={hunt} dynamic={dynamic} />
       <EditHuntSheet open={sheet === 'edit'} onClose={() => setSheet(null)} hunt={hunt} elapsed={elapsed} />
+      <AddTimeSheet open={sheet === 'time'} onClose={() => setSheet(null)} hunt={hunt} />
       {sheet === 'guide' && (
         <GuideSheet guide={guide} onClose={() => setSheet(null)} onRecipes={() => { setSheet(null); setUiValue('toolsSection', 'recipes'); goTo('tools'); }} />
       )}
     </div>
   );
 }
-
-const MiniStat = ({ icon, label, value, sub }) => (
-  <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
-    <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">{icon}{label}</div>
-    <div className="text-base font-black font-mono text-slate-100 mt-0.5">{value} {sub && <span className="text-[11px] font-sans font-semibold text-slate-500">{sub}</span>}</div>
-  </div>
-);
