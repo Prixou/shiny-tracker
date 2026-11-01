@@ -30,19 +30,18 @@ function indexEncounters(data, speciesId) {
 const uniqueNames = list => [...new Set((list || []).map(l => l.name))];
 
 /**
- * Meilleures façons d'obtenir un Pokémon shiny, classées par taux (le meilleur d'abord).
- * Chaque option contient une configuration de chasse prête à l'emploi (`cfg`).
- * `prefs.owns(jeu)` limite `main` aux jeux possédés (les autres vont dans `others`) ;
- * `prefs.charmFor(jeu)` indique si le Charme Chroma est compté.
+ * Toutes les façons de chasser un Pokémon shiny, jeu par jeu (plusieurs méthodes possibles par jeu), sans tri.
+ * `all` : ajoute aussi la rencontre sauvage ou le Soft Reset à pleine chance dans les jeux qui ont déjà
+ * une meilleure méthode (utile pour lister les Pokémon d'une méthode ; sans effet sur la meilleure option).
  * @param {Pokemon | null | undefined} p
  * @param {EncounterData} data Données de lieux (services/encounters.js).
  * @param {BestOptionsPrefs} [prefs]
- * @returns {{ main: BestOption[], extra: BestOption[], others: BestOption[] }}
+ * @param {{ all?: boolean }} [options]
+ * @returns {BestOption[]}
  */
-export function bestOptions(p, data, prefs = {}) {
-  const owns = prefs.owns || (() => true);
+export function huntOptions(p, data, prefs = {}, { all = false } = {}) {
   const charmFor = prefs.charmFor || (() => true);
-  if (!p || p.variantKind === 'mega' || p.variantKind === 'gmax') return { main: [], extra: [], others: [] };
+  if (!p || p.variantKind === 'mega' || p.variantKind === 'gmax') return [];
   const enc = indexEncounters(data, p.baseId);
   const options = [];
   // Forme régionale : seulement dans les jeux qui l'ont. Forme normale : pas dans les jeux où elle est remplacée.
@@ -83,9 +82,12 @@ export function bestOptions(p, data, prefs = {}) {
   }
 
   // Légendes Arceus
-  if (has('pla', 'pla-mo')) add('pla', { method: 'pla_mo', opts: { research: 3 } }, { label: 'Apparition massive + recherche parfaite', locations: locs('pla', 'pla-mo') });
-  else if (has('pla', 'pla-mmo')) add('pla', { method: 'pla_mmo', opts: { research: 3 } }, { label: 'Mégapparition + recherche parfaite', locations: locs('pla', 'pla-mmo') });
-  else if (has('pla', 'pla-wild', 'pla-landmark', 'pla-distortion')) add('pla', { method: 'pla_wild', opts: { research: 3 } }, { label: 'Sauvage + recherche parfaite', locations: locs('pla', 'pla-wild', 'pla-landmark', 'pla-distortion') });
+  // (Seule la meilleure est proposée ; avec `all`, toutes celles qui existent.)
+  const plaMo = has('pla', 'pla-mo');
+  const plaMmo = has('pla', 'pla-mmo');
+  if (plaMo) add('pla', { method: 'pla_mo', opts: { research: 3 } }, { label: 'Apparition massive + recherche parfaite', locations: locs('pla', 'pla-mo') });
+  if (plaMmo && (all || !plaMo)) add('pla', { method: 'pla_mmo', opts: { research: 3 } }, { label: 'Mégapparition + recherche parfaite', locations: locs('pla', 'pla-mmo') });
+  if (has('pla', 'pla-wild', 'pla-landmark', 'pla-distortion') && (all || (!plaMo && !plaMmo))) add('pla', { method: 'pla_wild', opts: { research: 3 } }, { label: 'Sauvage + recherche parfaite', locations: locs('pla', 'pla-wild', 'pla-landmark', 'pla-distortion') });
 
   // Légendes Z-A
   if (has('za', 'za-wild', 'za-hyperspace')) {
@@ -100,7 +102,11 @@ export function bestOptions(p, data, prefs = {}) {
   const wildLetsGo = Object.keys(enc.letsgo || {}).filter(m => !NOT_WILD.has(m));
   if (wildLetsGo.length) add('letsgo', { method: 'catch_combo', opts: { lure: true } }, { label: 'Combo Capture 31+ avec Parfum', locations: locs('letsgo', ...wildLetsGo) });
   for (const g of ['usum', 'sm']) {
-    if (has(g, 'sos', 'sos-from-bubbling-spot')) { add(g, { method: 'sos' }, { label: 'Appels à l\'aide (chaîne 31+)', locations: locs(g, 'sos', 'sos-from-bubbling-spot') }); break; }
+    // Ultra-Soleil / Ultra-Lune d'abord ; Soleil / Lune seulement à défaut (les deux avec « all »).
+    if (has(g, 'sos', 'sos-from-bubbling-spot')) {
+      add(g, { method: 'sos' }, { label: 'Appels à l\'aide (chaîne 31+)', locations: locs(g, 'sos', 'sos-from-bubbling-spot') });
+      if (!all) break;
+    }
   }
   for (const g of ['oras', 'xy']) {
     if (has(g, 'old-rod', 'good-rod', 'super-rod')) add(g, { method: 'chain_fishing' }, { label: 'Pêche à la chaîne (20+)', locations: locs(g, 'old-rod', 'good-rod', 'super-rod') });
@@ -127,7 +133,7 @@ export function bestOptions(p, data, prefs = {}) {
   const SKIP_TYPES = /^(gift|gift-egg|npc-trade|max-raid|colosseum|pokemon-|pla-|za-|sv-wild)/;
   for (const [game, byMethod] of Object.entries(enc)) {
     const g = GAME_BY_ID[game];
-    if (!g || game === 'pogo' || options.some(o => o.game === game)) continue;
+    if (!g || game === 'pogo' || (!all && options.some(o => o.game === game))) continue;
     const types = Object.keys(byMethod).filter(m => !SKIP_TYPES.test(m));
     const wildTypes = types.filter(m => !RESET_TYPES.has(m));
     const resetTypes = types.filter(m => RESET_TYPES.has(m));
@@ -135,6 +141,28 @@ export function bestOptions(p, data, prefs = {}) {
     else if (resetTypes.length && g.methods?.includes('reset')) add(game, { method: 'reset' }, { label: 'Soft Reset (rencontre unique)', locations: locs(game, ...resetTypes) });
   }
 
+  return options;
+}
+
+/**
+ * Meilleures façons d'obtenir un Pokémon shiny, classées par taux (le meilleur d'abord) : une option par jeu.
+ * Chaque option contient une configuration de chasse prête à l'emploi (`cfg`).
+ * `prefs.owns(jeu)` limite `main` aux jeux possédés (les autres vont dans `others`) ;
+ * `prefs.charmFor(jeu)` indique si le Charme Chroma est compté.
+ * @param {Pokemon | null | undefined} p
+ * @param {EncounterData} data Données de lieux (services/encounters.js).
+ * @param {BestOptionsPrefs} [prefs]
+ * @returns {{ main: BestOption[], extra: BestOption[], others: BestOption[] }}
+ */
+export function bestOptions(p, data, prefs = {}) {
+  const owns = prefs.owns || (() => true);
+  if (!p || p.variantKind === 'mega' || p.variantKind === 'gmax') return { main: [], extra: [], others: [] };
+  // Méthodes masquées par l'utilisateur : on part de toutes les options (sauvage et Soft Reset compris), puis on
+  // les retire, pour que chaque jeu retombe sur la meilleure méthode restante.
+  const hidden = prefs.hidden;
+  const options = hidden?.size
+    ? huntOptions(p, data, prefs, { all: true }).filter(o => !hidden.has(o.cfg.method))
+    : huntOptions(p, data, prefs);
   // Meilleure option par jeu, puis classement par taux.
   const bestByGame = new Map();
   for (const o of options) if (!bestByGame.has(o.game) || o.odds < bestByGame.get(o.game).odds) bestByGame.set(o.game, o);
@@ -145,8 +173,10 @@ export function bestOptions(p, data, prefs = {}) {
   // Pokémon GO en complément (taux différents, jeu à part).
   const extra = [];
   if (!p.isMythical && !p.isShinyLocked && owns('pogo')) {
-    if (p.isLegendary) extra.push({ game: 'pogo', cfg: { game: 'pogo', method: 'go_raid', opts: {}, charm: false }, odds: 20, label: 'Raids légendaires', locations: [] });
-    else extra.push({ game: 'pogo', cfg: { game: 'pogo', method: 'go_standard', opts: {}, charm: false }, odds: 512, label: 'Sauvage (1/64 en œuf ou raid, ~1/25 en Community Day)', locations: [] });
+    const go = p.isLegendary
+      ? { game: 'pogo', cfg: { game: 'pogo', method: 'go_raid', opts: {}, charm: false }, odds: 20, label: 'Raids légendaires', locations: [] }
+      : { game: 'pogo', cfg: { game: 'pogo', method: 'go_standard', opts: {}, charm: false }, odds: 512, label: 'Sauvage (1/64 en œuf ou raid, ~1/25 en Community Day)', locations: [] };
+    if (!hidden?.has(go.cfg.method)) extra.push(go);
   }
   return { main, extra, others };
 }

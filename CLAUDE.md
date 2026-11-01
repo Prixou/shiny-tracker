@@ -33,7 +33,7 @@ npm run test:e2e # tests Playwright sur écran de téléphone 412 × 915 (doiven
 - Lint, `npm run typecheck`, `npm test` et `npm run test:e2e` doivent passer avant chaque push (la CI les relance sur chaque pull request).
 - Toute correction de bug ou nouvelle fonctionnalité s'accompagne d'un test : unitaire dans `tests/unit` pour la logique (taux, meilleures options, Banque, stockage…), de bout en bout dans `tests/e2e` pour un parcours d'écran.
 - Les tests e2e tournent sans réseau extérieur (APIs d'IA simulées avec `page.route`) et vérifient qu'il n'y a ni erreur JavaScript ni défilement horizontal. Figer l'horloge (`page.clock.setFixedTime(TODAY)`) pour tout ce qui dépend de la date (Banque, agenda).
-- Navigateur déjà installé (environnement sans téléchargement) : `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm run test:e2e`.
+- Navigateur déjà installé (environnement sans téléchargement) : `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm run test:e2e` (le dossier change selon l'environnement : `ls /opt/pw-browsers`, par exemple `chromium-1243/chrome-linux64/chrome`).
 - Ne jamais affaiblir ou supprimer un test pour le faire passer : corriger le code ou, si le comportement attendu a changé, mettre à jour l'attente.
 
 ## Architecture
@@ -66,7 +66,8 @@ Règles :
 ## Repères
 
 - Taux shiny : `src/data/methods.js` (moteur par « tirages ») et `src/data/games.js` (jeux, Charme, méthodes, Pokédex régionaux).
-- Meilleures options : `src/domain/bestOptions.js` ; Banque : `src/domain/bank.js` (date limite et libellés uniques).
+- Meilleures options : `src/domain/bestOptions.js` (`huntOptions` liste toutes les méthodes, `bestOptions` garde la meilleure par jeu en écartant les méthodes masquées des Réglages) ; Pokémon disponibles par méthode : `src/domain/huntIndex.js` (filtre « Chassable avec » du Pokédex, tutos) ; Banque : `src/domain/bank.js` (date limite et libellés uniques).
+- Longues listes : `useProgressiveList` (`src/lib/hooks.js`) avec un repère de fin en « ref callback », pour que la grille se recharge toujours jusqu'au bout.
 - État global, actions et annulation : `src/state/store.js` ; sauvegarde locale : `src/state/persistence.js` ; synchro cloud : `src/state/cloud.jsx` + `src/services/cloud.js`.
 - Assistant : `src/services/ai/` (`tools/` par thème, `context.js`, Claude, Gemini) et `src/features/assistant/` (`useChat.js`).
 - Boîtes HOME du living dex : `src/domain/boxes.js` (ordre, places) et `src/features/boxes/`.

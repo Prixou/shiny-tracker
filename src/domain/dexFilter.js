@@ -33,7 +33,8 @@ export const SORTS = [
  * @property {string[]} regions
  * @property {string[]} types Deux au plus (double type).
  * @property {string} game 'all', 'mine' (mes jeux), 'platform:<console>' ou un identifiant de jeu.
- * @property {string} method
+ * @property {string} method Méthode de capture d'un exemplaire obtenu.
+ * @property {string} [hunt] Méthode de chasse « jeu|méthode » : Pokémon qu'on peut chasser ainsi dans ce jeu ('all' sinon).
  * @property {string} ball
  * @property {string[]} categories
  * @property {string[]} lists
@@ -41,7 +42,7 @@ export const SORTS = [
  */
 
 /** @type {DexFilters} */
-export const DEFAULT_FILTERS = { status: 'all', regions: [], types: [], game: 'all', method: 'all', ball: 'all', categories: [], lists: [], sort: 'id' };
+export const DEFAULT_FILTERS = { status: 'all', regions: [], types: [], game: 'all', method: 'all', hunt: 'all', ball: 'all', categories: [], lists: [], sort: 'id' };
 
 /**
  * Jeu précis choisi dans le filtre (null pour « tous », « mes jeux » ou une console).
@@ -56,14 +57,16 @@ export const singleGame = game => (game !== 'all' && game !== 'mine' && !game.st
  * @returns {number}
  */
 export const countActive = f => f.regions.length + f.types.length + f.categories.length + f.lists.length +
-  Number(f.game !== 'all') + Number(f.method !== 'all') + Number(f.ball !== 'all');
+  Number(f.game !== 'all') + Number(f.method !== 'all') + Number(!!f.hunt && f.hunt !== 'all') + Number(f.ball !== 'all');
 
 /**
  * Pokémon affichés pour des filtres, une recherche et l'état de la collection.
- * @param {{ filters: DexFilters, query?: string, shinies: Record<string, Catch>, catchesByKey: Record<string, Catch[]>, wishlist: Wishlist, lists: PokemonList[], hideLocked?: boolean, showVariants?: boolean, myGames?: string[] }} input
+ * `huntKeys` : Pokémon de la méthode choisie dans `filters.hunt` (vide tant que les lieux ne sont pas chargés).
+ * @param {{ filters: DexFilters, query?: string, shinies: Record<string, Catch>, catchesByKey: Record<string, Catch[]>, wishlist: Wishlist, lists: PokemonList[], hideLocked?: boolean, showVariants?: boolean, myGames?: string[], huntKeys?: Set<string> | null }} input
  * @returns {Pokemon[]}
  */
-export function filterPokedex({ filters, query = '', shinies, catchesByKey, wishlist, lists, hideLocked, showVariants, myGames }) {
+export function filterPokedex({ filters, query = '', shinies, catchesByKey, wishlist, lists, hideLocked, showVariants, myGames, huntKeys = null }) {
+  const hunt = filters.hunt && filters.hunt !== 'all';
   const q = normalize(query);
   const platform = filters.game.startsWith('platform:') ? filters.game.slice(9) : null;
   const game = singleGame(filters.game);
@@ -82,6 +85,7 @@ export function filterPokedex({ filters, query = '', shinies, catchesByKey, wish
     if (game && !isAvailableIn(p, game)) return false;
     if (platformGames && !platformGames.some(g => isAvailableIn(p, g) && !isLockedIn(p, g)) && !rec) return false;
     if (filters.method !== 'all' && !(catchesByKey[p.key] || []).some(c => c.method === filters.method)) return false;
+    if (hunt && !huntKeys?.has(p.key)) return false;
     if (filters.ball !== 'all' && !(catchesByKey[p.key] || []).some(c => c.ball === filters.ball)) return false;
     if (selectedLists.length && !selectedLists.some(l => l.keys[p.key])) return false;
     if (cats.length && !cats.some(c => c.test(p))) return false;

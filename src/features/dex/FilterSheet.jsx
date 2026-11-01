@@ -8,6 +8,7 @@ import { METHODS } from '../../data/methods.js';
 import { CATEGORIES, DEFAULT_FILTERS } from '../../domain/dexFilter.js';
 import { Sheet, RegionIcon, TypeIcon, GameOptions } from '../../ui/index.js';
 import ListsSheet from '../lists/ListsSheet.jsx';
+import HuntMethodSelect from './HuntMethodSelect.jsx';
 
 const toggleIn = (list, id) => (list.includes(id) ? list.filter(x => x !== id) : [...list, id]);
 
@@ -103,8 +104,9 @@ export default function FilterSheet({ open, onClose, filters, setFilters, result
               <GameOptions />
             </select>
           </label>
+          <HuntMethodSelect value={filters.hunt} onChange={hunt => setFilters({ hunt })} enabled={open} />
           <label className="block space-y-1.5">
-            <span className="label-caps">Méthode de capture</span>
+            <span className="label-caps">Méthode de capture (tes shiny)</span>
             <select className="input" value={filters.method} onChange={e => setFilters({ method: e.target.value })}>
               <option value="all">Toutes les méthodes</option>
               {METHODS.map(m => <option key={m.id} value={m.id}>{m.icon} {m.name}</option>)}

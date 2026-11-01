@@ -93,7 +93,7 @@ export function tonightCandidates(data, { shinies, prefs = {}, events = EVENTS, 
     const { main, others } = bestOptions(p, data, prefs);
     /** @type {Array<BestOption & { event?: boolean }>} */
     const options = [...main];
-    for (const e of live) if (e.hunt.keys.includes(p.key)) options.push(eventOption(e, prefs));
+    for (const e of live) if (e.hunt.keys.includes(p.key) && !prefs.hidden?.has(e.hunt.cfg.method)) options.push(eventOption(e, prefs));
     if (options.length) out.push({ p, options, noSwitch: ![...main, ...others].some(o => GAME_BY_ID[o.game]?.platform === 'switch') });
   }
   return out;

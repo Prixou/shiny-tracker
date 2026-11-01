@@ -2,31 +2,24 @@ import { useCallback, useMemo, useState } from 'react';
 import { Search, SlidersHorizontal, X, Star, ArrowUpDown, Sparkles } from 'lucide-react';
 import { useActions, useAppState, useCatchesByKey, useShinies, useStoreApi } from '../../state/StoreProvider.jsx';
 import { useNav } from '../../state/nav.jsx';
-import { TYPE_BY_ID, REGION_BY_ID, BALL_BY_ID } from '../../data/constants.js';
-import { GAME_BY_ID, PLATFORMS, isLockedIn } from '../../data/games.js';
-import { METHOD_BY_ID } from '../../data/methods.js';
-import { CATEGORIES, DEFAULT_FILTERS, countActive, filterPokedex, singleGame } from '../../domain/dexFilter.js';
+import { isLockedIn } from '../../data/games.js';
+import { DEFAULT_FILTERS, countActive, filterPokedex, singleGame } from '../../domain/dexFilter.js';
 import { quickAddFields } from '../../domain/catch.js';
 import { useDebouncedValue, useProgressiveList } from '../../lib/hooks.js';
 import { feedback } from '../../lib/feedback.js';
-import { Segmented, RegionIcon, EmptyState, useConfirm } from '../../ui/index.js';
+import { Segmented, EmptyState, useConfirm } from '../../ui/index.js';
 import PokemonCard from './PokemonCard.jsx';
 import FilterSheet from './FilterSheet.jsx';
 import SortSheet from './SortSheet.jsx';
 import BankBanner from './BankBanner.jsx';
 import ProvisionalBanner from './ProvisionalBanner.jsx';
+import { filterChips } from './filterChips.jsx';
+import { useHuntFilter } from './useHuntFilter.js';
 
 const DENSITY_CLASSES = {
   3: 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7',
   4: 'grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-8',
   5: 'grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10'
-};
-
-/** Libellé de la puce du filtre « jeu ». */
-const gameChipLabel = game => {
-  if (game === 'mine') return '🎮 Dans mes jeux';
-  if (game.startsWith('platform:')) return `🎮 ${PLATFORMS.find(pl => `platform:${pl.id}` === game)?.name}`;
-  return `${GAME_BY_ID[game]?.icon} ${GAME_BY_ID[game]?.short}`;
 };
 
 export default function DexView() {
@@ -51,9 +44,10 @@ export default function DexView() {
     });
   }, [setUiValue]);
 
+  const hunt = useHuntFilter(filters.hunt);
   const results = useMemo(
-    () => filterPokedex({ filters, query: debouncedQuery, shinies, catchesByKey, wishlist, lists, hideLocked: settings.hideLocked, showVariants: settings.showVariants, myGames: settings.myGames }),
-    [filters, debouncedQuery, shinies, catchesByKey, wishlist, lists, settings.hideLocked, settings.showVariants, settings.myGames]
+    () => filterPokedex({ filters, query: debouncedQuery, shinies, catchesByKey, wishlist, lists, hideLocked: settings.hideLocked, showVariants: settings.showVariants, myGames: settings.myGames, huntKeys: hunt.keys }),
+    [filters, debouncedQuery, shinies, catchesByKey, wishlist, lists, settings.hideLocked, settings.showVariants, settings.myGames, hunt.keys]
   );
   const caughtInResults = useMemo(() => results.reduce((n, p) => n + (shinies[p.key] ? 1 : 0), 0), [results, shinies]);
   // Nouvelle recherche ou nouveaux filtres : on repart du haut de la liste.
@@ -80,18 +74,7 @@ export default function DexView() {
   const density = DENSITY_CLASSES[settings.density] ? settings.density : 4;
   const lockGame = singleGame(filters.game);
 
-  const activeChips = [
-    ...filters.regions.map(id => ({ key: `r-${id}`, label: <><RegionIcon region={REGION_BY_ID[id]} className="w-[18px] h-[18px]" /> {REGION_BY_ID[id]?.name}</>, clear: () => setFilters({ regions: filters.regions.filter(x => x !== id) }) })),
-    ...filters.types.map(id => ({ key: `t-${id}`, label: TYPE_BY_ID[id]?.name, color: TYPE_BY_ID[id]?.color, clear: () => setFilters({ types: filters.types.filter(x => x !== id) }) })),
-    ...filters.categories.map(id => ({ key: `c-${id}`, label: CATEGORIES.find(c => c.id === id)?.label, clear: () => setFilters({ categories: filters.categories.filter(x => x !== id) }) })),
-    ...(filters.game !== 'all' ? [{ key: 'g', label: gameChipLabel(filters.game), clear: () => setFilters({ game: 'all' }) }] : []),
-    ...(filters.method !== 'all' ? [{ key: 'm', label: `${METHOD_BY_ID[filters.method]?.icon} ${METHOD_BY_ID[filters.method]?.name}`, clear: () => setFilters({ method: 'all' }) }] : []),
-    ...(filters.ball !== 'all' ? [{ key: 'b', label: BALL_BY_ID[filters.ball]?.name, clear: () => setFilters({ ball: 'all' }) }] : []),
-    ...filters.lists.map(id => {
-      const list = lists.find(l => l.id === id);
-      return { key: `l-${id}`, label: `${list?.emoji || ''} ${list?.name || 'Liste'}`, clear: () => setFilters({ lists: filters.lists.filter(x => x !== id) }) };
-    })
-  ];
+  const activeChips = filterChips(filters, setFilters, lists);
 
   return (
     <div className="space-y-3">
@@ -165,8 +148,10 @@ export default function DexView() {
       <BankBanner />
       <ProvisionalBanner />
 
-      {results.length === 0 ? (
-        <EmptyState icon={<Search className="w-7 h-7" />} title="Aucun Pokémon trouvé"
+      {hunt.status === 'loading' ? (
+        <div className="py-16 flex justify-center"><Sparkles className="w-7 h-7 text-amber-400 animate-spin" aria-label="Chargement des lieux de capture" /></div>
+      ) : results.length === 0 ? (
+        <EmptyState icon={<Search className="w-7 h-7" />} title={hunt.status === 'error' ? 'Lieux de capture indisponibles' : 'Aucun Pokémon trouvé'}
           action={<button className="btn-secondary" onClick={() => { setQuery(''); setFilters(DEFAULT_FILTERS); }}>Réinitialiser les filtres</button>}>
           Essaie un autre nom ou retire quelques filtres.
         </EmptyState>
