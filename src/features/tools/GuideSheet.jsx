@@ -3,6 +3,7 @@ import { GAME_BY_ID } from '../../data/games.js';
 import { oddsAt } from '../../data/methods.js';
 import { fmtOdds } from '../../lib/format.js';
 import { Sheet } from '../../ui/index.js';
+import GuidePokemonLinks from './GuidePokemonLinks.jsx';
 
 const Section = ({ title, items, ordered = false }) => {
   const Tag = ordered ? 'ol' : 'ul';
@@ -42,6 +43,7 @@ export default function GuideSheet({ guide, onClose, onHunt, onRecipes }) {
         <Section title="Il te faut" items={guide.needs} />
         <Section title="Étapes" items={guide.steps} ordered />
         {guide.tips.length > 0 && <Section title="Astuces" items={guide.tips} />}
+        <GuidePokemonLinks guide={guide} onClose={onClose} />
         <div className="grid grid-cols-1 gap-2">
           {onHunt && (
             <button className="btn-primary" onClick={() => onHunt(best.cfg)}>

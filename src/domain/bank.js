@@ -85,7 +85,7 @@ export function bankPriorities(data, { shinies, prefs = {} }) {
   for (const p of MAIN_DEX) {
     if (p.isShinyLocked || shinies[p.key]) continue;
     // Tous les jeux (pour savoir si la Switch le permet), avec les Charmes de l'utilisateur.
-    const { main } = bestOptions(p, data, { charmFor: prefs.charmFor });
+    const { main } = bestOptions(p, data, { charmFor: prefs.charmFor, hidden: prefs.hidden });
     const legacyAll = main.filter(o => viaBank(o.game));
     if (!legacyAll.length) continue;
     const legacyMine = legacyAll.filter(o => owns(o.game));

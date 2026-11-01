@@ -141,16 +141,20 @@ export function useDebouncedValue(value, delay = 150) {
  */
 export function useProgressiveList({ page = 72, resetKey } = {}) {
   const [limit, setLimit] = useState(page);
-  const sentinel = useRef(null);
+  // Repère de fin de liste en « ref callback » : l'observateur se rebranche dès que le repère réapparaît.
+  // (Avec une ref simple, après une recherche à moins de `page` résultats puis effacée, le repère revenait
+  // sans observateur et la liste restait bloquée aux premiers Pokémon.)
+  const [sentinel, setSentinel] = useState(/** @type {Element | null} */ (null));
   useEffect(() => { setLimit(page); }, [resetKey, page]);
   useEffect(() => {
-    const el = sentinel.current;
-    if (!el) return;
+    if (!sentinel) return;
+    if (typeof IntersectionObserver === 'undefined') { setLimit(Infinity); return; }
+    // Le premier rappel arrive dès l'observation : si le repère est encore visible, on charge la suite.
     const io = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting) setLimit(l => l + page);
     }, { rootMargin: '1200px 0px' });
-    io.observe(el);
+    io.observe(sentinel);
     return () => io.disconnect();
-  }, [limit, page]);
-  return [limit, sentinel];
+  }, [sentinel, limit, page]);
+  return [limit, setSentinel];
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Trophy, MapPin, Timer, Info, ShieldAlert } from 'lucide-react';
 import { GAME_BY_ID } from '../../data/games.js';
+import { METHOD_BY_ID } from '../../data/methods.js';
 import { bestOptions } from '../../domain/bestOptions.js';
 import { bestOptionsPrefs, myGamesSet } from '../../domain/settings.js';
 import { useAppState } from '../../state/StoreProvider.jsx';
@@ -106,6 +107,11 @@ export default function BestOptions({ pokemon, onHunt, fallbackTip, provisional 
         </button>
       ))}
       <p className="text-[11px] text-slate-500">{filtered ? 'Selon tes jeux et tes Charmes Chroma (Réglages → Mes jeux).' : 'Taux maximaux (Charme Chroma et bonus inclus).'} Lieux : PokéAPI et PKHeX ; les apparitions massives d'ÉV sont estimées.</p>
+      {settings.hiddenMethods?.length > 0 && (
+        <p className="text-[11px] text-slate-500">
+          Masquées dans les Réglages : {settings.hiddenMethods.map(id => METHOD_BY_ID[id]?.name).filter(Boolean).join(', ')}.
+        </p>
+      )}
     </section>
   );
 }

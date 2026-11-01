@@ -21,6 +21,7 @@ import { GAME_BY_ID } from '../data/games.js';
  * @property {'today' | 'unknown'} quickAddDate Date des shiny cochés d'un geste (✓ du Pokédex, bouton de la fiche).
  * @property {number} boxFirst Numéro de la première boîte HOME du living dex.
  * @property {'after' | 'end'} boxForms Formes régionales rangées juste après l'espèce, ou à la fin.
+ * @property {string[]} hiddenMethods Méthodes de chasse à ne jamais proposer (meilleures options, « Ce soir », Banque…).
  */
 
 /** @type {Settings} */
@@ -44,7 +45,9 @@ export const DEFAULT_SETTINGS = {
   quickAddDate: 'today',
   // Boîtes HOME du living dex.
   boxFirst: 1,
-  boxForms: 'after'
+  boxForms: 'after',
+  // Méthodes qu'on ne veut pas se voir proposer (ex. : Poké Radar).
+  hiddenMethods: []
 };
 
 /**
@@ -52,6 +55,7 @@ export const DEFAULT_SETTINGS = {
  * @typedef {object} BestOptionsPrefs
  * @property {(gameId: string) => boolean} [owns]
  * @property {(gameId: string) => boolean} [charmFor]
+ * @property {Set<string>} [hidden] Méthodes à ne pas proposer : la meilleure option passe à la suivante.
  */
 
 /**
@@ -92,5 +96,6 @@ export const hasCharm = (settings, gameId) => {
 export const bestOptionsPrefs = settings => ({
   owns: gameId => ownsGame(settings, gameId),
   // Sans réglage pour ce jeu, on montre le meilleur taux atteignable (Charme compris).
-  charmFor: gameId => settings?.charmGames?.[gameId] ?? true
+  charmFor: gameId => settings?.charmGames?.[gameId] ?? true,
+  hidden: new Set(settings?.hiddenMethods || [])
 });
