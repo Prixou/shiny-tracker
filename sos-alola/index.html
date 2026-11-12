@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shasse SOS Alola</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a three-column field notebook. Zones by island on the left, the zone's encounter
+   tables in the middle (each wild Pokémon with the allies it can call), the SOS chain counter on the right.
+   The accent follows the chosen version: sun orange for Ultra-Soleil, moon indigo for Ultra-Lune. */
+:root {
+  --bg: #edf3f2;
+  --surface: #ffffff;
+  --surface-2: #f5f9f8;
+  --ink: #12262b;
+  --muted: #557077;
+  --line: #d2dfdd;
+  --sun: #cf5407;
+  --moon: #5646cf;
+  --gold: #a87d00;
+  --gold-bg: #fff4cf;
+  --accent: var(--sun);
+  --accent-ink: #ffffff;
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b181c;
+    --surface: #12252c;
+    --surface-2: #172e36;
+    --ink: #e4f0ee;
+    --muted: #8ea9ae;
+    --line: #25434c;
+    --sun: #ff9a45;
+    --moon: #a497ff;
+    --gold: #ffd257;
+    --gold-bg: #3a3212;
+    --accent-ink: #0b181c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b181c;
+  --surface: #12252c;
+  --surface-2: #172e36;
+  --ink: #e4f0ee;
+  --muted: #8ea9ae;
+  --line: #25434c;
+  --sun: #ff9a45;
+  --moon: #a497ff;
+  --gold: #ffd257;
+  --gold-bg: #3a3212;
+  --accent-ink: #0b181c;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 15px/1.45 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+body[data-ver="um"] { --accent: var(--moon); }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+.num { font-variant-numeric: tabular-nums; }
+
+.app { display: grid; grid-template-rows: auto 1fr; height: 100%; }
+
+/* ---------- top bar ---------- */
+.bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+  padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+.brand h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.brand h1 b { color: var(--accent); font-weight: 700; }
+.brand span { color: var(--muted); font-size: 13px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--surface-2); }
+.seg button {
+  border: 0; background: transparent; padding: 5px 13px; border-radius: 999px; font-weight: 600; font-size: 14px; color: var(--muted);
+}
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.search { position: relative; flex: 1 1 220px; max-width: 340px; }
+.search input {
+  width: 100%; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2);
+}
+.search input::placeholder { color: var(--muted); }
+
+/* ---------- body columns ---------- */
+.cols { display: grid; grid-template-columns: 250px minmax(0, 1fr) 300px; min-height: 0; }
+.nav, .main, .side { overflow-y: auto; min-height: 0; }
+.nav { border-right: 1px solid var(--line); padding: 10px 8px 24px; }
+.nav h2 {
+  font-size: 12px; font-family: var(--font-body); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); padding: 12px 8px 4px;
+}
+.nav button {
+  display: flex; width: 100%; text-align: left; gap: 6px; align-items: baseline; flex-wrap: wrap;
+  border: 0; background: transparent; padding: 5px 8px; border-radius: 7px; font-weight: 500;
+}
+.nav button small { color: var(--muted); font-weight: 400; font-size: 12.5px; }
+.nav button:hover { background: var(--surface-2); }
+.nav button[aria-current="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.nav button[aria-current="true"] small { color: inherit; opacity: 0.85; }
+.navsel { display: none; }
+
+.main { padding: 18px 20px 40px; }
+.zonehead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin-bottom: 4px; }
+.zonehead h2 { font-size: 30px; font-weight: 700; letter-spacing: -0.015em; }
+.zonehead .sub { font-size: 17px; color: var(--muted); font-weight: 500; }
+.zonemeta { color: var(--muted); margin-bottom: 14px; font-size: 14px; }
+.notes { margin: 0 0 14px; padding: 9px 12px; border-left: 3px solid var(--accent); background: var(--surface); border-radius: 0 8px 8px 0; font-size: 14px; }
+.notes p { margin: 0; }
+.notes p + p { margin-top: 4px; }
+
+.table { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; }
+.thead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.thead h3 { font-size: 16.5px; font-weight: 700; }
+.thead .lab { font-weight: 600; }
+.thead .lv { margin-left: auto; color: var(--muted); font-size: 13.5px; }
+.tag { font-size: 11.5px; font-weight: 700; letter-spacing: 0.03em; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.thint { flex-basis: 100%; color: var(--muted); font-size: 12.5px; }
+
+.row { display: grid; grid-template-columns: minmax(190px, 240px) 92px minmax(0, 1fr); gap: 6px 14px; align-items: center; padding: 9px 14px; }
+.row + .row { border-top: 1px solid var(--line); }
+.mon { display: flex; align-items: center; gap: 10px; min-width: 0; border: 0; background: transparent; padding: 0; text-align: left; }
+.tok {
+  flex: none; width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center;
+  position: relative; color: #fff;
+  background: linear-gradient(135deg, var(--t1) 0 50%, var(--t2) 50% 100%);
+}
+.tok svg { width: 58%; height: 58%; filter: drop-shadow(0 1px 1px rgba(0,0,0,.4)); }
+.tok.dual svg { position: absolute; width: 42%; height: 42%; }
+.tok.dual svg:first-child { left: 9%; top: 9%; }
+.tok.dual svg:last-child { right: 9%; bottom: 9%; }
+.mon .nm { min-width: 0; }
+.mon .nm b { display: block; font-weight: 700; font-size: 15.5px; line-height: 1.2; overflow-wrap: anywhere; }
+.mon .nm small { color: var(--muted); font-size: 12.5px; }
+.mon:hover .nm b { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+.rate { display: flex; flex-direction: column; gap: 3px; }
+.rate b { font-size: 15px; }
+.rate i { display: block; height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.rate i::after { content: ""; display: block; height: 100%; width: var(--w); background: var(--accent); border-radius: 3px; }
+.allies { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
+.allies .lbl { font-size: 12.5px; color: var(--muted); margin-right: 2px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 4px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface-2); font-size: 13.5px; font-weight: 600; max-width: 100%;
+}
+.chip .dot { flex: none; width: 18px; height: 18px; border-radius: 6px; background: linear-gradient(135deg, var(--t1) 0 50%, var(--t2) 50% 100%); }
+.chip .pc { font-weight: 700; }
+.chip.self { color: var(--muted); font-weight: 500; }
+.chip.new { border-color: var(--accent); background: var(--surface); box-shadow: inset 0 0 0 1px var(--accent); }
+.chip.new .pc { color: var(--accent); }
+.chip[aria-pressed="true"] { background: var(--gold-bg); border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); color: var(--ink); }
+.chip:hover { border-color: var(--accent); }
+.nocall { font-size: 13px; color: var(--muted); font-style: italic; }
+.weather { padding: 9px 14px; border-top: 1px dashed var(--line); background: var(--surface-2); display: flex; flex-direction: column; gap: 6px; }
+.weather .wl { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.weather .wname { font-size: 13px; font-weight: 700; min-width: 122px; }
+.weather p { margin: 0; font-size: 12.5px; color: var(--muted); }
+
+/* ---------- search / where view ---------- */
+.res h3 { font-size: 19px; margin: 18px 0 8px; }
+.zonebtns { display: flex; flex-wrap: wrap; gap: 6px; }
+.zonebtns button, .linkbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 10px; font-weight: 600; }
+.zonebtns button:hover, .linkbtn:hover { border-color: var(--accent); }
+.where { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; }
+.where header { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.where header .nm b { font-family: var(--font-display); font-size: 19px; }
+.where header .nm small { color: var(--muted); display: block; }
+.where ul { list-style: none; margin: 0; padding: 0; }
+.where li { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.5fr) 62px; gap: 4px 12px; align-items: baseline; padding: 7px 14px; }
+.where li + li { border-top: 1px solid var(--line); }
+.where li button { border: 0; background: transparent; padding: 0; font-weight: 700; text-align: left; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.where li button:hover { text-decoration-color: var(--accent); }
+.where li .how { color: var(--muted); font-size: 13.5px; }
+.where li .how b { color: var(--ink); font-weight: 600; }
+.where li .pc { text-align: right; font-weight: 700; }
+.empty { color: var(--muted); padding: 12px 14px; }
+
+/* ---------- chain panel ---------- */
+.side { border-left: 1px solid var(--line); padding: 16px 14px 28px; display: flex; flex-direction: column; gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
+.card h2 { font-size: 16px; margin-bottom: 8px; }
+.target { display: flex; gap: 10px; align-items: center; }
+.target .tok { width: 46px; height: 46px; }
+.target b { display: block; font-size: 16px; line-height: 1.2; }
+.target small { color: var(--muted); font-size: 12.5px; }
+.count { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0 10px; }
+.count output { font: 700 54px/1 var(--font-display); letter-spacing: -0.02em; min-width: 2ch; text-align: center; }
+.count button { border: 1px solid var(--line); background: var(--surface-2); border-radius: 12px; font-weight: 700; }
+.count .minus { width: 44px; height: 44px; font-size: 20px; }
+.count .plus { flex: 1; height: 56px; font-size: 20px; background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.count .plus:active { transform: translateY(1px); }
+.steps { position: relative; height: 8px; border-radius: 4px; background: var(--line); margin: 6px 0 22px; }
+.steps i { position: absolute; inset: 0 auto 0 0; width: var(--w); background: var(--gold); border-radius: 4px; }
+.steps span { position: absolute; top: 11px; transform: translateX(-50%); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.steps span::before { content: ""; position: absolute; left: 50%; top: -12px; width: 1px; height: 9px; background: var(--surface); }
+.stats { display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; margin: 0; font-size: 14px; }
+.stats dt { color: var(--muted); }
+.stats dd { margin: 0; font-weight: 700; text-align: right; }
+.stats dd.gold { color: var(--gold); font-size: 17px; }
+.opts { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; margin-top: 10px; font-size: 13.5px; }
+.opts label { display: inline-flex; gap: 6px; align-items: center; }
+.opts input { accent-color: var(--accent); width: 16px; height: 16px; }
+.opts button { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 3px 9px; color: var(--muted); }
+.memo { font-size: 13.5px; }
+.memo ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; }
+.memo table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+.memo th, .memo td { text-align: right; padding: 3px 4px; border-top: 1px solid var(--line); }
+.memo th:first-child, .memo td:first-child { text-align: left; }
+.memo th { color: var(--muted); font-weight: 600; }
+.src { font-size: 12px; color: var(--muted); }
+.src a { color: inherit; }
+
+/* ---------- narrow screens ---------- */
+@media (max-width: 1080px) {
+  .cols { grid-template-columns: 220px minmax(0, 1fr); }
+  .side { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); overflow: visible; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); align-items: start; }
+  .app { height: auto; min-height: 100%; }
+  .cols { min-height: auto; }
+  .nav, .main { overflow: visible; }
+  .nav { position: sticky; top: 0; align-self: start; max-height: 100vh; overflow-y: auto; }
+}
+@media (max-width: 720px) {
+  .cols { grid-template-columns: minmax(0, 1fr); }
+  .nav { position: static; max-height: none; border-right: 0; border-bottom: 1px solid var(--line); padding: 10px 16px; }
+  .nav .list { display: none; }
+  .navsel { display: block; width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-weight: 600; }
+  .side { order: -1; border-top: 0; border-bottom: 1px solid var(--line); padding: 12px 16px; }
+  .side .memo, .side .src { display: none; }
+  .main { padding: 14px 16px 32px; }
+  .zonehead h2 { font-size: 25px; }
+  .row { grid-template-columns: minmax(0, 1fr) 84px; }
+  .row .allies { grid-column: 1 / -1; }
+  .where li { grid-template-columns: minmax(0, 1fr) 56px; }
+  .where li .how { grid-column: 1 / -1; grid-row: 2; }
+  .brand span { display: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .rate i::after, .steps i { transition: width .25s ease; }
+}
+</style>
+</head>
+<body data-ver="us">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="ty0" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5" fill="none" stroke="currentColor" stroke-width="3.2"/></symbol><symbol id="ty1" viewBox="0 0 24 24"><path fill="currentColor" d="M5 10a2.5 2.5 0 0 1 2.5-2.5h9A2.5 2.5 0 0 1 19 10v4.5a6 6 0 0 1-6 6h-2a6 6 0 0 1-6-6z"/><path d="M9.7 8v5M14.3 8v5M5.5 14h13" stroke="rgba(0,0,0,.42)" stroke-width="1.6" fill="none"/></symbol><symbol id="ty2" viewBox="0 0 24 24"><path fill="currentColor" d="M2.5 14.5c6 .5 10.5-3 13.5-10.5 1.2 4 .8 7.2-.8 9.8 2 0 4-.6 6.3-2-1.3 4.2-4.3 6.7-8.3 7.4-4.5.8-8.7-.9-10.7-4.7z"/></symbol><symbol id="ty3" viewBox="0 0 24 24"><circle cx="9.5" cy="14.5" r="5.5" fill="currentColor"/><circle cx="16.8" cy="6.8" r="3.2" fill="currentColor"/><circle cx="18.5" cy="15.5" r="1.8" fill="currentColor"/></symbol><symbol id="ty4" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5h8a1.5 1.5 0 0 1 0 3H8a1.5 1.5 0 0 1 0-3zM5.5 10.5h13a1.5 1.5 0 0 1 0 3h-13a1.5 1.5 0 0 1 0-3zM3.5 16h17a1.5 1.5 0 0 1 0 3h-17a1.5 1.5 0 0 1 0-3z"/></symbol><symbol id="ty5" viewBox="0 0 24 24"><path fill="currentColor" d="M8 4h8l5 8-4 8H7l-4-8z"/><path d="M8 4l3 8-4 8M11 12h10" stroke="rgba(0,0,0,.42)" stroke-width="1.4" fill="none"/></symbol><symbol id="ty6" viewBox="0 0 24 24"><ellipse cx="12" cy="14.5" rx="5.5" ry="6.5" fill="currentColor"/><path d="M9.8 8.5L7 4M14.2 8.5L17 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M12 9v12M6.8 13.5h10.4" stroke="rgba(0,0,0,.42)" stroke-width="1.4" fill="none"/></symbol><symbol id="ty7" viewBox="0 0 24 24"><path fill="currentColor" d="M5.5 21V11a6.5 6.5 0 0 1 13 0v10l-3.25-2.5L12 21l-3.25-2.5z"/><circle cx="9.7" cy="11" r="1.5" fill="rgba(0,0,0,.42)"/><circle cx="14.3" cy="11" r="1.5" fill="rgba(0,0,0,.42)"/></symbol><symbol id="ty8" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M12 2.5l8.2 4.75v9.5L12 21.5l-8.2-4.75v-9.5zM12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/></symbol><symbol id="ty9" viewBox="0 0 24 24"><path fill="currentColor" d="M12.5 2c.5 4 5.5 6 5.5 12a6 6 0 0 1-12 0c0-2.8 1.6-4.2 2.7-6.8.9 1.7 1.8 2.6 2.8 2.8.2-2.8-.6-5 1-8z"/></symbol><symbol id="ty10" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.5c3.5 4.5 6.5 7.8 6.5 11.8a6.5 6.5 0 0 1-13 0C5.5 10.3 8.5 7 12 2.5z"/></symbol><symbol id="ty11" viewBox="0 0 24 24"><path fill="currentColor" d="M4 20C4 10 10 4 20 4c0 10-6 16-16 16z"/><path d="M5 19L15 9" stroke="rgba(0,0,0,.42)" stroke-width="1.6" fill="none"/></symbol><symbol id="ty12" viewBox="0 0 24 24"><path fill="currentColor" d="M13.5 2L5 13.5h5.5L9.5 22 19 10h-5.5z"/></symbol><symbol id="ty13" viewBox="0 0 24 24"><path fill="currentColor" d="M1.5 12C4.5 7 8 5 12 5s7.5 2 10.5 7c-3 5-6.5 7-10.5 7s-7.5-2-10.5-7z"/><circle cx="12" cy="12" r="3.3" fill="rgba(0,0,0,.42)"/></symbol><symbol id="ty14" viewBox="0 0 24 24"><path d="M12 2.5v19M3.8 7.25l16.4 9.5M20.2 7.25l-16.4 9.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/></symbol><symbol id="ty15" viewBox="0 0 24 24"><path fill="currentColor" d="M4.5 3.5c3 3 5 4 7.5 4s4.5-1 7.5-4c-.8 8.5-3.5 14-7.5 17.5-4-3.5-6.7-9-7.5-17.5z"/></symbol><symbol id="ty16" viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 2.5a9.5 9.5 0 1 0 6 13.8A8.3 8.3 0 0 1 15.5 2.5z"/></symbol><symbol id="ty17" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.5l2.7 7.8 7.8 2.7-7.8 2.7L12 22.5l-2.7-7.8L1.5 12l7.8-2.7z"/></symbol></defs></svg>
+<div class="app">
+  <header class="bar">
+    <div class="brand">
+      <h1>Shasse <b>SOS</b> Alola</h1>
+      <span>Pokémon Ultra-Soleil et Ultra-Lune</span>
+    </div>
+    <div class="seg" role="group" aria-label="Version du jeu">
+      <button type="button" id="ver-us" data-ver="us" aria-pressed="true">Ultra-Soleil</button>
+      <button type="button" id="ver-um" data-ver="um" aria-pressed="false">Ultra-Lune</button>
+    </div>
+    <div class="seg" role="group" aria-label="Moment de la journée dans le jeu">
+      <button type="button" id="time-day" data-night="0" aria-pressed="true">Jour</button>
+      <button type="button" id="time-night" data-night="1" aria-pressed="false">Nuit</button>
+    </div>
+    <div class="search">
+      <input type="search" id="q" placeholder="Chercher un Pokémon ou une zone" autocomplete="off" aria-label="Chercher un Pokémon ou une zone">
+    </div>
+  </header>
+  <div class="cols">
+    <nav class="nav" aria-label="Zones d'Alola">
+      <select class="navsel" id="navsel" aria-label="Choisir une zone"></select>
+      <div class="list" id="navlist"></div>
+    </nav>
+    <main class="main" id="main"></main>
+    <aside class="side" id="side" aria-label="Chaîne SOS">
+      <section class="card">
+        <h2>Chaîne SOS</h2>
+        <div class="target" id="target"></div>
+        <div class="count">
+          <button type="button" class="minus" id="minus" aria-label="Retirer un allié">−</button>
+          <output id="count" class="num" aria-live="polite">0</output>
+          <button type="button" class="plus" id="plus">+1 allié</button>
+        </div>
+        <div class="steps" id="steps" aria-hidden="true"><i></i></div>
+        <dl class="stats" id="stats"></dl>
+        <div class="opts">
+          <label for="charm"><input type="checkbox" id="charm"> Charme Chroma</label>
+          <button type="button" id="reset">Remettre à zéro</button>
+        </div>
+      </section>
+      <section class="card memo">
+        <h2>Mémo</h2>
+        <ul>
+          <li>Les 7 emplacements d'alliés ont 1 %, 1 %, 1 %, 10 %, 10 %, 10 % et 67 % de chances. Les pourcentages affichés additionnent ces emplacements.</li>
+          <li>Les alliés météo demandent que la pluie, la grêle ou la tempête de sable soit active pendant le combat.</li>
+          <li>Dans Ultra-Soleil et Ultra-Lune, un Pokémon sauvage n'appelle qu'une fois par combat sans Orbe Frousse. Pensez à en utiliser un au premier tour.</li>
+          <li>Le compteur du jeu se bloque à 255 et garde ses bonus.</li>
+          <li>Le pictogramme de chaque pastille indique le ou les types du Pokémon. Survolez-le pour lire le nom du type.</li>
+          <li>L'heure d'Ultra-Lune est décalée de 12 h par rapport à la console.</li>
+        </ul>
+        <table>
+          <thead><tr><th>Alliés appelés</th><th>Jets chroma</th><th>Talent Caché</th><th>IV 31</th></tr></thead>
+          <tbody class="num">
+            <tr><td>0 à 4</td><td>1</td><td>0 %</td><td>0</td></tr>
+            <tr><td>5 à 9</td><td>1</td><td>0 %</td><td>1</td></tr>
+            <tr><td>10</td><td>1</td><td>5 %</td><td>2</td></tr>
+            <tr><td>11 à 19</td><td>5</td><td>5 %</td><td>2</td></tr>
+            <tr><td>20</td><td>5</td><td>10 %</td><td>3</td></tr>
+            <tr><td>21 à 29</td><td>9</td><td>10 %</td><td>3</td></tr>
+            <tr><td>30</td><td>9</td><td>15 %</td><td>4</td></tr>
+            <tr><td>31 et plus</td><td>13</td><td>15 %</td><td>4</td></tr>
+          </tbody>
+        </table>
+      </section>
+      <p class="src">Tables de rencontres et règles d'alliés : <a href="https://github.com/wwwwwwzx/3DSRNGTool">3DSRNGTool</a>, recoupées avec le <a href="https://gist.github.com/SciresM/a539739085e24af55dffdf443cb70eb2">dump des tables d'Ultra-Soleil</a>. Mécaniques de chaîne : <a href="https://bulbapedia.bulbagarden.net/wiki/SOS_Battle">Bulbapedia</a>. Outil de fan, non officiel.</p>
+    </aside>
+  </div>
+</div>
+<script>
+const D = {"sp":{"734":{"n":"Manglouton","e":"Yungoos","f":"","d":734,"cr":9,"ty":[0]},"731":{"n":"Picassaut","e":"Pikipek","f":"","d":731,"cr":15,"ty":[0,2]},"165":{"n":"Coxy","e":"Ledyba","f":"","d":165,"cr":9,"ty":[6,2]},"736":{"n":"Larvibule","e":"Grubbin","f":"","d":736,"cr":9,"ty":[6]},"427":{"n":"Laporeille","e":"Buneary","f":"","d":427,"cr":9,"ty":[0]},"10":{"n":"Chenipan","e":"Caterpie","f":"","d":10,"cr":15,"ty":[6]},"172":{"n":"Pichu","e":"Pichu","f":"","d":172,"cr":15,"ty":[12]},"25":{"n":"Pikachu","e":"Pikachu","f":"","d":25,"cr":6,"ty":[12]},"440":{"n":"Ptiravi","e":"Happiny","f":"","d":440,"cr":0,"ty":[0]},"2067":{"n":"Rattata","e":"Rattata","f":"Forme d’Alola","d":19,"cr":9,"ty":[16,0]},"167":{"n":"Mimigal","e":"Spinarak","f":"","d":167,"cr":9,"ty":[6,3]},"438":{"n":"Manzaï","e":"Bonsly","f":"","d":438,"cr":15,"ty":[5]},"185":{"n":"Simularbre","e":"Sudowoodo","f":"","d":185,"cr":0,"ty":[5]},"744":{"n":"Rocabot","e":"Rockruff","f":"","d":744,"cr":9,"ty":[5]},"446":{"n":"Goinfrex","e":"Munchlax","f":"","d":446,"cr":6,"ty":[0]},"143":{"n":"Ronflex","e":"Snorlax","f":"","d":143,"cr":0,"ty":[0]},"278":{"n":"Goélise","e":"Wingull","f":"","d":278,"cr":9,"ty":[10,2]},"686":{"n":"Sepiatop","e":"Inkay","f":"","d":686,"cr":9,"ty":[16,13]},"79":{"n":"Ramoloss","e":"Slowpoke","f":"","d":79,"cr":9,"ty":[10,13]},"2100":{"n":"Miaouss","e":"Meowth","f":"Forme d’Alola","d":52,"cr":9,"ty":[16]},"570":{"n":"Zorua","e":"Zorua","f":"","d":570,"cr":9,"ty":[16]},"2136":{"n":"Tadmorv","e":"Grimer","f":"Forme d’Alola","d":88,"cr":9,"ty":[3,16]},"81":{"n":"Magnéti","e":"Magnemite","f":"","d":81,"cr":9,"ty":[12,8]},"72":{"n":"Tentacool","e":"Tentacool","f":"","d":72,"cr":15,"ty":[10,3]},"456":{"n":"Écayon","e":"Finneon","f":"","d":456,"cr":9,"ty":[10]},"458":{"n":"Babimanta","e":"Mantyke","f":"","d":458,"cr":15,"ty":[10,2]},"223":{"n":"Rémoraid","e":"Remoraid","f":"","d":223,"cr":3,"ty":[10]},"296":{"n":"Makuhita","e":"Makuhita","f":"","d":296,"cr":9,"ty":[1]},"23":{"n":"Abo","e":"Ekans","f":"","d":23,"cr":9,"ty":[3]},"676":{"n":"Couafarel","e":"Furfrou","f":"","d":676,"cr":6,"ty":[0]},"235":{"n":"Queulorior","e":"Smeargle","f":"","d":235,"cr":9,"ty":[0]},"63":{"n":"Abra","e":"Abra","f":"","d":63,"cr":9,"ty":[13]},"96":{"n":"Soporifik","e":"Drowzee","f":"","d":96,"cr":9,"ty":[13]},"58":{"n":"Caninos","e":"Growlithe","f":"","d":58,"cr":9,"ty":[9]},"742":{"n":"Bombydou","e":"Cutiefly","f":"","d":742,"cr":9,"ty":[6,17]},"21":{"n":"Piafabec","e":"Spearow","f":"","d":21,"cr":9,"ty":[0,2]},"41":{"n":"Nosferapti","e":"Zubat","f":"","d":41,"cr":15,"ty":[3,2]},"54":{"n":"Psykokwak","e":"Psyduck","f":"","d":54,"cr":15,"ty":[10]},"2098":{"n":"Taupiqueur","e":"Diglett","f":"Forme d’Alola","d":50,"cr":9,"ty":[4,8]},"714":{"n":"Sonistrelle","e":"Noibat","f":"","d":714,"cr":9,"ty":[2,15]},"56":{"n":"Férosinge","e":"Mankey","f":"","d":56,"cr":9,"ty":[1]},"701":{"n":"Brutalibré","e":"Hawlucha","f":"","d":701,"cr":3,"ty":[1,2]},"371":{"n":"Draby","e":"Bagon","f":"","d":371,"cr":9,"ty":[15]},"373":{"n":"Drattak","e":"Salamence","f":"","d":373,"cr":0,"ty":[15,2]},"439":{"n":"Mime Jr.","e":"Mime Jr.","f":"","d":439,"cr":15,"ty":[13,17]},"122":{"n":"M. Mime","e":"Mr. Mime","f":"","d":122,"cr":0,"ty":[13,17]},"92":{"n":"Fantominus","e":"Gastly","f":"","d":92,"cr":9,"ty":[7,3]},"425":{"n":"Baudrive","e":"Drifloon","f":"","d":425,"cr":9,"ty":[7,2]},"198":{"n":"Cornèbre","e":"Murkrow","f":"","d":198,"cr":9,"ty":[16,2]},"546":{"n":"Doudouvet","e":"Cottonee","f":"","d":546,"cr":9,"ty":[11,17]},"669":{"n":"Flabébé","e":"Flabébé","f":"","d":669,"cr":15,"ty":[17]},"2789":{"n":"Plumeline","e":"Oricorio","f":"Style Pom-Pom","d":741,"cr":6,"ty":[12,2]},"12":{"n":"Papilusion","e":"Butterfree","f":"","d":12,"cr":0,"ty":[6,2]},"11":{"n":"Chrysacier","e":"Metapod","f":"","d":11,"cr":15,"ty":[6]},"548":{"n":"Chlorobule","e":"Petilil","f":"","d":548,"cr":9,"ty":[11]},"238":{"n":"Lippouti","e":"Smoochum","f":"","d":238,"cr":15,"ty":[14,13]},"124":{"n":"Lippoutou","e":"Jynx","f":"","d":124,"cr":0,"ty":[14,13]},"225":{"n":"Cadoizo","e":"Delibird","f":"","d":225,"cr":9,"ty":[14,2]},"86":{"n":"Otaria","e":"Seel","f":"","d":86,"cr":9,"ty":[10]},"80":{"n":"Flagadoss","e":"Slowbro","f":"","d":80,"cr":3,"ty":[10,13]},"199":{"n":"Roigada","e":"Slowking","f":"","d":199,"cr":0,"ty":[10,13]},"372":{"n":"Drackhaus","e":"Shelgon","f":"","d":372,"cr":6,"ty":[15]},"303":{"n":"Mysdibule","e":"Mawile","f":"","d":303,"cr":6,"ty":[8,17]},"703":{"n":"Strassie","e":"Carbink","f":"","d":703,"cr":9,"ty":[5,17]},"302":{"n":"Ténéfix","e":"Sableye","f":"","d":302,"cr":0,"ty":[16,7]},"524":{"n":"Nodulithe","e":"Roggenrola","f":"","d":524,"cr":9,"ty":[5]},"66":{"n":"Machoc","e":"Machop","f":"","d":66,"cr":9,"ty":[1]},"327":{"n":"Spinda","e":"Spinda","f":"","d":327,"cr":6,"ty":[0]},"506":{"n":"Ponchiot","e":"Lillipup","f":"","d":506,"cr":9,"ty":[0]},"749":{"n":"Tiboudet","e":"Mudbray","f":"","d":749,"cr":9,"ty":[4]},"174":{"n":"Toudoudou","e":"Igglybuff","f":"","d":174,"cr":15,"ty":[0,17]},"39":{"n":"Rondoudou","e":"Jigglypuff","f":"","d":39,"cr":6,"ty":[0,17]},"133":{"n":"Évoli","e":"Eevee","f":"","d":133,"cr":9,"ty":[0]},"196":{"n":"Mentali","e":"Espeon","f":"","d":196,"cr":0,"ty":[13]},"197":{"n":"Noctali","e":"Umbreon","f":"","d":197,"cr":0,"ty":[16]},"179":{"n":"Wattouat","e":"Mareep","f":"","d":179,"cr":9,"ty":[12]},"128":{"n":"Tauros","e":"Tauros","f":"","d":128,"cr":3,"ty":[0]},"241":{"n":"Écrémeuh","e":"Miltank","f":"","d":241,"cr":3,"ty":[0]},"753":{"n":"Mimantis","e":"Fomantis","f":"","d":753,"cr":9,"ty":[11]},"732":{"n":"Piclairon","e":"Trumbeak","f":"","d":732,"cr":9,"ty":[0,2]},"751":{"n":"Araqua","e":"Dewpider","f":"","d":751,"cr":9,"ty":[10,6]},"60":{"n":"Ptitard","e":"Poliwag","f":"","d":60,"cr":9,"ty":[10]},"46":{"n":"Paras","e":"Paras","f":"","d":46,"cr":9,"ty":[6,11]},"283":{"n":"Arakdo","e":"Surskit","f":"","d":283,"cr":9,"ty":[6,10]},"755":{"n":"Spododo","e":"Morelull","f":"","d":755,"cr":9,"ty":[11,17]},"762":{"n":"Candine","e":"Steenee","f":"","d":762,"cr":6,"ty":[11]},"764":{"n":"Guérilande","e":"Comfey","f":"","d":764,"cr":9,"ty":[17]},"766":{"n":"Quartermac","e":"Passimian","f":"","d":766,"cr":15,"ty":[1]},"127":{"n":"Scarabrute","e":"Pinsir","f":"","d":127,"cr":3,"ty":[6]},"704":{"n":"Mucuscule","e":"Goomy","f":"","d":704,"cr":0,"ty":[15]},"351":{"n":"Morphéo","e":"Castform","f":"","d":351,"cr":0,"ty":[0]},"163":{"n":"Hoothoot","e":"Hoothoot","f":"","d":163,"cr":9,"ty":[0,2]},"164":{"n":"Noarfang","e":"Noctowl","f":"","d":164,"cr":6,"ty":[0,2]},"765":{"n":"Gouroutan","e":"Oranguru","f":"","d":765,"cr":15,"ty":[0,13]},"42":{"n":"Nosferalto","e":"Golbat","f":"","d":42,"cr":9,"ty":[3,2]},"169":{"n":"Nostenfer","e":"Crobat","f":"","d":169,"cr":0,"ty":[3,2]},"2099":{"n":"Triopikeur","e":"Dugtrio","f":"Forme d’Alola","d":51,"cr":6,"ty":[4,8]},"757":{"n":"Tritox","e":"Salandit","f":"","d":757,"cr":9,"ty":[3,9]},"758":{"n":"Malamandre","e":"Salazzle","f":"","d":758,"cr":15,"ty":[3,9]},"636":{"n":"Pyronille","e":"Larvesta","f":"","d":636,"cr":3,"ty":[6,9]},"637":{"n":"Pyrax","e":"Volcarona","f":"","d":637,"cr":0,"ty":[6,9]},"741":{"n":"Plumeline","e":"Oricorio","f":"Style Flamenco","d":741,"cr":6,"ty":[9,2]},"771":{"n":"Concombaffe","e":"Pyukumuku","f":"","d":771,"cr":6,"ty":[10]},"735":{"n":"Argouste","e":"Gumshoos","f":"","d":735,"cr":6,"ty":[0]},"661":{"n":"Passerouge","e":"Fletchling","f":"","d":661,"cr":9,"ty":[0,2]},"662":{"n":"Braisillon","e":"Fletchinder","f":"","d":662,"cr":6,"ty":[9,2]},"759":{"n":"Nounourson","e":"Stufful","f":"","d":759,"cr":9,"ty":[0,1]},"2068":{"n":"Rattatac","e":"Raticate","f":"Forme d’Alola","d":20,"cr":6,"ty":[16,0]},"104":{"n":"Osselait","e":"Cubone","f":"","d":104,"cr":15,"ty":[4]},"115":{"n":"Kangourex","e":"Kangaskhan","f":"","d":115,"cr":3,"ty":[0]},"240":{"n":"Magby","e":"Magby","f":"","d":240,"cr":15,"ty":[9]},"126":{"n":"Magmar","e":"Magmar","f":"","d":126,"cr":6,"ty":[9]},"246":{"n":"Embrylex","e":"Larvitar","f":"","d":246,"cr":9,"ty":[5,4]},"708":{"n":"Brocélôme","e":"Phantump","f":"","d":708,"cr":9,"ty":[7,11]},"177":{"n":"Natu","e":"Natu","f":"","d":177,"cr":9,"ty":[13,2]},"178":{"n":"Xatu","e":"Xatu","f":"","d":178,"cr":6,"ty":[13,2]},"299":{"n":"Tarinor","e":"Nosepass","f":"","d":299,"cr":9,"ty":[5]},"568":{"n":"Miamiasme","e":"Trubbish","f":"","d":568,"cr":9,"ty":[3]},"572":{"n":"Chinchidou","e":"Minccino","f":"","d":572,"cr":9,"ty":[0]},"61":{"n":"Têtarte","e":"Poliwhirl","f":"","d":61,"cr":6,"ty":[10]},"2101":{"n":"Persian","e":"Persian","f":"Forme d’Alola","d":53,"cr":6,"ty":[16]},"752":{"n":"Tarenbulle","e":"Araquanid","f":"","d":752,"cr":6,"ty":[10,6]},"166":{"n":"Coxyclaque","e":"Ledian","f":"","d":166,"cr":6,"ty":[6,2]},"62":{"n":"Tartard","e":"Poliwrath","f":"","d":62,"cr":0,"ty":[10,1]},"284":{"n":"Maskadra","e":"Masquerain","f":"","d":284,"cr":6,"ty":[6,2]},"168":{"n":"Migalos","e":"Ariados","f":"","d":168,"cr":6,"ty":[6,3]},"186":{"n":"Tarpaud","e":"Politoed","f":"","d":186,"cr":0,"ty":[10]},"22":{"n":"Rapasdepic","e":"Fearow","f":"","d":22,"cr":6,"ty":[0,2]},"674":{"n":"Pandespiègle","e":"Pancham","f":"","d":674,"cr":9,"ty":[1]},"675":{"n":"Pandarbare","e":"Pangoro","f":"","d":675,"cr":0,"ty":[1,16]},"227":{"n":"Airmure","e":"Skarmory","f":"","d":227,"cr":6,"ty":[8,2]},"774":{"n":"Météno","e":"Minior","f":"","d":774,"cr":0,"ty":[5,2]},"605":{"n":"Lewsor","e":"Elgyem","f":"","d":605,"cr":15,"ty":[13]},"374":{"n":"Terhal","e":"Beldum","f":"","d":374,"cr":9,"ty":[8,13]},"132":{"n":"Métamorph","e":"Ditto","f":"","d":132,"cr":9,"ty":[0]},"173":{"n":"Mélo","e":"Cleffa","f":"","d":173,"cr":15,"ty":[17]},"35":{"n":"Mélofée","e":"Clefairy","f":"","d":35,"cr":6,"ty":[17]},"239":{"n":"Élekid","e":"Elekid","f":"","d":239,"cr":15,"ty":[12]},"125":{"n":"Élektek","e":"Electabuzz","f":"","d":125,"cr":6,"ty":[12]},"733":{"n":"Bazoucan","e":"Toucannon","f":"","d":733,"cr":0,"ty":[0,2]},"47":{"n":"Parasect","e":"Parasect","f":"","d":47,"cr":6,"ty":[6,11]},"775":{"n":"Dodoala","e":"Komala","f":"","d":775,"cr":0,"ty":[0]},"2123":{"n":"Gravalanch","e":"Graveler","f":"Forme d’Alola","d":75,"cr":6,"ty":[5,12]},"750":{"n":"Bourrinos","e":"Mudsdale","f":"","d":750,"cr":6,"ty":[4]},"324":{"n":"Chartor","e":"Torkoal","f":"","d":324,"cr":6,"ty":[9]},"229":{"n":"Démolosse","e":"Houndoom","f":"","d":229,"cr":6,"ty":[16,9]},"310":{"n":"Élecsprint","e":"Manectric","f":"","d":310,"cr":6,"ty":[12]},"702":{"n":"Dedenne","e":"Dedenne","f":"","d":702,"cr":9,"ty":[12,17]},"777":{"n":"Togedemaru","e":"Togedemaru","f":"","d":777,"cr":9,"ty":[12,8]},"737":{"n":"Chrysapile","e":"Charjabug","f":"","d":737,"cr":15,"ty":[6,12]},"738":{"n":"Lucanon","e":"Vikavolt","f":"","d":738,"cr":0,"ty":[6,12]},"776":{"n":"Boumata","e":"Turtonator","f":"","d":776,"cr":3,"ty":[9,15]},"552":{"n":"Escroco","e":"Krokorok","f":"","d":552,"cr":6,"ty":[4,16]},"622":{"n":"Gringolem","e":"Golett","f":"","d":622,"cr":15,"ty":[4,7]},"444":{"n":"Carmache","e":"Gabite","f":"","d":444,"cr":0,"ty":[15,4]},"343":{"n":"Balbuto","e":"Baltoy","f":"","d":343,"cr":15,"ty":[4,13]},"279":{"n":"Bekipan","e":"Pelipper","f":"","d":279,"cr":6,"ty":[10,2]},"361":{"n":"Stalgamin","e":"Snorunt","f":"","d":361,"cr":9,"ty":[14]},"359":{"n":"Absol","e":"Absol","f":"","d":359,"cr":3,"ty":[16]},"2085":{"n":"Goupix","e":"Vulpix","f":"Forme d’Alola","d":37,"cr":9,"ty":[14]},"582":{"n":"Sorbébé","e":"Vanillite","f":"","d":582,"cr":0,"ty":[14]},"2075":{"n":"Sabelette","e":"Sandshrew","f":"Forme d’Alola","d":27,"cr":9,"ty":[14,8]},"73":{"n":"Tentacruel","e":"Tentacruel","f":"","d":73,"cr":6,"ty":[10,3]},"592":{"n":"Viskuse","e":"Frillish","f":"","d":592,"cr":9,"ty":[10,7]},"93":{"n":"Spectrum","e":"Haunter","f":"","d":93,"cr":6,"ty":[7,3]},"94":{"n":"Ectoplasma","e":"Gengar","f":"","d":94,"cr":0,"ty":[7,3]},"353":{"n":"Polichombr","e":"Shuppet","f":"","d":353,"cr":9,"ty":[7]},"707":{"n":"Trousselin","e":"Klefki","f":"","d":707,"cr":6,"ty":[8,17]},"778":{"n":"Mimiqui","e":"Mimikyu","f":"","d":778,"cr":9,"ty":[7,17]},"457":{"n":"Luminéon","e":"Lumineon","f":"","d":457,"cr":6,"ty":[10]},"559":{"n":"Baggiguane","e":"Scraggy","f":"","d":559,"cr":9,"ty":[16,1]},"743":{"n":"Rubombelle","e":"Ribombee","f":"","d":743,"cr":6,"ty":[6,17]},"670":{"n":"Floette","e":"Floette","f":"","d":670,"cr":9,"ty":[17]},"4837":{"n":"Plumeline","e":"Oricorio","f":"Style Hula","d":741,"cr":6,"ty":[13,2]},"625":{"n":"Scalproie","e":"Bisharp","f":"","d":625,"cr":15,"ty":[16,8]},"624":{"n":"Scalpion","e":"Pawniard","f":"","d":624,"cr":0,"ty":[16,8]},"362":{"n":"Oniglali","e":"Glalie","f":"","d":362,"cr":3,"ty":[14]},"215":{"n":"Farfuret","e":"Sneasel","f":"","d":215,"cr":9,"ty":[16,14]},"583":{"n":"Sorboul","e":"Vanillish","f":"","d":583,"cr":0,"ty":[14]},"584":{"n":"Sorbouboul","e":"Vanilluxe","f":"","d":584,"cr":0,"ty":[14]},"780":{"n":"Draïeul","e":"Drampa","f":"","d":780,"cr":3,"ty":[0,15]},"2151":{"n":"Noadkoko","e":"Exeggutor","f":"Forme d’Alola","d":103,"cr":0,"ty":[11,15]},"102":{"n":"Noeunoeuf","e":"Exeggcute","f":"","d":102,"cr":15,"ty":[11,13]},"357":{"n":"Tropius","e":"Tropius","f":"","d":357,"cr":3,"ty":[11,2]},"423":{"n":"Tritosor","e":"Gastrodon","f":"","d":423,"cr":6,"ty":[10,4]},"705":{"n":"Colimucus","e":"Sliggoo","f":"","d":705,"cr":0,"ty":[15]},"210":{"n":"Granbull","e":"Granbull","f":"","d":210,"cr":6,"ty":[17]},"525":{"n":"Géolithe","e":"Boldore","f":"","d":525,"cr":6,"ty":[5]},"67":{"n":"Machopeur","e":"Machoke","f":"","d":67,"cr":6,"ty":[1]},"745":{"n":"Lougaroc","e":"Lycanroc","f":"Forme Diurne","d":745,"cr":3,"ty":[5]},"619":{"n":"Kungfouine","e":"Mienfoo","f":"","d":619,"cr":6,"ty":[1]},"782":{"n":"Bébécaille","e":"Jangmo-o","f":"","d":782,"cr":9,"ty":[15]},"783":{"n":"Écaïd","e":"Hakamo-o","f":"","d":783,"cr":6,"ty":[15,1]},"784":{"n":"Ékaïser","e":"Kommo-o","f":"","d":784,"cr":0,"ty":[15,1]},"2793":{"n":"Lougaroc","e":"Lycanroc","f":"Forme Nocturne","d":745,"cr":3,"ty":[5]},"55":{"n":"Akwakwak","e":"Golduck","f":"","d":55,"cr":6,"ty":[10]},"131":{"n":"Lokhlass","e":"Lapras","f":"","d":131,"cr":3,"ty":[10,14]},"428":{"n":"Lockpin","e":"Lopunny","f":"","d":428,"cr":6,"ty":[0]},"571":{"n":"Zoroark","e":"Zoroark","f":"","d":571,"cr":6,"ty":[16]},"214":{"n":"Scarhino","e":"Heracross","f":"","d":214,"cr":3,"ty":[6,1]},"447":{"n":"Riolu","e":"Riolu","f":"","d":447,"cr":15,"ty":[1]},"448":{"n":"Lucario","e":"Lucario","f":"","d":448,"cr":0,"ty":[1,8]},"297":{"n":"Hariyama","e":"Hariyama","f":"","d":297,"cr":6,"ty":[1]},"97":{"n":"Hypnomade","e":"Hypno","f":"","d":97,"cr":6,"ty":[13]},"6885":{"n":"Plumeline","e":"Oricorio","f":"Style Buyō","d":741,"cr":6,"ty":[7,2]},"200":{"n":"Feuforêve","e":"Misdreavus","f":"","d":200,"cr":9,"ty":[7]},"715":{"n":"Bruyverne","e":"Noivern","f":"","d":715,"cr":6,"ty":[2,15]},"621":{"n":"Drakkarmin","e":"Druddigon","f":"","d":621,"cr":3,"ty":[15]},"108":{"n":"Excelangue","e":"Lickitung","f":"","d":108,"cr":3,"ty":[0]},"760":{"n":"Chelours","e":"Bewear","f":"","d":760,"cr":6,"ty":[0,1]},"129":{"n":"Magicarpe","e":"Magikarp","f":"","d":129,"cr":9,"ty":[10]},"130":{"n":"Léviator","e":"Gyarados","f":"","d":130,"cr":3,"ty":[10,2]},"320":{"n":"Wailmer","e":"Wailmer","f":"","d":320,"cr":9,"ty":[10]},"321":{"n":"Wailord","e":"Wailord","f":"","d":321,"cr":6,"ty":[10]},"781":{"n":"Sinistrail","e":"Dhelmise","f":"","d":781,"cr":3,"ty":[7,11]},"339":{"n":"Barloche","e":"Barboach","f":"","d":339,"cr":9,"ty":[10,4]},"340":{"n":"Barbicha","e":"Whiscash","f":"","d":340,"cr":6,"ty":[10,4]},"746":{"n":"Froussardine","e":"Wishiwashi","f":"","d":746,"cr":9,"ty":[10]},"224":{"n":"Octillery","e":"Octillery","f":"","d":224,"cr":0,"ty":[10]},"90":{"n":"Kokiyas","e":"Shellder","f":"","d":90,"cr":9,"ty":[10]},"370":{"n":"Lovdisc","e":"Luvdisc","f":"","d":370,"cr":6,"ty":[10]},"222":{"n":"Corayon","e":"Corsola","f":"","d":222,"cr":9,"ty":[10,5]},"747":{"n":"Vorastérie","e":"Mareanie","f":"","d":747,"cr":0,"ty":[3,10]},"366":{"n":"Coquiperl","e":"Clamperl","f":"","d":366,"cr":15,"ty":[10]},"368":{"n":"Rosabyss","e":"Gorebyss","f":"","d":368,"cr":0,"ty":[10]},"367":{"n":"Serpang","e":"Huntail","f":"","d":367,"cr":0,"ty":[10]},"118":{"n":"Poissirène","e":"Goldeen","f":"","d":118,"cr":9,"ty":[10]},"119":{"n":"Poissoroy","e":"Seaking","f":"","d":119,"cr":6,"ty":[10]},"550":{"n":"Bargantua","e":"Basculin","f":"","d":550,"cr":9,"ty":[10]},"349":{"n":"Barpau","e":"Feebas","f":"","d":349,"cr":9,"ty":[10]},"594":{"n":"Mamanbo","e":"Alomomola","f":"","d":594,"cr":6,"ty":[10]},"120":{"n":"Stari","e":"Staryu","f":"","d":120,"cr":9,"ty":[10]},"121":{"n":"Staross","e":"Starmie","f":"","d":121,"cr":0,"ty":[10,13]},"170":{"n":"Loupio","e":"Chinchou","f":"","d":170,"cr":9,"ty":[10,12]},"171":{"n":"Lanturn","e":"Lanturn","f":"","d":171,"cr":6,"ty":[10,12]},"779":{"n":"Denticrisse","e":"Bruxish","f":"","d":779,"cr":6,"ty":[10,13]},"318":{"n":"Carvanha","e":"Carvanha","f":"","d":318,"cr":9,"ty":[10,16]},"319":{"n":"Sharpedo","e":"Sharpedo","f":"","d":319,"cr":3,"ty":[10,16]},"369":{"n":"Relicanth","e":"Relicanth","f":"","d":369,"cr":3,"ty":[10,5]},"341":{"n":"Écrapince","e":"Corphish","f":"","d":341,"cr":9,"ty":[10]},"342":{"n":"Colhomard","e":"Crawdaunt","f":"","d":342,"cr":6,"ty":[10,16]},"147":{"n":"Minidraco","e":"Dratini","f":"","d":147,"cr":9,"ty":[15]},"148":{"n":"Draco","e":"Dragonair","f":"","d":148,"cr":6,"ty":[15]},"149":{"n":"Dracolosse","e":"Dragonite","f":"","d":149,"cr":0,"ty":[15,2]},"206":{"n":"Insolourdo","e":"Dunsparce","f":"","d":206,"cr":3,"ty":[0]},"627":{"n":"Furaiglon","e":"Rufflet","f":"","d":627,"cr":9,"ty":[0,2]},"629":{"n":"Vostourno","e":"Vullaby","f":"","d":629,"cr":9,"ty":[16,2]},"352":{"n":"Kecleon","e":"Kecleon","f":"","d":352,"cr":9,"ty":[0]},"767":{"n":"Sovkipou","e":"Wimpod","f":"","d":767,"cr":0,"ty":[6,10]},"769":{"n":"Bacabouh","e":"Sandygast","f":"","d":769,"cr":9,"ty":[7,4]},"204":{"n":"Pomdepik","e":"Pineco","f":"","d":204,"cr":9,"ty":[6]},"551":{"n":"Mascaïman","e":"Sandile","f":"","d":551,"cr":9,"ty":[4,16]},"328":{"n":"Kraknoix","e":"Trapinch","f":"","d":328,"cr":9,"ty":[4]},"693":{"n":"Gamblast","e":"Clawitzer","f":"","d":693,"cr":6,"ty":[10]},"691":{"n":"Kravarech","e":"Dragalge","f":"","d":691,"cr":6,"ty":[3,15]},"123":{"n":"Insécateur","e":"Scyther","f":"","d":123,"cr":3,"ty":[6,2]},"113":{"n":"Leveinard","e":"Chansey","f":"","d":113,"cr":9,"ty":[0]},"242":{"n":"Leuphorie","e":"Blissey","f":"","d":242,"cr":0,"ty":[0]},"57":{"n":"Colossinge","e":"Primeape","f":"","d":57,"cr":6,"ty":[1]},"190":{"n":"Capumain","e":"Aipom","f":"","d":190,"cr":9,"ty":[0]},"424":{"n":"Capidextre","e":"Ambipom","f":"","d":424,"cr":0,"ty":[0]},"587":{"n":"Emolga","e":"Emolga","f":"","d":587,"cr":9,"ty":[12,2]},"628":{"n":"Gueriaigle","e":"Braviary","f":"","d":628,"cr":6,"ty":[0,2]},"630":{"n":"Vaututrice","e":"Mandibuzz","f":"","d":630,"cr":6,"ty":[16,2]},"668":{"n":"Némélios","e":"Pyroar","f":"","d":668,"cr":6,"ty":[9,0]},"739":{"n":"Crabagarre","e":"Crabrawler","f":"","d":739,"cr":9,"ty":[1]}},"locs":[{"id":8,"n":"Route 1","s":"","isl":0,"t":[{"k":"wild","lab":"Zone 1","lv":[2,3],"vm":[0,1,0,1],"v":[{"e":[[734,20,[[734,100]]],[731,20,[[731,100]]],[165,20,[[165,100]]],[736,15,[[736,100]]],[427,10,[[427,100]]],[10,10,[[10,100]]],[172,5,[[172,77],[25,13],[440,10]]]],"w":{}},{"e":[[2067,20,[[2067,100]]],[731,20,[[731,100]]],[167,20,[[167,100]]],[736,15,[[736,100]]],[427,10,[[427,100]]],[10,10,[[10,100]]],[172,5,[[172,77],[25,13],[440,10]]]],"w":{}}]},{"k":"wild","lab":"Zone 2","lv":[2,3],"vm":[0,1,0,1],"v":[{"e":[[734,35,[[734,100]]],[10,35,[[10,100]]],[427,30,[[427,100]]]],"w":{}},{"e":[[2067,35,[[2067,100]]],[10,35,[[10,100]]],[427,30,[[427,100]]]],"w":{}}]},{"k":"wild","lab":"Zone 3","lv":[11,14],"vm":[0,1,0,1],"v":[{"e":[[438,30,[[438,87],[440,10],[185,3]]],[734,20,[[734,100]]],[731,20,[[731,100]]],[744,20,[[744,100]]],[446,10,[[446,89],[440,10],[143,1]]]],"w":{}},{"e":[[438,30,[[438,87],[440,10],[185,3]]],[2067,20,[[2067,100]]],[731,20,[[731,100]]],[744,20,[[744,100]]],[446,10,[[446,89],[440,10],[143,1]]]],"w":{}}]}],"notes":[]},{"id":6,"n":"Route 1","s":"Abords d’Ekaeka","isl":0,"t":[{"k":"wild","lab":"","lv":[4,7],"vm":[0,0,0,0],"v":[{"e":[[278,50,[[278,100]]],[686,30,[[686,100]]],[79,20,[[79,100]]]],"w":{}}]}],"notes":[]},{"id":231,"n":"Route 1","s":"École de Dresseurs","isl":0,"t":[{"k":"wild","lab":"","lv":[5,8],"vm":[0,0,0,0],"v":[{"e":[[2100,50,[[2100,100]]],[570,30,[[570,100]]],[2136,10,[[2136,100]]],[81,10,[[81,100]]]],"w":{}}]}],"notes":[]},{"id":16,"n":"Mer de Mele-Mele","s":"","isl":0,"t":[{"k":"wild","lab":"Est + Ouest","lv":[15,18],"vm":[0,0,0,0],"v":[{"e":[[72,40,[[72,100]]],[278,20,[[278,100]]],[456,20,[[456,100]]],[458,20,[[458,80],[223,20]]]],"w":{}}]},{"k":"fish","lab":"","lv":[10,17],"vm":[0,1,0,1],"v":[{"e":[[129,25,[[129,87],[130,13]]],[746,25,[[746,100]]],[370,25,[[370,100]]],[223,15,[[223,87],[224,13]]],[222,5,[[222,67],[747,33]]],[366,5,[[366,97],[368,3]]]],"w":{}},{"e":[[129,25,[[129,87],[130,13]]],[746,25,[[746,100]]],[370,25,[[370,100]]],[223,15,[[223,87],[224,13]]],[222,5,[[222,67],[747,33]]],[366,5,[[366,97],[367,3]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,22],"vm":[0,1,0,1],"v":[{"e":[[222,35,[[222,67],[747,33]]],[129,15,[[129,87],[130,13]]],[746,15,[[746,100]]],[370,15,[[370,100]]],[223,15,[[223,87],[224,13]]],[366,5,[[366,97],[368,3]]]],"w":{}},{"e":[[222,35,[[222,67],[747,33]]],[129,15,[[129,87],[130,13]]],[746,15,[[746,100]]],[370,15,[[370,100]]],[223,15,[[223,87],[224,13]]],[366,5,[[366,97],[367,3]]]],"w":{}}]}],"notes":[]},{"id":12,"n":"Route 2","s":"","isl":0,"t":[{"k":"wild","lab":"Zone 1","lv":[7,10],"vm":[0,1,0,1],"v":[{"e":[[296,20,[[296,100]]],[23,20,[[23,100]]],[676,10,[[676,100]]],[2100,10,[[2100,100]]],[235,10,[[235,100]]],[734,10,[[734,100]]],[63,10,[[63,100]]],[96,10,[[96,100]]]],"w":{}},{"e":[[96,20,[[96,100]]],[23,20,[[23,100]]],[676,10,[[676,100]]],[2100,10,[[2100,100]]],[235,10,[[235,100]]],[2067,10,[[2067,100]]],[63,10,[[63,100]]],[296,10,[[296,100]]]],"w":{}}]},{"k":"wild","lab":"Zone 2","lv":[7,10],"vm":[0,1,0,1],"v":[{"e":[[296,20,[[296,100]]],[23,20,[[23,100]]],[58,10,[[58,100]]],[742,10,[[742,100]]],[235,10,[[235,100]]],[734,10,[[734,100]]],[21,10,[[21,100]]],[96,10,[[96,100]]]],"w":{}},{"e":[[96,20,[[96,100]]],[23,20,[[23,100]]],[58,10,[[58,100]]],[742,10,[[742,100]]],[235,10,[[235,100]]],[2067,10,[[2067,100]]],[21,10,[[21,100]]],[296,10,[[296,100]]]],"w":{}}]},{"k":"wild","lab":"Zone 3","lv":[7,10],"vm":[0,1,0,1],"v":[{"e":[[21,30,[[21,100]]],[742,30,[[742,100]]],[734,20,[[734,100]]],[58,10,[[58,100]]],[235,10,[[235,100]]]],"w":{}},{"e":[[21,30,[[21,100]]],[742,30,[[742,100]]],[2067,20,[[2067,100]]],[58,10,[[58,100]]],[235,10,[[235,100]]]],"w":{}}]},{"k":"ambush","lab":"","lv":[7,10],"vm":[0,1,0,1],"v":[{"e":[[23,50,[[23,100]]],[296,30,[[296,100]]],[206,15,[[206,100]]],[96,5,[[96,100]]]],"w":{}},{"e":[[23,50,[[23,100]]],[96,30,[[96,100]]],[206,15,[[206,100]]],[296,5,[[296,100]]]],"w":{}}]},{"k":"berry","lab":"","lv":null,"vm":[0,0,0,0],"v":[{"e":[[739,100,[[739,100]]]],"w":{}}]}],"notes":[]},{"id":200,"n":"Grotte de la Plage","s":"","isl":0,"t":[{"k":"wild","lab":"","lv":[6,9],"vm":[0,0,0,0],"v":[{"e":[[41,70,[[41,100]]],[54,30,[[54,100]]]],"w":{}}]}],"notes":[]},{"id":46,"n":"Grotte Verdoyante","s":"Zone de l’Épreuve","isl":0,"t":[{"k":"wild","lab":"","lv":[8,11],"vm":[0,0,0,0],"v":[{"e":[[41,35,[[41,100]]],[2098,35,[[2098,100]]],[714,30,[[714,100]]]],"w":{}}]}],"notes":[]},{"id":10,"n":"Route 3","s":"","isl":0,"t":[{"k":"wild","lab":"Zone 1","lv":[9,12],"vm":[0,0,0,0],"v":[{"e":[[742,30,[[742,100]]],[21,30,[[21,100]]],[56,30,[[56,100]]],[701,10,[[701,100]]]],"w":{}}]},{"k":"wild","lab":"Zone 2","lv":[9,12],"vm":[0,0,0,0],"v":[{"e":[[742,30,[[742,100]]],[56,30,[[56,100]]],[21,29,[[21,100]]],[701,10,[[701,100]]],[371,1,[[371,99],[373,1]]]],"w":{}}]},{"k":"ambush","lab":"","lv":[10,13],"vm":[0,0,1,1],"v":[{"e":[[21,70,[[21,100]]],[627,30,[[627,100]]]],"w":{}},{"e":[[21,70,[[21,100]]],[629,30,[[629,100]]]],"w":{}}]},{"k":"berry","lab":"","lv":null,"vm":[0,0,0,0],"v":[{"e":[[739,100,[[739,100]]]],"w":{}}]}],"notes":[]},{"id":18,"n":"Ekaeka","s":"Plage","isl":0,"t":[{"k":"wild","lab":"","lv":[15,18],"vm":[0,0,0,0],"v":[{"e":[[72,40,[[72,100]]],[278,20,[[278,100]]],[456,20,[[456,100]]],[458,20,[[458,80],[223,20]]]],"w":{}}]}],"notes":[]},{"id":21,"n":"Ekaeka","s":"Zone commerciale","isl":0,"t":[{"k":"wild","lab":"Zone 1","lv":[6,9],"vm":[0,0,0,0],"v":[{"e":[[278,40,[[278,100]]],[676,15,[[676,100]]],[63,10,[[63,100]]],[439,10,[[439,87],[440,10],[122,3]]],[81,10,[[81,100]]],[2100,10,[[2100,100]]],[2136,5,[[2136,100]]]],"w":{}}]},{"k":"wild","lab":"Zone 2","lv":[6,9],"vm":[0,0,0,0],"v":[{"e":[[676,25,[[676,100]]],[63,20,[[63,100]]],[439,20,[[439,87],[440,10],[122,3]]],[2136,10,[[2136,100]]],[81,10,[[81,100]]],[2100,10,[[2100,100]]],[278,5,[[278,100]]]],"w":{}}]}],"notes":[]},{"id":38,"n":"Cimetière d’Ekaeka","s":"","isl":0,"t":[{"k":"wild","lab":"","lv":[6,9],"vm":[0,1,0,1],"v":[{"e":[[92,40,[[92,100]]],[425,40,[[425,100]]],[41,20,[[41,100]]]],"w":{}},{"e":[[92,40,[[92,100]]],[198,40,[[198,100]]],[41,20,[[41,100]]]],"w":{}}]}],"notes":[]},{"id":40,"n":"Jardin de Mele-Mele","s":"","isl":0,"t":[{"k":"wild","lab":"","lv":[9,12],"vm":[0,0,1,1],"v":[{"e":[[742,20,[[742,100]]],[546,20,[[546,100]]],[669,20,[[669,100]]],[2789,20,[[2789,100]]],[10,10,[[10,87],[12,13]]],[11,9,[[10,87],[12,13]]],[12,1,[]]],"w":{}},{"e":[[742,20,[[742,100]]],[548,20,[[548,100]]],[669,20,[[669,100]]],[2789,20,[[2789,100]]],[10,10,[[10,87],[12,13]]],[11,9,[[10,87],[12,13]]],[12,1,[]]],"w":{}}]}],"notes":["Les Plumeline d’ici sont en Style Pom-Pom. Les Flabébé appelés à l’aide peuvent être d’une autre couleur."]},{"id":42,"n":"Grotte Verlamer","s":"","isl":0,"t":[{"k":"wild","lab":"Grotte","lv":[9,12],"vm":[0,0,0,0],"v":[{"e":[[54,30,[[54,100]]],[238,30,[[238,87],[440,10],[124,3]]],[225,20,[[225,100]]],[41,20,[[41,100]]]],"w":{}}]},{"k":"wild","lab":"Sur l’eau","lv":[15,18],"vm":[0,0,0,0],"v":[{"e":[[41,55,[[41,100]]],[86,30,[[86,100]]],[225,10,[[225,100]]],[54,5,[[54,100]]]],"w":{}}]},{"k":"fish","lab":"","lv":[10,17],"vm":[0,0,0,0],"v":[{"e":[[129,90,[[129,97],[130,3]]],[339,10,[[339,87],[340,13]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,22],"vm":[0,0,0,0],"v":[{"e":[[339,60,[[339,87],[340,13]]],[129,40,[[129,97],[130,3]]]],"w":{}}]}],"notes":[]},{"id":14,"n":"Baie de Kala’e","s":"","isl":0,"t":[{"k":"wild","lab":"Herbes","lv":[15,18],"vm":[0,1,0,1],"v":[{"e":[[278,40,[[278,100]]],[734,30,[[734,100]]],[79,20,[[79,87],[80,12],[199,1]]],[371,10,[[371,97],[372,3]]]],"w":{}},{"e":[[278,40,[[278,100]]],[2067,30,[[2067,100]]],[79,20,[[79,87],[80,12],[199,1]]],[371,10,[[371,97],[372,3]]]],"w":{}}]},{"k":"wild","lab":"Sur l’eau","lv":[15,18],"vm":[0,0,0,0],"v":[{"e":[[72,40,[[72,100]]],[278,20,[[278,100]]],[456,20,[[456,100]]],[458,20,[[458,80],[223,20]]]],"w":{}}]},{"k":"fish","lab":"","lv":[10,17],"vm":[0,0,0,0],"v":[{"e":[[129,35,[[129,87],[130,13]]],[746,35,[[746,100]]],[223,25,[[223,87],[224,13]]],[90,5,[[90,100]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,22],"vm":[0,0,0,0],"v":[{"e":[[90,35,[[90,100]]],[129,25,[[129,87],[130,13]]],[746,25,[[746,100]]],[223,15,[[223,87],[224,13]]]],"w":{}}]}],"notes":[]},{"id":34,"n":"Colline Dicarat","s":"","isl":0,"t":[{"k":"wild","lab":"Grotte","lv":[11,14],"vm":[0,0,0,0],"v":[{"e":[[303,30,[[303,100]]],[703,20,[[302,67],[703,33]]],[524,20,[[524,100]]],[41,20,[[41,100]]],[54,10,[[54,100]]]],"w":{}}]},{"k":"wild","lab":"Herbes","lv":[11,14],"vm":[0,0,0,0],"v":[{"e":[[66,30,[[66,100]]],[327,30,[[327,100]]],[744,20,[[744,100]]],[524,10,[[524,100]]],[703,10,[[302,67],[703,33]]]],"w":{}}]},{"k":"wild","lab":"Sur l’eau","lv":[15,18],"vm":[0,0,0,0],"v":[{"e":[[41,95,[[41,100]]],[54,5,[[54,100]]]],"w":{}}]}],"notes":[]},{"id":50,"n":"Route 4","s":"","isl":1,"t":[{"k":"wild","lab":"","lv":[11,14],"vm":[0,1,0,1],"v":[{"e":[[506,20,[[506,100]]],[749,20,[[749,100]]],[174,20,[[174,77],[39,13],[440,10]]],[731,15,[[731,100]]],[736,10,[[736,100]]],[734,10,[[734,100]]],[133,5,[[133,97],[196,3]]]],"w":{}},{"e":[[506,30,[[506,100]]],[731,25,[[731,100]]],[749,20,[[749,100]]],[736,10,[[736,100]]],[2067,10,[[2067,100]]],[133,5,[[133,97],[197,3]]]],"w":{}}]},{"k":"berry","lab":"","lv":null,"vm":[0,0,0,0],"v":[{"e":[[739,100,[[739,100]]]],"w":{}}]}],"notes":[]},{"id":78,"n":"Ranch Ohana","s":"","isl":1,"t":[{"k":"wild","lab":"","lv":[12,15],"vm":[0,0,0,0],"v":[{"e":[[749,40,[[749,100]]],[179,30,[[179,100]]],[506,20,[[506,100]]],[128,5,[[241,67],[128,33]]],[241,5,[[128,67],[241,33]]]],"w":{}}]}],"notes":[]},{"id":52,"n":"Route 5","s":"","isl":1,"t":[{"k":"wild","lab":"Zone 1","lv":[13,16],"vm":[0,0,0,0],"v":[{"e":[[506,20,[[506,100]]],[731,20,[[731,100]]],[736,20,[[736,100]]],[753,20,[[753,100]]],[10,10,[[10,87],[12,13]]],[11,9,[[10,87],[12,13]]],[12,1,[]]],"w":{}}]},{"k":"wild","lab":"Zone 2","lv":[18,21],"vm":[0,0,0,0],"v":[{"e":[[753,30,[[753,100]]],[732,20,[[732,100]]],[736,20,[[736,100]]],[438,10,[[438,77],[185,13],[440,10]]],[10,10,[[10,87],[12,13]]],[11,9,[[10,87],[12,13]]],[12,1,[]]],"w":{}}]},{"k":"ambush","lab":"","lv":[18,21],"vm":[0,0,0,0],"v":[{"e":[[2098,100,[[2098,100]]]],"w":{}}]},{"k":"berry","lab":"","lv":null,"vm":[0,0,0,0],"v":[{"e":[[739,100,[[739,100]]]],"w":{}}]}],"notes":[]},{"id":86,"n":"Colline Clapotis","s":"","isl":1,"t":[{"k":"wild","lab":"Herbes","lv":[14,17],"vm":[0,1,0,1],"v":[{"e":[[751,20,[[751,100]]],[60,20,[[60,100]]],[54,20,[[54,100]]],[278,20,[[278,100]]],[46,20,[[46,100]]]],"w":{}},{"e":[[283,20,[[283,100]]],[60,20,[[60,100]]],[54,20,[[54,100]]],[278,20,[[278,100]]],[755,20,[[755,100]]]],"w":{}}]},{"k":"wild","lab":"Sur l’eau","lv":[14,17],"vm":[0,1,0,1],"v":[{"e":[[60,40,[[60,100]]],[751,40,[[751,100]]],[54,20,[[54,100]]]],"w":{}},{"e":[[60,40,[[60,100]]],[283,40,[[283,100]]],[54,20,[[54,100]]]],"w":{}}]},{"k":"fish","lab":"","lv":[10,16],"vm":[0,0,0,0],"v":[{"e":[[129,44,[[129,87],[130,13]]],[118,30,[[118,87],[119,13]]],[550,25,[[550,100]]],[349,1,[[349,100]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,21],"vm":[0,0,0,0],"v":[{"e":[[129,40,[[129,87],[130,13]]],[118,25,[[118,87],[119,13]]],[550,25,[[550,100]]],[349,10,[[349,100]]]],"w":{}}]}],"notes":[]},{"id":88,"n":"Colline Clapotis","s":"Repaire du Dominant","isl":1,"t":[{"k":"wild","lab":"","lv":[14,17],"vm":[0,0,0,0],"v":[{"e":[[72,40,[[72,100]]],[456,40,[[456,100]]],[278,20,[[278,100]]]],"w":{}}]},{"k":"fish","lab":"","lv":[10,16],"vm":[0,0,0,0],"v":[{"e":[[129,55,[[129,87],[130,13]]],[746,40,[[746,100]]],[594,5,[[594,100]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,21],"vm":[0,0,0,0],"v":[{"e":[[129,40,[[129,87],[130,13]]],[594,35,[[594,100]]],[746,25,[[746,100]]]],"w":{}}]}],"notes":[]},{"id":90,"n":"Jungle Sombrefeuille","s":"","isl":1,"t":[{"k":"wild","lab":"Sud + Ouest + Nord","lv":[19,22],"vm":[0,1,2,3],"v":[{"e":[[732,21,[[732,100]]],[753,20,[[753,100]]],[438,10,[[438,77],[185,13],[440,10]]],[11,10,[[10,87],[12,13]]],[762,10,[[762,100]]],[46,10,[[46,100]]],[764,10,[[764,100]]],[766,5,[[732,100]]],[127,4,[[127,100]]]],"w":{"rain":[[704,10],[351,1]],"hail":[[351,11]],"sand":[[351,11]]}},{"e":[[753,20,[[753,100]]],[163,20,[[163,87],[164,13]]],[438,10,[[438,77],[185,13],[440,10]]],[11,10,[[10,87],[12,13]]],[762,10,[[762,100]]],[755,10,[[755,100]]],[764,10,[[764,100]]],[766,5,[[732,100]]],[127,4,[[127,100]]],[732,1,[[732,100]]]],"w":{"rain":[[704,10],[351,1]],"hail":[[351,11]],"sand":[[351,11]]}},{"e":[[732,21,[[732,100]]],[753,20,[[753,100]]],[438,10,[[438,77],[185,13],[440,10]]],[11,10,[[10,87],[12,13]]],[762,10,[[762,100]]],[46,10,[[46,100]]],[764,10,[[764,100]]],[765,5,[[732,100]]],[127,4,[[127,100]]]],"w":{"rain":[[704,10],[351,1]],"hail":[[351,11]],"sand":[[351,11]]}},{"e":[[753,20,[[753,100]]],[163,20,[[163,87],[164,13]]],[438,10,[[438,77],[185,13],[440,10]]],[11,10,[[10,87],[12,13]]],[762,10,[[762,100]]],[755,10,[[755,100]]],[764,10,[[764,100]]],[765,5,[[732,100]]],[127,4,[[127,100]]],[732,1,[[732,100]]]],"w":{"rain":[[704,10],[351,1]],"hail":[[351,11]],"sand":[[351,11]]}}]},{"k":"wild","lab":"Grotte","lv":[41,44],"vm":[0,0,0,0],"v":[{"e":[[42,39,[[42,97],[169,3]]],[2099,30,[[2099,100]]],[757,30,[[757,99],[758,1]]],[636,1,[[636,99],[637,1]]]],"w":{"rain":[[704,10],[351,1]],"hail":[[351,11]],"sand":[[351,11]]}}]},{"k":"ambush","lab":"","lv":[19,22],"vm":[0,0,1,1],"v":[{"e":[[762,70,[[762,100]]],[766,30,[[732,100]]]],"w":{"rain":[[704,10],[351,1]],"hail":[[351,11]],"sand":[[351,11]]}},{"e":[[762,70,[[762,100]]],[765,30,[[732,100]]]],"w":{"rain":[[704,10],[351,1]],"hail":[[351,11]],"sand":[[351,11]]}}]}],"notes":[]},{"id":54,"n":"Route 6","s":"","isl":1,"t":[{"k":"wild","lab":"Zone 1","lv":[14,17],"vm":[0,1,0,1],"v":[{"e":[[506,20,[[506,100]]],[749,20,[[749,100]]],[174,20,[[174,77],[39,13],[440,10]]],[731,15,[[731,100]]],[736,10,[[736,100]]],[734,10,[[734,100]]],[133,5,[[133,97],[196,3]]]],"w":{}},{"e":[[506,30,[[506,100]]],[731,25,[[731,100]]],[749,20,[[749,100]]],[736,10,[[736,100]]],[2067,10,[[2067,100]]],[133,5,[[133,97],[197,3]]]],"w":{}}]},{"k":"wild","lab":"Zone 2","lv":[14,17],"vm":[0,1,0,1],"v":[{"e":[[506,20,[[506,100]]],[741,20,[[741,100]]],[174,20,[[174,77],[39,13],[440,10]]],[731,15,[[731,100]]],[736,10,[[736,100]]],[734,10,[[734,100]]],[133,5,[[133,97],[196,3]]]],"w":{}},{"e":[[506,30,[[506,100]]],[731,25,[[731,100]]],[741,20,[[741,100]]],[736,10,[[736,100]]],[2067,10,[[2067,100]]],[133,5,[[133,97],[197,3]]]],"w":{}}]}],"notes":["Les Plumeline d’ici sont en Style Flamenco."]},{"id":56,"n":"Route 7","s":"","isl":1,"t":[{"k":"wild","lab":"","lv":[16,19],"vm":[0,0,0,0],"v":[{"e":[[72,30,[[72,100]]],[456,30,[[456,100]]],[278,20,[[278,100]]],[771,20,[[771,100]]]],"w":{}}]},{"k":"ambush","lab":"","lv":[16,19],"vm":[0,0,0,0],"v":[{"e":[[2098,100,[[2098,100]]]],"w":{}}]},{"k":"fish","lab":"","lv":[10,18],"vm":[0,0,0,0],"v":[{"e":[[129,55,[[129,87],[130,13]]],[746,40,[[746,100]]],[120,5,[[120,97],[121,3]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,23],"vm":[0,0,0,0],"v":[{"e":[[129,45,[[129,87],[130,13]]],[120,35,[[120,97],[121,3]]],[746,20,[[746,100]]]],"w":{}}]}],"notes":[]},{"id":58,"n":"Route 8","s":"","isl":1,"t":[{"k":"wild","lab":"Herbes","lv":[17,20],"vm":[0,1,0,1],"v":[{"e":[[734,30,[[734,87],[735,13]]],[732,30,[[732,100]]],[757,15,[[757,100]]],[661,15,[[661,87],[662,13]]],[759,10,[[759,100]]]],"w":{}},{"e":[[2067,30,[[2067,87],[2068,13]]],[732,30,[[732,100]]],[757,15,[[757,100]]],[661,15,[[661,87],[662,13]]],[759,10,[[759,100]]]],"w":{}}]},{"k":"wild","lab":"Sur l’eau","lv":[17,20],"vm":[0,0,0,0],"v":[{"e":[[72,40,[[72,100]]],[278,20,[[278,100]]],[456,20,[[456,100]]],[458,20,[[458,80],[223,20]]]],"w":{}}]},{"k":"ambush","lab":"","lv":[17,20],"vm":[0,0,0,0],"v":[{"e":[[767,100,[]]],"w":{}}]},{"k":"berry","lab":"","lv":null,"vm":[0,0,0,0],"v":[{"e":[[739,100,[[739,100]]]],"w":{}}]},{"k":"fish","lab":"","lv":[10,20],"vm":[0,0,0,0],"v":[{"e":[[129,50,[[129,87],[130,13]]],[746,30,[[746,100]]],[223,15,[[223,87],[224,13]]],[170,5,[[170,87],[171,13]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,25],"vm":[0,0,0,0],"v":[{"e":[[129,40,[[129,87],[130,13]]],[170,35,[[170,87],[171,13]]],[746,20,[[746,100]]],[223,5,[[223,87],[224,13]]]],"w":{}}]}],"notes":["D’après Bulbapedia : la nuit, certains Tritox peuvent appeler Nounourson."]},{"id":64,"n":"Plage Hano-Hano","s":"","isl":1,"t":[{"k":"wild","lab":"","lv":[21,24],"vm":[0,0,0,0],"v":[{"e":[[72,30,[[72,100]]],[456,30,[[456,100]]],[771,30,[[771,100]]],[278,10,[[278,100]]]],"w":{}}]},{"k":"ambush","lab":"Zone 1","lv":[22,25],"vm":[0,0,0,0],"v":[{"e":[[120,70,[[120,97],[121,3]]],[769,30,[[769,100]]]],"w":{}}]},{"k":"ambush","lab":"Zone 2","lv":[22,25],"vm":[0,0,0,0],"v":[{"e":[[72,100,[[72,100]]]],"w":{}}]}],"notes":["D’après Bulbapedia : la nuit, certains Concombaffe peuvent appeler Goélise."]},{"id":82,"n":"Parc Volcanique","s":"","isl":1,"t":[{"k":"wild","lab":"","lv":[16,19],"vm":[0,0,0,0],"v":[{"e":[[757,30,[[757,99],[758,1]]],[661,30,[[661,87],[662,13]]],[104,24,[[104,90],[115,10]]],[240,15,[[240,77],[126,13],[440,10]]],[115,1,[[115,100]]]],"w":{}}]}],"notes":[]},{"id":100,"n":"Tunnel Taupiqueur","s":"","isl":1,"t":[{"k":"wild","lab":"","lv":[20,23],"vm":[0,0,0,0],"v":[{"e":[[41,60,[[41,87],[42,13]]],[2098,30,[[2098,100]]],[246,10,[[246,100]]]],"w":{}}]},{"k":"ambush","lab":"","lv":[20,23],"vm":[0,0,0,0],"v":[{"e":[[2098,100,[[2098,100]]]],"w":{}}]}],"notes":[]},{"id":76,"n":"Colline Memento","s":"","isl":1,"t":[{"k":"wild","lab":"","lv":[21,24],"vm":[0,0,0,0],"v":[{"e":[[92,50,[[92,100]]],[708,30,[[708,100]]],[41,20,[[41,87],[42,13]]]],"w":{}}]}],"notes":[]},{"id":94,"n":"Côte Reculée d’Akala","s":"","isl":1,"t":[{"k":"wild","lab":"","lv":[21,24],"vm":[0,1,0,1],"v":[{"e":[[278,30,[[278,100]]],[735,20,[[735,100]]],[177,20,[[177,87],[178,13]]],[759,15,[[759,100]]],[299,15,[[299,100]]]],"w":{}},{"e":[[278,30,[[278,100]]],[2068,20,[[2068,100]]],[177,20,[[177,87],[178,13]]],[759,15,[[759,100]]],[299,15,[[299,100]]]],"w":{}}]},{"k":"fish","lab":"","lv":[10,24],"vm":[0,0,0,0],"v":[{"e":[[129,55,[[129,87],[130,13]]],[746,40,[[746,100]]],[170,5,[[170,87],[171,13]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,29],"vm":[0,0,0,0],"v":[{"e":[[129,40,[[129,87],[130,13]]],[170,35,[[170,87],[171,13]]],[746,25,[[746,100]]]],"w":{}}]}],"notes":[]},{"id":68,"n":"Ohana","s":"","isl":1,"t":[{"k":"fish","lab":"","lv":[10,18],"vm":[0,0,0,0],"v":[{"e":[[129,90,[[129,87],[130,13]]],[339,10,[[339,87],[340,13]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,23],"vm":[0,0,0,0],"v":[{"e":[[339,60,[[339,87],[340,13]]],[129,40,[[129,87],[130,13]]]],"w":{}}]}],"notes":[]},{"id":60,"n":"Route 9","s":"","isl":1,"t":[{"k":"fish","lab":"","lv":[10,23],"vm":[0,0,0,0],"v":[{"e":[[370,50,[[370,100]]],[129,20,[[129,87],[130,13]]],[746,15,[[746,100]]],[222,15,[[222,67],[747,33]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,28],"vm":[0,0,0,0],"v":[{"e":[[370,80,[[370,100]]],[129,10,[[129,87],[130,13]]],[746,5,[[746,100]]],[222,5,[[222,67],[747,33]]]],"w":{}}]}],"notes":[]},{"id":232,"n":"Tunnel Perce-Mont","s":"","isl":1,"t":[{"k":"ambush","lab":"Zone 1","lv":[17,20],"vm":[0,0,0,0],"v":[{"e":[[352,100,[[352,100]]]],"w":{}}]},{"k":"ambush","lab":"Zone 2","lv":[17,20],"vm":[0,0,0,0],"v":[{"e":[[767,100,[]]],"w":{}}]}],"notes":[]},{"id":132,"n":"Malié","s":"","isl":2,"t":[{"k":"wild","lab":"","lv":[25,28],"vm":[0,0,0,0],"v":[{"e":[[568,30,[[568,100]]],[2136,30,[[2136,100]]],[572,20,[[572,100]]],[81,20,[[81,100]]]],"w":{}}]}],"notes":[]},{"id":134,"n":"Parc de Malié","s":"","isl":2,"t":[{"k":"wild","lab":"","lv":[24,27],"vm":[0,1,2,3],"v":[{"e":[[61,20,[[61,100]]],[2100,20,[[2100,87],[2101,13]]],[752,20,[[752,100]]],[166,20,[[166,100]]],[546,10,[[546,100]]],[54,10,[[54,100]]]],"w":{"rain":[[61,10],[62,1]],"hail":[[351,11]],"sand":[[351,11]]}},{"e":[[61,20,[[61,100]]],[2100,20,[[2100,87],[2101,13]]],[284,20,[[284,100]]],[168,20,[[168,100]]],[546,10,[[546,100]]],[54,10,[[54,100]]]],"w":{"rain":[[61,10],[186,1]],"hail":[[351,11]],"sand":[[351,11]]}},{"e":[[61,20,[[61,100]]],[2100,20,[[2100,87],[2101,13]]],[752,20,[[752,100]]],[166,20,[[166,100]]],[548,10,[[548,100]]],[54,10,[[54,100]]]],"w":{"rain":[[61,10],[62,1]],"hail":[[351,11]],"sand":[[351,11]]}},{"e":[[61,20,[[61,100]]],[2100,20,[[2100,87],[2101,13]]],[284,20,[[284,100]]],[168,20,[[168,100]]],[548,10,[[548,100]]],[54,10,[[54,100]]]],"w":{"rain":[[61,10],[186,1]],"hail":[[351,11]],"sand":[[351,11]]}}]},{"k":"fish","lab":"","lv":[10,28],"vm":[0,1,0,1],"v":[{"e":[[129,40,[[129,87],[130,13]]],[118,30,[[118,87],[119,13]]],[550,25,[[550,100]]],[130,5,[[130,100]]]],"w":{"rain":[[61,10],[62,1]],"hail":[[351,11]],"sand":[[351,11]]}},{"e":[[129,40,[[129,87],[130,13]]],[118,30,[[118,87],[119,13]]],[550,25,[[550,100]]],[130,5,[[130,100]]]],"w":{"rain":[[61,10],[186,1]],"hail":[[351,11]],"sand":[[351,11]]}}]},{"k":"bubble","lab":"","lv":[10,33],"vm":[0,1,0,1],"v":[{"e":[[130,35,[[130,100]]],[129,30,[[129,87],[130,13]]],[118,20,[[118,87],[119,13]]],[550,15,[[550,100]]]],"w":{"rain":[[61,10],[62,1]],"hail":[[351,11]],"sand":[[351,11]]}},{"e":[[130,35,[[130,100]]],[129,30,[[129,87],[130,13]]],[118,20,[[118,87],[119,13]]],[550,15,[[550,100]]]],"w":{"rain":[[61,10],[186,1]],"hail":[[351,11]],"sand":[[351,11]]}}]}],"notes":[]},{"id":106,"n":"Route 10","s":"","isl":2,"t":[{"k":"wild","lab":"","lv":[26,29],"vm":[0,1,0,1],"v":[{"e":[[735,30,[[735,100]]],[22,30,[[22,100]]],[166,20,[[166,100]]],[674,10,[[675,67],[674,33]]],[227,10,[[227,100]]]],"w":{}},{"e":[[2068,30,[[2068,100]]],[22,30,[[22,100]]],[168,20,[[168,100]]],[674,10,[[675,67],[674,33]]],[227,10,[[227,100]]]],"w":{}}]},{"k":"ambush","lab":"","lv":[26,29],"vm":[0,0,0,0],"v":[{"e":[[22,50,[[22,100]]],[204,30,[[204,100]]],[227,20,[[227,100]]]],"w":{}}]},{"k":"berry","lab":"","lv":null,"vm":[0,0,0,0],"v":[{"e":[[739,100,[[739,100]]]],"w":{}}]}],"notes":[]},{"id":136,"n":"Mont Hokulani","s":"","isl":2,"t":[{"k":"wild","lab":"Zone 1","lv":[27,30],"vm":[0,1,0,1],"v":[{"e":[[774,40,[]],[605,30,[[605,100]]],[374,20,[[374,100]]],[132,10,[[132,100]]]],"w":{}},{"e":[[774,30,[]],[605,20,[[605,100]]],[173,20,[[173,77],[35,13],[440,10]]],[374,20,[[374,100]]],[132,10,[[132,100]]]],"w":{}}]},{"k":"wild","lab":"Zone 2","lv":[27,30],"vm":[0,1,0,1],"v":[{"e":[[22,30,[[22,100]]],[605,20,[[605,100]]],[774,10,[]],[374,10,[[374,100]]],[227,10,[[227,100]]],[239,10,[[239,77],[125,13],[440,10]]],[132,10,[[132,100]]]],"w":{}},{"e":[[605,20,[[605,100]]],[173,20,[[173,77],[35,13],[440,10]]],[22,10,[[22,100]]],[774,10,[]],[374,10,[[374,100]]],[227,10,[[227,100]]],[239,10,[[239,77],[125,13],[440,10]]],[132,10,[[132,100]]]],"w":{}}]}],"notes":[]},{"id":108,"n":"Route 11","s":"","isl":2,"t":[{"k":"wild","lab":"","lv":[26,29],"vm":[0,1,0,1],"v":[{"e":[[735,20,[[735,100]]],[732,20,[[732,97],[733,3]]],[674,20,[[675,67],[674,33]]],[166,20,[[166,100]]],[47,10,[[47,100]]],[775,10,[]]],"w":{}},{"e":[[2068,20,[[2068,100]]],[732,20,[[732,97],[733,3]]],[674,20,[[675,67],[674,33]]],[168,20,[[168,100]]],[47,10,[[47,100]]],[775,10,[]]],"w":{}}]}],"notes":[]},{"id":122,"n":"Route 12","s":"","isl":2,"t":[{"k":"wild","lab":"","lv":[29,32],"vm":[0,0,1,1],"v":[{"e":[[2123,30,[[2123,100]]],[749,30,[[749,87],[750,13]]],[324,20,[[324,100]]],[229,20,[[229,100]]]],"w":{}},{"e":[[2123,30,[[2123,100]]],[749,30,[[749,87],[750,13]]],[324,20,[[324,100]]],[310,20,[[310,100]]]],"w":{}}]}],"notes":[]},{"id":138,"n":"Mont Ardent","s":"","isl":2,"t":[{"k":"wild","lab":"","lv":[29,32],"vm":[0,0,1,1],"v":[{"e":[[2123,20,[[2123,100]]],[749,20,[[749,87],[750,13]]],[702,10,[[702,80],[777,20]]],[737,10,[[736,97],[738,3]]],[324,10,[[324,100]]],[776,10,[[776,100]]],[777,10,[[777,80],[702,20]]],[239,10,[[239,77],[125,13],[440,10]]]],"w":{}},{"e":[[2123,20,[[2123,100]]],[749,20,[[749,87],[750,13]]],[324,20,[[324,100]]],[702,10,[[702,80],[777,20]]],[737,10,[[736,97],[738,3]]],[777,10,[[777,80],[702,20]]],[239,10,[[239,77],[125,13],[440,10]]]],"w":{}}]}],"notes":[]},{"id":124,"n":"Désert Haina","s":"","isl":2,"t":[{"k":"wild","lab":"","lv":[32,35],"vm":[0,0,1,1],"v":[{"e":[[552,70,[[552,90],[622,10]]],[2099,30,[[2099,90],[622,10]]]],"w":{"rain":[[351,11]],"hail":[[351,11]],"sand":[[444,10],[351,1]]}},{"e":[[552,70,[[552,90],[343,10]]],[2099,30,[[2099,90],[343,10]]]],"w":{"rain":[[351,11]],"hail":[[351,11]],"sand":[[444,10],[351,1]]}}]},{"k":"ambush","lab":"","lv":[32,35],"vm":[0,0,1,1],"v":[{"e":[[551,70,[[551,90],[622,10]]],[2099,20,[[2099,90],[622,10]]],[328,10,[[328,90],[622,10]]]],"w":{"rain":[[351,11]],"hail":[[351,11]],"sand":[[444,10],[351,1]]}},{"e":[[551,70,[[551,90],[343,10]]],[2099,20,[[2099,90],[343,10]]],[328,10,[[328,90],[343,10]]]],"w":{"rain":[[351,11]],"hail":[[351,11]],"sand":[[444,10],[351,1]]}}]}],"notes":["Chaque Pokémon du désert a un emplacement d’allié (10 %) réservé à Gringolem dans Ultra-Soleil et à Balbuto dans Ultra-Lune."]},{"id":114,"n":"Village Toko","s":"","isl":2,"t":[{"k":"wild","lab":"","lv":[30,33],"vm":[0,1,2,3],"v":[{"e":[[735,30,[[735,100]]],[279,30,[[279,100]]],[361,20,[[361,100]]],[359,10,[[359,100]]],[2085,10,[[2085,100]]]],"w":{"rain":[[351,11]],"hail":[[582,10],[351,1]],"sand":[[351,11]]}},{"e":[[2068,30,[[2068,100]]],[279,30,[[279,100]]],[361,20,[[361,100]]],[359,10,[[359,100]]],[2085,10,[[2085,100]]]],"w":{"rain":[[351,11]],"hail":[[582,10],[351,1]],"sand":[[351,11]]}},{"e":[[735,30,[[735,100]]],[279,30,[[279,100]]],[361,20,[[361,100]]],[359,10,[[359,100]]],[2075,10,[[2075,100]]]],"w":{"rain":[[351,11]],"hail":[[582,10],[351,1]],"sand":[[351,11]]}},{"e":[[2068,30,[[2068,100]]],[279,30,[[279,100]]],[361,20,[[361,100]]],[359,10,[[359,100]]],[2075,10,[[2075,100]]]],"w":{"rain":[[351,11]],"hail":[[582,10],[351,1]],"sand":[[351,11]]}}]}],"notes":[]},{"id":126,"n":"Route 14","s":"","isl":2,"t":[{"k":"wild","lab":"","lv":[30,33],"vm":[0,0,0,0],"v":[{"e":[[73,30,[[73,100]]],[456,30,[[456,100]]],[592,20,[[592,100]]],[279,20,[[279,100]]]],"w":{}}]},{"k":"fish","lab":"","lv":[10,34],"vm":[0,0,0,0],"v":[{"e":[[129,55,[[129,87],[130,13]]],[746,40,[[746,100]]],[779,5,[[779,100]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,39],"vm":[0,0,0,0],"v":[{"e":[[129,40,[[129,87],[130,13]]],[779,35,[[779,100]]],[746,25,[[746,100]]]],"w":{}}]}],"notes":[]},{"id":150,"n":"Bradley Prix","s":"Site désaffecté","isl":2,"t":[{"k":"wild","lab":"","lv":[31,34],"vm":[0,0,0,0],"v":[{"e":[[93,30,[[93,99],[94,1]]],[353,30,[[353,100]]],[42,20,[[42,100]]],[707,15,[[707,100]]],[778,5,[[778,100]]]],"w":{}}]}],"notes":[]},{"id":116,"n":"Route 15","s":"","isl":2,"t":[{"k":"wild","lab":"Herbes","lv":[30,33],"vm":[0,1,0,1],"v":[{"e":[[279,50,[[279,100]]],[735,30,[[735,100]]],[79,20,[[79,100]]]],"w":{}},{"e":[[279,50,[[279,100]]],[2068,30,[[2068,100]]],[79,20,[[79,100]]]],"w":{}}]},{"k":"wild","lab":"Sur l’eau","lv":[32,35],"vm":[0,0,0,0],"v":[{"e":[[73,40,[[73,100]]],[456,40,[[456,87],[457,13]]],[279,20,[[279,100]]]],"w":{}}]},{"k":"fish","lab":"","lv":[10,35],"vm":[0,1,0,1],"v":[{"e":[[129,50,[[129,87],[130,13]]],[746,40,[[746,100]]],[779,5,[[779,100]]],[366,5,[[366,97],[368,3]]]],"w":{}},{"e":[[129,50,[[129,87],[130,13]]],[746,40,[[746,100]]],[779,5,[[779,100]]],[366,5,[[366,97],[367,3]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,40],"vm":[0,1,0,1],"v":[{"e":[[779,35,[[779,100]]],[366,35,[[366,97],[368,3]]],[129,20,[[129,87],[130,13]]],[746,10,[[746,100]]]],"w":{}},{"e":[[779,35,[[779,100]]],[366,35,[[366,97],[367,3]]],[129,20,[[129,87],[130,13]]],[746,10,[[746,100]]]],"w":{}}]}],"notes":[]},{"id":118,"n":"Route 16","s":"","isl":2,"t":[{"k":"wild","lab":"","lv":[32,35],"vm":[0,1,0,1],"v":[{"e":[[559,30,[[559,100]]],[279,30,[[279,100]]],[735,20,[[735,100]]],[79,20,[[79,100]]]],"w":{}},{"e":[[559,30,[[559,100]]],[279,30,[[279,100]]],[2068,20,[[2068,100]]],[79,20,[[79,100]]]],"w":{}}]},{"k":"berry","lab":"","lv":null,"vm":[0,0,0,0],"v":[{"e":[[739,100,[[739,100]]]],"w":{}}]}],"notes":[]},{"id":128,"n":"Jardin d’Ula-Ula","s":"","isl":2,"t":[{"k":"wild","lab":"","lv":[33,36],"vm":[0,1,2,3],"v":[{"e":[[743,20,[[743,100]]],[546,20,[[546,100]]],[670,20,[[670,100]]],[4837,20,[[4837,100]]],[166,20,[[166,100]]]],"w":{}},{"e":[[743,20,[[743,100]]],[546,20,[[546,100]]],[670,20,[[670,100]]],[4837,20,[[4837,100]]],[168,20,[[168,100]]]],"w":{}},{"e":[[743,20,[[743,100]]],[548,20,[[548,100]]],[670,20,[[670,100]]],[4837,20,[[4837,100]]],[166,20,[[166,100]]]],"w":{}},{"e":[[743,20,[[743,100]]],[548,20,[[548,100]]],[670,20,[[670,100]]],[4837,20,[[4837,100]]],[168,20,[[168,100]]]],"w":{}}]}],"notes":["Les Plumeline d’ici sont en Style Hula. Les Floette appelés à l’aide peuvent être d’une autre couleur."]},{"id":120,"n":"Route 17","s":"","isl":2,"t":[{"k":"wild","lab":"Zone 1","lv":[33,36],"vm":[0,1,0,1],"v":[{"e":[[559,40,[[559,100]]],[735,20,[[735,100]]],[22,20,[[22,100]]],[166,20,[[166,100]]]],"w":{"rain":[[704,10],[351,1]],"hail":[[351,11]],"sand":[[351,11]]}},{"e":[[559,40,[[559,100]]],[2068,20,[[2068,100]]],[22,20,[[22,100]]],[168,20,[[168,100]]]],"w":{"rain":[[704,10],[351,1]],"hail":[[351,11]],"sand":[[351,11]]}}]},{"k":"wild","lab":"Zone 2","lv":[33,36],"vm":[0,1,0,1],"v":[{"e":[[735,20,[[735,100]]],[22,20,[[22,100]]],[559,20,[[559,100]]],[2123,20,[[2123,100]]],[227,15,[[227,100]]],[625,5,[[624,100]]]],"w":{"rain":[[704,10],[351,1]],"hail":[[351,11]],"sand":[[351,11]]}},{"e":[[2068,20,[[2068,100]]],[22,20,[[22,100]]],[559,20,[[559,100]]],[2123,20,[[2123,100]]],[227,15,[[227,100]]],[625,5,[[624,100]]]],"w":{"rain":[[704,10],[351,1]],"hail":[[351,11]],"sand":[[351,11]]}}]},{"k":"berry","lab":"","lv":null,"vm":[0,0,0,0],"v":[{"e":[[739,100,[[739,100]]]],"w":{}}]}],"notes":["La nuit, certains Baggiguane peuvent appeler Rapasdepic (rare)."]},{"id":146,"n":"Mont Lanakila","s":"","isl":2,"t":[{"k":"wild","lab":"Pied du mont","lv":[30,33],"vm":[0,1,2,3],"v":[{"e":[[2085,30,[[2085,100]]],[361,30,[[361,100]]],[735,20,[[735,100]]],[359,20,[[359,100]]]],"w":{"rain":[[351,11]],"hail":[[582,10],[351,1]],"sand":[[351,11]]}},{"e":[[2085,30,[[2085,100]]],[361,30,[[361,100]]],[2068,20,[[2068,100]]],[359,20,[[359,100]]]],"w":{"rain":[[351,11]],"hail":[[582,10],[351,1]],"sand":[[351,11]]}},{"e":[[2075,30,[[2075,100]]],[361,30,[[361,100]]],[735,20,[[735,100]]],[359,20,[[359,100]]]],"w":{"rain":[[351,11]],"hail":[[582,10],[351,1]],"sand":[[351,11]]}},{"e":[[2075,30,[[2075,100]]],[361,30,[[361,100]]],[2068,20,[[2068,100]]],[359,20,[[359,100]]]],"w":{"rain":[[351,11]],"hail":[[582,10],[351,1]],"sand":[[351,11]]}}]},{"k":"wild","lab":"Flanc","lv":[47,50],"vm":[0,0,1,1],"v":[{"e":[[2085,30,[[2085,100]]],[362,30,[[362,100]]],[359,20,[[359,100]]],[215,20,[[215,100]]]],"w":{"rain":[[351,11]],"hail":[[583,10],[584,1]],"sand":[[351,11]]}},{"e":[[2075,30,[[2075,100]]],[362,30,[[362,100]]],[359,20,[[359,100]]],[215,20,[[215,100]]]],"w":{"rain":[[351,11]],"hail":[[583,10],[584,1]],"sand":[[351,11]]}}]},{"k":"wild","lab":"Salle ouest","lv":[47,50],"vm":[0,0,0,0],"v":[{"e":[[42,30,[[42,100]]],[362,30,[[362,100]]],[359,20,[[359,100]]],[215,20,[[215,100]]]],"w":{"rain":[[351,11]],"hail":[[583,10],[584,1]],"sand":[[351,11]]}}]},{"k":"wild","lab":"Extérieur","lv":[47,50],"vm":[0,0,1,1],"v":[{"e":[[2075,30,[[2075,100]]],[362,30,[[362,100]]],[359,20,[[359,100]]],[215,20,[[215,100]]]],"w":{"rain":[[351,11]],"hail":[[583,10],[584,1]],"sand":[[351,11]]}},{"e":[[2085,30,[[2085,100]]],[362,30,[[362,100]]],[215,20,[[215,100]]],[359,10,[[359,100]]],[780,10,[[780,100]]]],"w":{"rain":[[351,11]],"hail":[[583,10],[584,1]],"sand":[[351,11]]}}]},{"k":"wild","lab":"Grotte","lv":[48,51],"vm":[0,0,1,1],"v":[{"e":[[42,30,[[42,100]]],[362,30,[[362,100]]],[359,20,[[359,100]]],[215,20,[[215,100]]]],"w":{"rain":[[351,11]],"hail":[[583,10],[584,1]],"sand":[[351,11]]}},{"e":[[42,30,[[42,100]]],[362,30,[[362,100]]],[215,20,[[215,100]]],[359,10,[[359,100]]],[780,10,[[780,100]]]],"w":{"rain":[[351,11]],"hail":[[583,10],[584,1]],"sand":[[351,11]]}}]},{"k":"wild","lab":"Mi-parcours","lv":[48,51],"vm":[0,0,1,1],"v":[{"e":[[2075,30,[[2075,100]]],[362,30,[[362,100]]],[359,20,[[359,100]]],[215,20,[[215,100]]]],"w":{"rain":[[351,11]],"hail":[[583,10],[584,1]],"sand":[[351,11]]}},{"e":[[2085,30,[[2085,100]]],[362,30,[[362,100]]],[215,20,[[215,100]]],[359,10,[[359,100]]],[780,10,[[780,100]]]],"w":{"rain":[[351,11]],"hail":[[583,10],[584,1]],"sand":[[351,11]]}}]}],"notes":[]},{"id":112,"n":"Route 13","s":"","isl":2,"t":[{"k":"fish","lab":"","lv":[10,33],"vm":[0,0,0,0],"v":[{"e":[[129,55,[[129,87],[130,13]]],[746,40,[[746,100]]],[779,5,[[779,100]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,38],"vm":[0,0,0,0],"v":[{"e":[[129,40,[[129,87],[130,13]]],[779,35,[[779,100]]],[746,25,[[746,100]]]],"w":{}}]}],"notes":[]},{"id":110,"n":"Plage d’Ula-Ula","s":"","isl":2,"t":[{"k":"berry","lab":"","lv":null,"vm":[0,0,0,0],"v":[{"e":[[739,100,[[739,100]]]],"w":{}}]}],"notes":[]},{"id":184,"n":"Île Noadkoko","s":"","isl":3,"t":[{"k":"wild","lab":"","lv":[42,45],"vm":[0,0,0,0],"v":[{"e":[[2151,20,[]],[279,20,[[279,100]]],[102,20,[[102,100]]],[357,20,[[357,100]]],[127,10,[[127,100]]],[423,10,[[423,100]]]],"w":{"rain":[[705,10],[351,1]],"hail":[[351,11]],"sand":[[351,11]]}}]}],"notes":[]},{"id":158,"n":"Prairie de Poni","s":"","isl":3,"t":[{"k":"wild","lab":"","lv":[41,44],"vm":[0,0,0,0],"v":[{"e":[[279,30,[[279,100]]],[676,20,[[676,100]]],[686,20,[[686,100]]],[210,20,[[210,100]]],[423,10,[[423,100]]]],"w":{}}]},{"k":"berry","lab":"","lv":null,"vm":[0,0,0,0],"v":[{"e":[[739,100,[[739,100]]]],"w":{}}]}],"notes":[]},{"id":160,"n":"Vieille Route","s":"","isl":3,"t":[{"k":"wild","lab":"","lv":[41,44],"vm":[0,0,0,0],"v":[{"e":[[279,30,[[279,100]]],[676,20,[[676,100]]],[686,20,[[686,100]]],[210,20,[[210,100]]],[423,10,[[423,100]]]],"w":{}}]}],"notes":[]},{"id":174,"n":"Grand Canyon de Poni","s":"","isl":3,"t":[{"k":"wild","lab":"Intérieur + 2F + 3F + B1F centre","lv":[42,45],"vm":[0,0,0,0],"v":[{"e":[[42,30,[[42,100]]],[525,30,[[525,100]]],[2099,20,[[2099,100]]],[703,20,[[302,67],[703,33]]]],"w":{}}]},{"k":"wild","lab":"Sommet + Sous l’arbre","lv":[42,45],"vm":[0,1,0,1],"v":[{"e":[[67,20,[[67,100]]],[745,20,[[745,100]]],[619,20,[[619,100]]],[703,15,[[302,67],[703,33]]],[227,10,[[227,100]]],[525,10,[[525,100]]],[782,5,[[783,97],[784,3]]]],"w":{}},{"e":[[67,20,[[67,100]]],[2793,20,[[2793,100]]],[619,20,[[619,100]]],[703,15,[[302,67],[703,33]]],[227,10,[[227,100]]],[525,10,[[525,100]]],[782,5,[[783,97],[784,3]]]],"w":{}}]},{"k":"wild","lab":"B1F ouest","lv":[42,45],"vm":[0,0,0,0],"v":[{"e":[[42,80,[[42,100]]],[55,20,[[55,100]]]],"w":{}}]},{"k":"ambush","lab":"","lv":[42,45],"vm":[0,0,0,0],"v":[{"e":[[2099,100,[[2099,100]]]],"w":{}}]},{"k":"fish","lab":"","lv":[10,46],"vm":[0,0,0,0],"v":[{"e":[[129,45,[[129,87],[130,13]]],[339,25,[[339,87],[340,13]]],[550,25,[[550,100]]],[341,5,[[341,87],[342,13]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,51],"vm":[0,0,0,0],"v":[{"e":[[341,35,[[341,87],[342,13]]],[129,25,[[129,87],[130,13]]],[339,20,[[339,87],[340,13]]],[550,20,[[550,100]]]],"w":{}}]}],"notes":[]},{"id":162,"n":"Récif de Poni","s":"","isl":3,"t":[{"k":"wild","lab":"","lv":[41,44],"vm":[0,0,0,0],"v":[{"e":[[73,30,[[73,100]]],[457,25,[[457,100]]],[423,20,[[423,100]]],[279,20,[[279,100]]],[131,5,[[131,100]]]],"w":{}}]},{"k":"ambush","lab":"Zone 1","lv":[41,44],"vm":[0,0,0,0],"v":[{"e":[[767,100,[]]],"w":{}}]},{"k":"ambush","lab":"Zone 2","lv":[41,44],"vm":[0,0,1,1],"v":[{"e":[[320,70,[[320,100]]],[693,20,[[693,100]]],[321,10,[[321,100]]]],"w":{}},{"e":[[320,70,[[320,100]]],[691,20,[[691,100]]],[321,10,[[321,100]]]],"w":{}}]},{"k":"fish","lab":"","lv":[10,44],"vm":[0,0,0,0],"v":[{"e":[[129,49,[[129,87],[130,13]]],[320,40,[[320,87],[321,13]]],[318,10,[[318,87],[319,13]]],[369,1,[[369,100]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,49],"vm":[0,0,0,0],"v":[{"e":[[129,40,[[129,87],[130,13]]],[320,30,[[320,87],[321,13]]],[318,20,[[318,87],[319,13]]],[369,10,[[369,100]]]],"w":{}}]}],"notes":[]},{"id":164,"n":"Forêt de Poni","s":"","isl":3,"t":[{"k":"wild","lab":"","lv":[52,55],"vm":[0,1,0,1],"v":[{"e":[[732,30,[[732,87],[733,13]]],[427,20,[[427,97],[428,3]]],[571,20,[[571,100]]],[214,10,[[214,100]]],[127,10,[[127,100]]],[447,10,[[447,87],[440,10],[448,3]]]],"w":{}},{"e":[[427,30,[[427,97],[428,3]]],[732,30,[[732,87],[733,13]]],[571,20,[[571,100]]],[214,10,[[214,100]]],[127,10,[[127,100]]]],"w":{}}]}],"notes":["La nuit, dans une partie des hautes herbes, Laporeille peut aussi appeler Riolu (relevé dans le dump des tables d’Ultra-Soleil)."]},{"id":166,"n":"Plaine de Poni","s":"","isl":3,"t":[{"k":"wild","lab":"Zone 1","lv":[54,57],"vm":[0,1,2,3],"v":[{"e":[[735,30,[[735,100]]],[279,20,[[279,100]]],[546,20,[[546,100]]],[732,10,[[732,87],[733,13]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]]],"w":{}},{"e":[[2068,30,[[2068,100]]],[279,20,[[279,100]]],[546,20,[[546,100]]],[732,10,[[732,87],[733,13]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]]],"w":{}},{"e":[[735,30,[[735,100]]],[279,20,[[279,100]]],[548,20,[[548,100]]],[732,10,[[732,87],[733,13]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]]],"w":{}},{"e":[[2068,30,[[2068,100]]],[279,20,[[279,100]]],[548,20,[[548,100]]],[732,10,[[732,87],[733,13]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]]],"w":{}}]},{"k":"wild","lab":"Zone 2","lv":[54,57],"vm":[0,1,2,3],"v":[{"e":[[735,30,[[735,100]]],[732,30,[[732,87],[733,13]]],[546,20,[[546,100]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]]],"w":{}},{"e":[[2068,30,[[2068,100]]],[732,30,[[732,87],[733,13]]],[546,20,[[546,100]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]]],"w":{}},{"e":[[735,30,[[735,100]]],[732,30,[[732,87],[733,13]]],[548,20,[[548,100]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]]],"w":{}},{"e":[[2068,30,[[2068,100]]],[732,30,[[732,87],[733,13]]],[548,20,[[548,100]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]]],"w":{}}]},{"k":"wild","lab":"Zone 3","lv":[54,57],"vm":[0,1,2,3],"v":[{"e":[[735,30,[[735,100]]],[297,20,[[297,100]]],[732,10,[[732,87],[733,13]]],[546,10,[[546,100]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]],[97,10,[[97,100]]]],"w":{}},{"e":[[2068,30,[[2068,100]]],[97,20,[[97,100]]],[732,10,[[732,87],[733,13]]],[546,10,[[546,100]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]],[297,10,[[297,100]]]],"w":{}},{"e":[[735,30,[[735,100]]],[297,20,[[297,100]]],[732,10,[[732,87],[733,13]]],[548,10,[[548,100]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]],[97,10,[[97,100]]]],"w":{}},{"e":[[2068,30,[[2068,100]]],[97,20,[[97,100]]],[732,10,[[732,87],[733,13]]],[548,10,[[548,100]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]],[297,10,[[297,100]]]],"w":{}}]},{"k":"wild","lab":"Zone 4","lv":[54,57],"vm":[0,1,2,3],"v":[{"e":[[750,20,[[750,100]]],[22,20,[[22,100]]],[546,20,[[546,100]]],[735,10,[[735,100]]],[732,10,[[732,87],[733,13]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]]],"w":{}},{"e":[[750,20,[[750,100]]],[22,20,[[22,100]]],[546,20,[[546,100]]],[2068,10,[[2068,100]]],[732,10,[[732,87],[733,13]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]]],"w":{}},{"e":[[750,20,[[750,100]]],[22,20,[[22,100]]],[548,20,[[548,100]]],[735,10,[[735,100]]],[732,10,[[732,87],[733,13]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]]],"w":{}},{"e":[[750,20,[[750,100]]],[22,20,[[22,100]]],[548,20,[[548,100]]],[2068,10,[[2068,100]]],[732,10,[[732,87],[733,13]]],[128,10,[[241,67],[128,33]]],[241,10,[[128,67],[241,33]]]],"w":{}}]},{"k":"ambush","lab":"Zone 1","lv":[54,57],"vm":[0,0,1,1],"v":[{"e":[[546,50,[[546,100]]],[123,30,[[123,100]]],[113,20,[[113,80],[242,20]]]],"w":{}},{"e":[[548,50,[[548,100]]],[123,30,[[123,100]]],[113,20,[[113,80],[242,20]]]],"w":{}}]},{"k":"ambush","lab":"Zone 2","lv":[54,57],"vm":[0,0,0,0],"v":[{"e":[[57,60,[[57,100]]],[190,20,[[190,97],[424,3]]],[587,20,[[587,100]]]],"w":{}}]},{"k":"ambush","lab":"Zone 3","lv":[54,57],"vm":[0,0,1,1],"v":[{"e":[[22,70,[[22,100]]],[628,30,[[628,100]]]],"w":{}},{"e":[[22,70,[[22,100]]],[630,30,[[630,100]]]],"w":{}}]},{"k":"ambush","lab":"Zone 4","lv":[54,57],"vm":[0,1,0,1],"v":[{"e":[[735,70,[[735,100]]],[668,30,[[668,100]]]],"w":{}},{"e":[[2068,70,[[2068,100]]],[668,30,[[668,100]]]],"w":{}}]},{"k":"berry","lab":"","lv":null,"vm":[0,0,0,0],"v":[{"e":[[739,100,[[739,100]]]],"w":{}}]}],"notes":[]},{"id":156,"n":"Jardin de Poni","s":"","isl":3,"t":[{"k":"wild","lab":"","lv":[54,57],"vm":[0,1,2,3],"v":[{"e":[[743,30,[[743,100]]],[548,20,[[548,100]]],[670,20,[[670,100]]],[6885,20,[[6885,100]]],[168,10,[[168,100]]]],"w":{}},{"e":[[743,20,[[743,100]]],[548,20,[[548,100]]],[670,20,[[670,100]]],[6885,20,[[6885,100]]],[200,10,[[200,100]]],[166,10,[[166,100]]]],"w":{}},{"e":[[743,30,[[743,100]]],[546,20,[[546,100]]],[670,20,[[670,100]]],[6885,20,[[6885,100]]],[168,10,[[168,100]]]],"w":{}},{"e":[[743,20,[[743,100]]],[546,20,[[546,100]]],[670,20,[[670,100]]],[6885,20,[[6885,100]]],[200,10,[[200,100]]],[166,10,[[166,100]]]],"w":{}}]},{"k":"fish","lab":"","lv":[10,57],"vm":[0,0,0,0],"v":[{"e":[[129,59,[[129,87],[130,13]]],[339,40,[[339,87],[340,13]]],[147,1,[[147,87],[148,13]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,62],"vm":[0,0,0,0],"v":[{"e":[[129,50,[[129,87],[130,13]]],[339,40,[[339,87],[340,13]]],[147,10,[[147,87],[148,13]]]],"w":{}}]}],"notes":["Les Plumeline d’ici sont en Style Buyō. Les Floette appelés à l’aide peuvent être d’une autre couleur."]},{"id":182,"n":"Caverne Coda","s":"","isl":3,"t":[{"k":"wild","lab":"1F","lv":[56,59],"vm":[0,0,0,0],"v":[{"e":[[42,40,[[42,97],[169,3]]],[2099,30,[[2099,100]]],[715,15,[[715,100]]],[621,15,[[621,100]]]],"w":{}}]},{"k":"wild","lab":"B1F","lv":[56,59],"vm":[0,0,0,0],"v":[{"e":[[715,40,[[715,100]]],[2099,20,[[2099,100]]],[42,20,[[42,97],[169,3]]],[621,20,[[621,100]]]],"w":{}}]}],"notes":["D’après Bulbapedia : la nuit, certains Drakkarmin peuvent appeler Nosferalto."]},{"id":170,"n":"Chemin du Défi","s":"","isl":3,"t":[{"k":"wild","lab":"","lv":[58,61],"vm":[0,0,0,0],"v":[{"e":[[279,25,[[279,100]]],[108,20,[[108,100]]],[210,20,[[210,100]]],[686,15,[[686,100]]],[760,10,[[760,100]]],[55,10,[[55,100]]]],"w":{}}]},{"k":"fish","lab":"","lv":[10,61],"vm":[0,0,0,0],"v":[{"e":[[129,59,[[129,87],[130,13]]],[339,40,[[339,87],[340,13]]],[147,1,[[147,87],[148,12],[149,1]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,66],"vm":[0,0,0,0],"v":[{"e":[[129,50,[[129,87],[130,13]]],[339,40,[[339,87],[340,13]]],[147,10,[[147,87],[148,12],[149,1]]]],"w":{}}]}],"notes":[]},{"id":172,"n":"Village Flottant","s":"","isl":3,"t":[{"k":"fish","lab":"","lv":[10,44],"vm":[0,0,0,0],"v":[{"e":[[129,55,[[129,87],[130,13]]],[320,40,[[320,87],[321,13]]],[781,5,[[781,100]]]],"w":{}}]},{"k":"bubble","lab":"","lv":[10,49],"vm":[0,0,0,0],"v":[{"e":[[129,40,[[129,87],[130,13]]],[781,35,[[781,100]]],[320,25,[[320,87],[321,13]]]],"w":{}}]}],"notes":[]},{"id":168,"n":"Côte de Poni","s":"","isl":3,"t":[{"k":"ambush","lab":"","lv":[56,59],"vm":[0,0,0,0],"v":[{"e":[[2099,100,[[2099,100]]]],"w":{}}]}],"notes":[]}]};
+const SP = D.sp;
+const ISLANDS = ["Mele-Mele", "Akala", "Ula-Ula", "Poni"];
+const TYPES = ["Normal","Combat","Vol","Poison","Sol","Roche","Insecte","Spectre","Acier","Feu","Eau","Plante","Électrik","Psy","Glace","Dragon","Ténèbres","Fée"];
+const TCOL = ["#8f8f7c","#b8452f","#7d92dd","#9a49a4","#b7954a","#9c8a47","#8fa028","#5f4f93","#7f8ea3","#dc642c","#3f84d6","#4f9e44","#c9a51a","#d9517f","#4fb0b0","#5a46d8","#55463c","#d27fc0"];
+const KIND = {
+  wild: ["Rencontres sauvages", "herbes, grotte ou surf"],
+  ambush: ["Embuscade", "buisson qui bouge, ombre, nuage de sable ou remous"],
+  berry: ["Tas de Baies", "au pied d'un arbre à Baies"],
+  fish: ["Pêche", "point de pêche normal"],
+  bubble: ["Pêche, point à bulles", "quand l'eau bouillonne"]
+};
+const WEATHER = { rain: "Pluie", hail: "Grêle", sand: "Tempête de sable" };
+const LOCS = D.locs, LOCBY = {};
+LOCS.forEach(l => { LOCBY[l.id] = l; });
+
+/* ---------- state ---------- */
+const KEY = "shasse-sos-alola";
+let S = { ver: "us", night: false, loc: LOCS[0].id, chain: 0, charm: false, target: null, q: "" };
+try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
+if (!LOCBY[S.loc]) S.loc = LOCS[0].id;
+S.q = "";
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+const vi = () => (S.ver === "um" ? 2 : 0) + (S.night ? 1 : 0);
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const pc = n => String(n).replace(".", ",") + " %";
+const locName = l => l.n + (l.s ? " (" + l.s + ")" : "");
+const dex = sf => "#" + String(SP[sf].d).padStart(3, "0");
+function tcss(sf) { const t = SP[sf].ty; return "--t1:" + TCOL[t[0]] + ";--t2:" + TCOL[t[t.length - 1]]; }
+function fullName(sf) { const p = SP[sf]; return p.n + (p.f ? " (" + p.f + ")" : ""); }
+function tok(sf) {
+  const ty = SP[sf].ty, label = ty.map(t => TYPES[t]).join(" / ");
+  return '<span class="tok' + (ty.length > 1 ? " dual" : "") + '" style="' + tcss(sf) + '" role="img" aria-label="Type ' + esc(label) + '" title="' + esc(label) + '">' +
+    ty.map(t => '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ty' + t + '"></use></svg>').join("") + "</span>";
+}
+
+/* ---------- navigation ---------- */
+function renderNav() {
+  let html = "", opts = "";
+  ISLANDS.forEach((name, i) => {
+    html += "<h2>Île de " + name + "</h2>";
+    opts += '<optgroup label="Île de ' + name + '">';
+    LOCS.filter(l => l.isl === i).forEach(l => {
+      html += '<button type="button" data-loc="' + l.id + '"' + (l.id === S.loc && !S.q ? ' aria-current="true"' : "") + ">" + esc(l.n) + (l.s ? " <small>" + esc(l.s) + "</small>" : "") + "</button>";
+      opts += '<option value="' + l.id + '"' + (l.id === S.loc ? " selected" : "") + ">" + esc(locName(l)) + "</option>";
+    });
+    opts += "</optgroup>";
+  });
+  $("navlist").innerHTML = html;
+  $("navsel").innerHTML = opts;
+}
+
+/* ---------- zone view ---------- */
+function isTarget(sf, via, loc) {
+  const t = S.target; return !!t && t.sf === sf && t.via === via && t.loc === loc;
+}
+function chip(sf, pct, via, loc, extra) {
+  const self = sf === via;
+  return '<button type="button" class="chip' + (self ? " self" : " new") + '" data-t="' + sf + '" data-via="' + via + '" data-pct="' + pct + '" data-loc="' + loc + '"' + (extra ? ' data-w="' + extra + '"' : "") +
+    ' aria-pressed="' + isTarget(sf, via, loc) + '" title="Prendre pour cible"><span class="dot" style="' + tcss(sf) + '"></span>' +
+    (self ? "lui-même" : esc(fullName(sf))) + ' <span class="pc num">' + pc(pct) + "</span></button>";
+}
+function renderTable(l, t) {
+  const v = t.v[t.vm[vi()]], k = KIND[t.k];
+  const dn = t.vm[0] !== t.vm[1] || t.vm[2] !== t.vm[3], vd = t.vm[0] !== t.vm[2] || t.vm[1] !== t.vm[3];
+  let h = '<section class="table"><div class="thead"><h3>' + k[0] + "</h3>" + (t.lab ? '<span class="lab">' + esc(t.lab) + "</span>" : "") +
+    (dn ? '<span class="tag">change jour / nuit</span>' : "") + (vd ? '<span class="tag">change selon la version</span>' : "") +
+    (t.lv ? '<span class="lv num">Niv. ' + t.lv[0] + " à " + t.lv[1] + "</span>" : "") +
+    '<span class="thint">' + k[1] + (/^Zone/.test(t.lab) ? ". Les zones numérotées sont des carrés d'herbes distincts de ce lieu, dans l'ordre des données du jeu." : "") + "</span></div>";
+  v.e.forEach(e => {
+    const sf = e[0], p = SP[sf];
+    h += '<div class="row"><button type="button" class="mon" data-sp="' + sf + '" title="Voir où le trouver">' + tok(sf) +
+      '<span class="nm"><b>' + esc(p.n) + "</b><small>" + dex(sf) + " · " + (p.f ? esc(p.f) + " · " : "") + esc(p.e) + (p.cr ? " · appel " + p.cr : "") + "</small></span></button>" +
+      '<div class="rate"><b class="num">' + pc(e[1]) + '</b><i style="--w:' + e[1] + '%"></i></div><div class="allies">';
+    if (!e[2].length) h += '<span class="nocall">N\'appelle jamais à l\'aide</span>';
+    else {
+      h += '<span class="lbl">Appelle</span>';
+      const al = e[2].slice().sort((a, b) => (a[0] === sf) - (b[0] === sf) || b[1] - a[1]);
+      al.forEach(a => { h += chip(a[0], a[1], sf, l.id); });
+    }
+    h += "</div></div>";
+  });
+  const ws = Object.keys(v.w);
+  if (ws.length) {
+    h += '<div class="weather">';
+    ws.forEach(w => {
+      h += '<div class="wl"><span class="wname">' + WEATHER[w] + "</span>";
+      v.w[w].forEach(a => { h += chip(a[0], a[1], 0, l.id, w); });
+      h += "</div>";
+    });
+    h += "<p>Alliés météo : n'importe quel Pokémon de cette table peut les appeler tant que la météo est active.</p></div>";
+  }
+  return h + "</section>";
+}
+function renderZone() {
+  const l = LOCBY[S.loc];
+  const lv = l.t.filter(t => t.lv && t.k !== "fish" && t.k !== "bubble").flatMap(t => t.lv);
+  let h = '<div class="zonehead"><h2>' + esc(l.n) + "</h2>" + (l.s ? '<span class="sub">' + esc(l.s) + "</span>" : "") + "</div>" +
+    '<p class="zonemeta">Île de ' + ISLANDS[l.isl] + (lv.length ? " · niveaux " + Math.min(...lv) + " à " + Math.max(...lv) : "") + " · " +
+    (S.ver === "um" ? "Ultra-Lune" : "Ultra-Soleil") + ", " + (S.night ? "de nuit" : "de jour") + "</p>";
+  if (l.notes.length) h += '<div class="notes">' + l.notes.map(n => "<p>" + esc(n) + "</p>").join("") + "</div>";
+  h += l.t.map(t => renderTable(l, t)).join("");
+  $("main").innerHTML = h;
+}
+
+/* ---------- where to find ---------- */
+function tableLabel(t) { return KIND[t.k][0] + (t.lab ? " · " + t.lab : ""); }
+function whereList(sf) {
+  const out = [], i = vi();
+  LOCS.forEach(l => l.t.forEach(t => {
+    const v = t.v[t.vm[i]];
+    v.e.forEach(e => {
+      if (e[0] === sf) out.push({ l, t, kind: 0, pct: e[1], how: "Sauvage" });
+      e[2].forEach(a => { if (a[0] === sf && e[0] !== sf) out.push({ l, t, kind: 1, pct: a[1], via: e[0], how: "Allié SOS de <b>" + esc(fullName(e[0])) + "</b> (sauvage à " + pc(e[1]) + ")" }); });
+    });
+    Object.keys(v.w).forEach(w => v.w[w].forEach(a => { if (a[0] === sf) out.push({ l, t, kind: 2, pct: a[1], how: "Allié météo, <b>" + WEATHER[w].toLowerCase() + "</b>" }); }));
+  }));
+  return out.sort((a, b) => a.kind - b.kind || b.pct - a.pct);
+}
+function renderWhere(sf) {
+  const p = SP[sf], rows = whereList(sf);
+  let h = '<section class="where"><header>' + tok(sf) + '<span class="nm"><b>' + esc(fullName(sf)) + "</b><small>" + esc(p.e) + " · " + dex(sf) + " · " + p.ty.map(t => TYPES[t]).join(" / ") +
+    (p.cr ? " · taux d'appel " + p.cr : " · n'appelle jamais") + "</small></span></header>";
+  if (!rows.length) h += '<p class="empty">Introuvable avec cette version et ce moment de la journée. Essayez l\'autre version ou basculez jour / nuit.</p>';
+  else h += "<ul>" + rows.map(r => '<li><button type="button" data-loc="' + r.l.id + '">' + esc(locName(r.l)) + '</button><span class="how">' + r.how + " · " + esc(tableLabel(r.t)) + '</span><span class="pc num">' + pc(r.pct) + "</span></li>").join("") + "</ul>";
+  return h + "</section>";
+}
+function renderSearch() {
+  const q = norm(S.q);
+  const zones = LOCS.filter(l => norm(locName(l)).includes(q));
+  const mons = Object.keys(SP).map(Number).filter(sf => { const p = SP[sf]; return norm(p.n + " " + p.e + " " + p.f).includes(q) || String(p.d) === q; })
+    .sort((a, b) => (norm(SP[b].n).startsWith(q) - norm(SP[a].n).startsWith(q)) || SP[a].d - SP[b].d);
+  let h = '<div class="res"><div class="zonehead"><h2>Résultats pour « ' + esc(S.q) + " »</h2></div>" +
+    '<p class="zonemeta">' + (S.ver === "um" ? "Ultra-Lune" : "Ultra-Soleil") + ", " + (S.night ? "de nuit" : "de jour") + ". Changez la version ou l'heure en haut pour voir les autres cas.</p>";
+  if (zones.length) h += "<h3>Zones</h3><div class=\"zonebtns\">" + zones.map(l => '<button type="button" data-loc="' + l.id + '">' + esc(locName(l)) + "</button>").join("") + "</div>";
+  if (mons.length) h += "<h3>Pokémon</h3>" + mons.slice(0, 12).map(renderWhere).join("") + (mons.length > 12 ? '<p class="empty">' + (mons.length - 12) + " autres Pokémon correspondent. Précisez la recherche.</p>" : "");
+  if (!zones.length && !mons.length) h += '<p class="empty">Aucun Pokémon sauvage ni aucune zone ne correspond. Seuls les Pokémon trouvables en rencontre sauvage ou en appel à l\'aide sont listés.</p>';
+  $("main").innerHTML = h + "</div>";
+}
+function renderMain() { if (S.q.trim()) renderSearch(); else renderZone(); }
+
+/* ---------- chain ---------- */
+function chainInfo(c) {
+  const rolls = (c >= 31 ? 13 : c >= 21 ? 9 : c >= 11 ? 5 : 1) + (S.charm ? 2 : 0);
+  return { rolls, p: 1 - Math.pow(4095 / 4096, rolls), ha: c >= 30 ? 15 : c >= 20 ? 10 : c >= 10 ? 5 : 0, iv: c >= 30 ? 4 : c >= 20 ? 3 : c >= 10 ? 2 : c >= 5 ? 1 : 0 };
+}
+const one = p => "1 sur " + Math.round(1 / p).toLocaleString("fr-FR");
+function renderChain() {
+  const c = S.chain, info = chainInfo(c), t = S.target;
+  $("count").textContent = c;
+  let th;
+  if (t && SP[t.sf]) {
+    const l = LOCBY[t.loc];
+    th = tok(t.sf) + "<span><b>" + esc(fullName(t.sf)) + "</b><small>" +
+      (t.w ? "allié météo (" + WEATHER[t.w].toLowerCase() + ")" : t.via === t.sf ? "appelé par un autre " + esc(SP[t.sf].n) : "appelé par " + esc(fullName(t.via))) +
+      " · " + pc(t.pct) + " des appels" + (l ? " · " + esc(locName(l)) : "") + "</small></span>";
+  } else th = "<span><b>Aucune cible</b><small>Touchez un allié dans une table pour le suivre ici.</small></span>";
+  $("target").innerHTML = th;
+  const steps = $("steps");
+  steps.style.setProperty("--w", Math.min(c, 31) / 31 * 100 + "%");
+  if (!steps.dataset.done) {
+    [5, 11, 21, 31].forEach(n => { const s = document.createElement("span"); s.style.left = n / 31 * 100 + "%"; s.textContent = n; steps.appendChild(s); });
+    steps.dataset.done = "1";
+  }
+  let h = '<dt>Chromatique par allié</dt><dd class="gold num">' + one(info.p) + "</dd>" +
+    '<dt>Jets chromatiques</dt><dd class="num">' + info.rolls + "</dd>" +
+    '<dt>Talent Caché</dt><dd class="num">' + pc(info.ha) + "</dd>" +
+    '<dt>IV parfaits garantis</dt><dd class="num">' + info.iv + "</dd>";
+  if (t && SP[t.sf]) {
+    const best = chainInfo(31);
+    h += '<dt>Cible chromatique par appel réussi, maintenant</dt><dd class="num">' + one(info.p * t.pct / 100) + "</dd>" +
+      '<dt>Idem à partir de 31 alliés</dt><dd class="num">' + one(best.p * t.pct / 100) + "</dd>";
+  }
+  $("stats").innerHTML = h;
+  $("charm").checked = S.charm;
+}
+
+/* ---------- wiring ---------- */
+function renderAll() {
+  document.body.dataset.ver = S.ver;
+  document.querySelectorAll("[data-ver][aria-pressed]").forEach(b => b.setAttribute("aria-pressed", b.dataset.ver === S.ver));
+  document.querySelectorAll("[data-night]").forEach(b => b.setAttribute("aria-pressed", (b.dataset.night === "1") === S.night));
+  renderNav(); renderMain(); renderChain(); save();
+}
+function goLoc(id, push) {
+  S.loc = Number(id); S.q = ""; $("q").value = "";
+  if (push !== false) { try { history.replaceState(null, "", "#zone-" + S.loc); } catch (e) { location.hash = "zone-" + S.loc; } }
+  renderAll(); $("main").scrollTop = 0;
+  if (window.matchMedia("(max-width: 1080px)").matches) $("main").scrollIntoView({ block: "start" });
+}
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  if (b.dataset.t) {
+    const t = { sf: Number(b.dataset.t), via: Number(b.dataset.via), pct: Number(b.dataset.pct), loc: Number(b.dataset.loc), w: b.dataset.w || "" };
+    S.target = isTarget(t.sf, t.via, t.loc) ? null : t;
+    renderMain(); renderChain(); save();
+  } else if (b.dataset.sp) { S.q = SP[b.dataset.sp].n; $("q").value = S.q; renderAll(); $("main").scrollTop = 0; }
+  else if (b.dataset.loc) goLoc(b.dataset.loc);
+  else if (b.dataset.ver && b.hasAttribute("aria-pressed")) { S.ver = b.dataset.ver; renderAll(); }
+  else if (b.dataset.night) { S.night = b.dataset.night === "1"; renderAll(); }
+  else if (b.id === "plus") { S.chain = Math.min(S.chain + 1, 9999); renderChain(); save(); }
+  else if (b.id === "minus") { S.chain = Math.max(S.chain - 1, 0); renderChain(); save(); }
+  else if (b.id === "reset") { S.chain = 0; renderChain(); save(); }
+});
+$("charm").addEventListener("change", ev => { S.charm = ev.target.checked; renderChain(); save(); });
+$("navsel").addEventListener("change", ev => goLoc(ev.target.value));
+$("q").addEventListener("input", ev => { S.q = ev.target.value; renderNav(); renderMain(); });
+function fromHash() {
+  const m = /^#zone-(\d+)$/.exec(location.hash);
+  if (m && LOCBY[m[1]]) { S.loc = Number(m[1]); return true; }
+  return false;
+}
+window.addEventListener("hashchange", () => { if (fromHash()) { S.q = ""; $("q").value = ""; renderAll(); } });
+fromHash();
+renderAll();
+</script>
+</body>
+</html>
